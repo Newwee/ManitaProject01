@@ -198,6 +198,16 @@ export default function App() {
     return () => stopMusic();
   }, []);
 
+  const category = config.presetCategory || 'chat_scratch';
+
+  // Ensure website ambient BGM does not overlap when entering Christmas tree experience
+  useEffect(() => {
+    if (category === 'christmas_tree' && isMusicPlaying) {
+      stopMusic();
+      setIsMusicPlaying(false);
+    }
+  }, [category, isMusicPlaying]);
+
   const handleToggleMusic = () => {
     toggleMusic(
       config.theme,
@@ -230,16 +240,6 @@ export default function App() {
       </div>
     );
   }
-
-  const category = config.presetCategory || 'chat_scratch';
-
-  // Ensure website ambient BGM does not overlap when entering Christmas tree experience
-  useEffect(() => {
-    if (category === 'christmas_tree' && isMusicPlaying) {
-      stopMusic();
-      setIsMusicPlaying(false);
-    }
-  }, [category, isMusicPlaying]);
 
   return (
     <div
