@@ -85,7 +85,7 @@ export default function ChristmasTreeExperience({
     <div className="w-full h-full relative bg-black overflow-hidden flex-1">
       <iframe
         ref={iframeRef}
-        src={`/experiences/ChristmasTree.html?view=${viewMode}&theme=${treeTheme}&v=2.1`}
+        src={`/experiences/ChristmasTree.html?view=${viewMode}&theme=${treeTheme}&v=2.4`}
         className="w-full h-full border-0 absolute inset-0 block"
         title="MANITA 3D Christmas Tree Experience"
         allow="autoplay; fullscreen"

@@ -112,7 +112,12 @@ export function toggleMusic(themeKey = 'scrapbook', onStateChange, presetCategor
 export function startMusic(themeKey = 'scrapbook', presetCategory = 'chat_scratch') {
   stopMusic();
 
-  const isChristmas = presetCategory === 'christmas_tree' || themeKey === 'festive';
+  if (presetCategory === 'christmas_tree') {
+    // Christmas tree uses its own dedicated ChristmasMusicPlayer component
+    return;
+  }
+
+  const isChristmas = themeKey === 'festive';
   if (isChristmas) {
     try {
       currentAudioEl = new Audio('/assets/Music/LastChristmas.mp3');
@@ -151,6 +156,8 @@ export function stopMusic() {
     try {
       currentAudioEl.pause();
       currentAudioEl.currentTime = 0;
+      currentAudioEl.removeAttribute('src');
+      currentAudioEl.load();
     } catch (e) {}
     currentAudioEl = null;
   }

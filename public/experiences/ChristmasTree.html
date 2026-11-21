@@ -2221,15 +2221,28 @@
     }
 
     const unlockChristmasAudio = () => {
+      window.removeEventListener('pointerdown', unlockChristmasAudio);
+      window.removeEventListener('click', unlockChristmasAudio);
+      if (window.self !== window.top) return; // In React iframe, ChristmasMusicPlayer is the single audio source
       initAudio();
       if (!isSoundMuted && bgMusicAudio && bgMusicAudio.paused) {
         bgMusicAudio.play().catch(e => {});
       }
-      window.removeEventListener('pointerdown', unlockChristmasAudio);
-      window.removeEventListener('click', unlockChristmasAudio);
     };
     window.addEventListener('pointerdown', unlockChristmasAudio, { once: true });
     window.addEventListener('click', unlockChristmasAudio, { once: true });
+
+    window.addEventListener('beforeunload', () => {
+      if (bgMusicAudio) {
+        try {
+          bgMusicAudio.pause();
+          bgMusicAudio.currentTime = 0;
+          bgMusicAudio.removeAttribute('src');
+          bgMusicAudio.load();
+        } catch(e) {}
+        bgMusicAudio = null;
+      }
+    });
 
     // ================= CREATOR LOCK SYSTEM ("ระบบตั้งค่าผู้แต่ง") =================
     function getBangkokTime(dateObj = new Date()) {
@@ -2723,7 +2736,8 @@
       const bowP = project(box.x, topCenterY - 2 * scale, box.z, fov, centerX, centerY);
       if (bowP) {
         const bs = Math.max(4, 10 * bowP.scale * scale);
-        if (isBoxLocked(i)) drawPadlock(bowP.x, bowP.y - bs * 2.1, bs * 1.5, box);
+        const boxIdx = (box && typeof box.index === 'number') ? box.index : 0;
+        if (isBoxLocked(boxIdx)) drawPadlock(bowP.x, bowP.y - bs * 2.1, bs * 1.5, box);
         ctx.strokeStyle = pal.ribbon;
         ctx.lineWidth = Math.max(1.8, bs * 0.32);
 
@@ -2949,7 +2963,13 @@
         drawables.push({ z: cp ? cp.z : 0, run: () => drawProp(pr, pp, fov, centerX, centerY, dt) });
       }
       drawables.sort((a, b) => b.z - a.z);
-      for (const d of drawables) d.run();
+      for (const d of drawables) {
+        try {
+          d.run();
+        } catch (e) {
+          console.warn('Drawable render error:', e);
+        }
+      }
       drawBalls(false);
 
       // แสดงคำอวยพรอัตโนมัติเมื่อกล่องของขวัญโผล่ครบแล้ว

@@ -4,6 +4,21 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { VolumeHighIcon, VolumeLowIcon } from '@hugeicons/core-free-icons';
 import ElasticSlider from '../UI/ElasticSlider';
 
+// Module-level global singleton to guarantee only ONE Christmas audio element ever plays
+let globalChristmasAudio = null;
+
+export function stopChristmasAudio() {
+  if (globalChristmasAudio) {
+    try {
+      globalChristmasAudio.pause();
+      globalChristmasAudio.currentTime = 0;
+      globalChristmasAudio.removeAttribute('src');
+      globalChristmasAudio.load();
+    } catch (e) {}
+    globalChristmasAudio = null;
+  }
+}
+
 export default function ChristmasMusicPlayer() {
   const [isOpen, setIsOpen] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -14,10 +29,14 @@ export default function ChristmasMusicPlayer() {
 
   // Initialize and auto-play Last Christmas when animation begins
   useEffect(() => {
+    // Terminate any previous audio instance immediately before creating new one
+    stopChristmasAudio();
+
     const audio = new Audio('/assets/Music/LastChristmas.mp3');
     audio.loop = true;
     audio.volume = volume / 100;
     audioRef.current = audio;
+    globalChristmasAudio = audio;
 
     const handleLoadedMetadata = () => {
       if (audio.duration && !isNaN(audio.duration)) {
@@ -32,11 +51,24 @@ export default function ChristmasMusicPlayer() {
     audio.addEventListener('loadedmetadata', handleLoadedMetadata);
     audio.addEventListener('timeupdate', handleTimeUpdate);
 
-    // Try auto-play
+    // Try auto-play safely
+    let isDisposed = false;
     const playPromise = audio.play();
     if (playPromise !== undefined) {
       playPromise
-        .then(() => setIsPlaying(true))
+        .then(() => {
+          if (isDisposed) {
+            try {
+              audio.pause();
+              audio.currentTime = 0;
+              audio.removeAttribute('src');
+              audio.load();
+            } catch (e) {}
+            setIsPlaying(false);
+          } else {
+            setIsPlaying(true);
+          }
+        })
         .catch(() => {
           // Autoplay blocked by browser policy until interaction
           setIsPlaying(false);
@@ -44,10 +76,18 @@ export default function ChristmasMusicPlayer() {
     }
 
     return () => {
+      isDisposed = true;
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
       audio.removeEventListener('timeupdate', handleTimeUpdate);
-      audio.pause();
-      audio.src = '';
+      try {
+        audio.pause();
+        audio.currentTime = 0;
+        audio.removeAttribute('src');
+        audio.load();
+      } catch (e) {}
+      if (globalChristmasAudio === audio) {
+        globalChristmasAudio = null;
+      }
     };
   }, []);
 
@@ -59,6 +99,10 @@ export default function ChristmasMusicPlayer() {
       audio.pause();
       setIsPlaying(false);
     } else {
+      if (!audio.paused) {
+        audio.pause();
+        audio.currentTime = 0;
+      }
       audio.play().then(() => setIsPlaying(true)).catch(e => console.warn(e));
     }
   };
