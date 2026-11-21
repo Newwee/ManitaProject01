@@ -1,0 +1,2427 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>3D Cinematic Christmas Tree & Gift</title>
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #02040a;
+      font-family: 'Prompt', sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+      color: #fff;
+    }
+
+    #bgLayer {
+      position: fixed;
+      inset: 0;
+      transition: background 1.2s ease;
+      background: radial-gradient(circle at 50% 62%, #0c221b 0%, #03080b 60%, #000000 100%);
+      z-index: 0;
+    }
+
+    canvas {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      display: block;
+      cursor: grab;
+      z-index: 1;
+    }
+
+    canvas:active {
+      cursor: grabbing;
+    }
+
+    canvas.hover-gift {
+      cursor: pointer;
+    }
+
+    /* หัวข้อ Merry Christmas */
+    .title-wrap {
+      position: fixed;
+      top: clamp(14px, 3vh, 32px);
+      left: 0;
+      width: 100%;
+      text-align: center;
+      pointer-events: none;
+      z-index: 5;
+      opacity: 0;
+      transform: translateY(-14px) scale(0.96);
+      transition: opacity 1.8s ease, transform 1.8s ease;
+      padding: 0 16px;
+    }
+
+    .title-wrap.show {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    .title {
+      font-family: 'Great Vibes', cursive;
+      font-size: clamp(2.5rem, 6vw, 4.6rem);
+      color: #fff8e2;
+      letter-spacing: 3px;
+      text-shadow: 0 0 14px rgba(255, 225, 140, 0.9), 0 0 36px rgba(255, 175, 70, 0.55);
+      line-height: 1.1;
+    }
+
+    .subtitle {
+      margin-top: -4px;
+      font-size: clamp(0.7rem, 1.3vw, 0.9rem);
+      letter-spacing: 5px;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.55);
+      font-weight: 300;
+    }
+
+    /* กล่องข้อความคำอวยพร (โผล่หลังกล่องของขวัญปรากฏครบ) */
+    .wish-banner {
+      margin: 12px auto 0;
+      max-width: min(560px, 90vw);
+      background: rgba(15, 20, 32, 0.42);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 232, 170, 0.28);
+      border-radius: 18px;
+      padding: 10px 20px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35), 0 0 20px rgba(255, 215, 120, 0.14);
+      opacity: 0;
+      transform: translateY(14px) scale(0.96);
+      transition: opacity 1.2s ease, transform 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+      pointer-events: none;
+    }
+
+    .wish-banner.show {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    .wish-text {
+      font-size: clamp(0.88rem, 1.7vw, 1.05rem);
+      color: #fff8e8;
+      font-weight: 300;
+      line-height: 1.5;
+      text-shadow: 0 0 12px rgba(255, 220, 140, 0.45);
+    }
+
+    .wish-cta {
+      margin-top: 5px;
+      font-size: clamp(0.72rem, 1.2vw, 0.82rem);
+      color: #ffe28a;
+      letter-spacing: 0.5px;
+      animation: softPulse 2.2s infinite ease-in-out;
+    }
+
+    @keyframes softPulse {
+      0%, 100% { opacity: 0.65; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.03); }
+    }
+
+    /* แถบควบคุมด้านล่าง */
+    .controls {
+      position: fixed;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 7px;
+      background: rgba(10, 14, 24, 0.5);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      z-index: 10;
+      opacity: 0.35;
+      transition: opacity 0.35s ease, transform 0.35s ease;
+      max-width: 95vw;
+    }
+
+    .controls:hover,
+    .controls.visible {
+      opacity: 1;
+    }
+
+    .controls.hidden-ui {
+      opacity: 0 !important;
+      pointer-events: none;
+    }
+
+    .divider {
+      width: 1px;
+      background: rgba(255, 255, 255, 0.2);
+      margin: 2px 3px;
+    }
+
+    .btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: rgba(255, 255, 255, 0.92);
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-family: 'Prompt', sans-serif;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      white-space: nowrap;
+    }
+
+    .btn:hover,
+    .btn.active {
+      background: rgba(255, 255, 255, 0.22);
+      border-color: rgba(255, 255, 255, 0.85);
+      color: #fff;
+      box-shadow: 0 0 12px rgba(255, 255, 255, 0.22);
+    }
+
+    .btn-gift-highlight {
+      background: linear-gradient(135deg, rgba(255, 196, 61, 0.28), rgba(255, 77, 90, 0.28));
+      border-color: rgba(255, 215, 115, 0.65);
+      color: #fff5d6;
+    }
+
+    .btn-gift-highlight:hover {
+      background: linear-gradient(135deg, rgba(255, 196, 61, 0.5), rgba(255, 77, 90, 0.45));
+      box-shadow: 0 0 16px rgba(255, 200, 90, 0.45);
+    }
+
+    .hint {
+      position: fixed;
+      bottom: 72px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255, 255, 255, 0.45);
+      font-size: 0.76rem;
+      letter-spacing: 0.6px;
+      pointer-events: none;
+      z-index: 5;
+      transition: opacity 0.8s ease;
+      text-align: center;
+      width: 90vw;
+    }
+
+    .hint.hide {
+      opacity: 0;
+    }
+
+    /* ================= SETUP OVERLAY (เลือกรูปก่อนเล่น) ================= */
+    .overlay-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      background: rgba(2, 6, 14, 0.72);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.45s ease;
+      touch-action: auto;
+    }
+
+    .overlay-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .setup-card {
+      width: 100%;
+      max-width: 520px;
+      max-height: 92vh;
+      overflow-y: auto;
+      background: linear-gradient(160deg, rgba(18, 28, 38, 0.92), rgba(10, 14, 24, 0.95));
+      border: 1px solid rgba(255, 224, 150, 0.28);
+      border-radius: 26px;
+      padding: 26px 24px 22px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.65), 0 0 40px rgba(255, 195, 90, 0.12);
+      transform: translateY(18px) scale(0.96);
+      transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .overlay-backdrop.open .setup-card {
+      transform: translateY(0) scale(1);
+    }
+
+    .setup-header {
+      text-align: center;
+      margin-bottom: 18px;
+    }
+
+    .setup-title {
+      font-family: 'Great Vibes', cursive;
+      font-size: 2.6rem;
+      color: #ffe8a3;
+      text-shadow: 0 0 18px rgba(255, 200, 90, 0.55);
+      line-height: 1.1;
+    }
+
+    .setup-sub {
+      font-size: 0.88rem;
+      color: rgba(255, 255, 255, 0.72);
+      margin-top: 4px;
+      font-weight: 300;
+    }
+
+    .field-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.84rem;
+      color: #ffebb8;
+      margin-bottom: 7px;
+      font-weight: 400;
+    }
+
+    .wish-input {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 14px;
+      padding: 10px 14px;
+      color: #fff;
+      font-family: 'Prompt', sans-serif;
+      font-size: 0.88rem;
+      resize: none;
+      outline: none;
+      transition: border-color 0.25s ease, box-shadow 0.25s ease;
+      margin-bottom: 16px;
+    }
+
+    .wish-input:focus {
+      border-color: rgba(255, 215, 120, 0.75);
+      box-shadow: 0 0 0 3px rgba(255, 215, 120, 0.15);
+    }
+
+    .upload-zone {
+      border: 1.5px dashed rgba(255, 220, 140, 0.4);
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 16px;
+      padding: 18px 14px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      margin-bottom: 14px;
+    }
+
+    .upload-zone:hover,
+    .upload-zone.dragover {
+      background: rgba(255, 220, 140, 0.1);
+      border-color: rgba(255, 225, 140, 0.85);
+      transform: translateY(-1px);
+    }
+
+    .upload-icon {
+      font-size: 1.9rem;
+      margin-bottom: 4px;
+    }
+
+    .upload-text {
+      font-size: 0.9rem;
+      color: #fff;
+    }
+
+    .upload-hint {
+      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.55);
+      margin-top: 2px;
+    }
+
+    .preview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(74px, 1fr));
+      gap: 9px;
+      max-height: 175px;
+      overflow-y: auto;
+      margin-bottom: 16px;
+      padding-right: 4px;
+    }
+
+    .preview-grid:empty {
+      display: none;
+    }
+
+    .preview-item {
+      position: relative;
+      aspect-ratio: 1;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      background: #0d1320;
+      animation: popIn 0.25s ease;
+    }
+
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0.8); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .preview-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .preview-remove {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(0, 0, 0, 0.72);
+      color: #fff;
+      font-size: 0.75rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+
+    .preview-remove:hover {
+      background: #e63946;
+    }
+
+    .setup-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 6px;
+    }
+
+    .btn-primary {
+      flex: 1;
+      background: linear-gradient(135deg, #f7b733, #fc4a1a);
+      border: none;
+      color: #fff;
+      font-family: 'Prompt', sans-serif;
+      font-size: 0.96rem;
+      font-weight: 500;
+      padding: 12px 18px;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(252, 74, 26, 0.35);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(252, 74, 26, 0.48);
+      filter: brightness(1.06);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: rgba(255, 255, 255, 0.85);
+      font-family: 'Prompt', sans-serif;
+      font-size: 0.86rem;
+      padding: 12px 16px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.16);
+      color: #fff;
+    }
+
+    .clear-link {
+      background: none;
+      border: none;
+      color: #ff8fa3;
+      font-family: 'Prompt', sans-serif;
+      font-size: 0.76rem;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
+    /* ================= GIFT OPENING MODAL ================= */
+    #giftModal {
+      z-index: 40;
+      background: rgba(2, 5, 12, 0.82);
+    }
+
+    .gift-modal-inner {
+      position: relative;
+      width: 100%;
+      max-width: 680px;
+      min-height: 460px;
+      max-height: 92vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+    }
+
+    /* เวทีกล่องของขวัญกำลังเปิด */
+    .gift-stage {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    #giftModal.state-revealed .gift-stage {
+      opacity: 0;
+      transform: translateY(70px) scale(0.75);
+    }
+
+    .stage-label {
+      margin-top: 28px;
+      font-size: 0.95rem;
+      color: #ffebb0;
+      letter-spacing: 1px;
+      text-shadow: 0 0 12px rgba(255, 210, 100, 0.7);
+      animation: softPulse 1.4s infinite;
+    }
+
+    /* ตัวกล่องของขวัญ CSS แอนิเมชัน */
+    .css-gift {
+      position: relative;
+      width: 164px;
+      height: 150px;
+      --box-main: #d93848;
+      --box-dark: #a61e2e;
+      --box-ribbon: #ffd76b;
+      --box-ribbon-dark: #e0a82e;
+      transform-origin: bottom center;
+    }
+
+    #giftModal.state-shaking .css-gift {
+      animation: giftEnterShake 1.05s cubic-bezier(0.36, 0.07, 0.19, 0.97) forwards;
+    }
+
+    @keyframes giftEnterShake {
+      0% { transform: scale(0.3) translateY(40px); opacity: 0; }
+      25% { transform: scale(1.06) translateY(-8px); opacity: 1; }
+      40% { transform: scale(1) translateY(0) rotate(0deg); }
+      52% { transform: rotate(-6deg) scale(1.02, 0.96); }
+      64% { transform: rotate(6deg) scale(0.98, 1.04); }
+      76% { transform: rotate(-7deg) scale(1.04, 0.95); }
+      88% { transform: rotate(5deg) scale(1.06, 0.93); }
+      100% { transform: rotate(0deg) scale(1.08, 0.9); }
+    }
+
+    .gift-glow-core {
+      position: absolute;
+      left: 50%;
+      top: 32%;
+      width: 180px;
+      height: 180px;
+      transform: translate(-50%, -50%) scale(0.2);
+      border-radius: 50%;
+      background: radial-gradient(circle, #ffffff 0%, #ffe694 30%, rgba(255, 195, 70, 0.35) 60%, rgba(255, 195, 70, 0) 75%);
+      opacity: 0;
+      transition: transform 0.65s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s ease;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    #giftModal.state-opening .gift-glow-core,
+    #giftModal.state-revealed .gift-glow-core {
+      transform: translate(-50%, -50%) scale(2.8);
+      opacity: 1;
+    }
+
+    .gift-body {
+      position: absolute;
+      bottom: 0;
+      left: 12px;
+      width: 140px;
+      height: 112px;
+      background: linear-gradient(135deg, var(--box-main) 0%, var(--box-dark) 100%);
+      border-radius: 10px;
+      box-shadow: 0 22px 40px rgba(0, 0, 0, 0.6), inset 0 2px 10px rgba(255, 255, 255, 0.25);
+      overflow: hidden;
+      z-index: 2;
+    }
+
+    .gift-body::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 26px;
+      background: linear-gradient(90deg, var(--box-ribbon-dark), var(--box-ribbon), var(--box-ribbon-dark));
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .gift-body::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      height: 22px;
+      background: linear-gradient(180deg, var(--box-ribbon), var(--box-ribbon-dark));
+      opacity: 0.92;
+    }
+
+    .gift-lid {
+      position: absolute;
+      top: 16px;
+      left: 0;
+      width: 164px;
+      height: 36px;
+      background: linear-gradient(135deg, var(--box-main) 10%, var(--box-dark) 100%);
+      border-radius: 9px;
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.45), inset 0 2px 6px rgba(255, 255, 255, 0.35);
+      z-index: 4;
+      transform-origin: left bottom;
+      transition: transform 0.72s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.6s ease;
+    }
+
+    .gift-lid::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 28px;
+      background: linear-gradient(90deg, var(--box-ribbon-dark), var(--box-ribbon), var(--box-ribbon-dark));
+    }
+
+    .gift-bow {
+      position: absolute;
+      top: -24px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 78px;
+      height: 30px;
+      z-index: 5;
+    }
+
+    .gift-bow::before,
+    .gift-bow::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      width: 38px;
+      height: 26px;
+      border: 7px solid var(--box-ribbon);
+      border-radius: 50% 50% 10% 50%;
+      box-shadow: 0 0 10px rgba(255, 215, 100, 0.45);
+    }
+
+    .gift-bow::before {
+      left: 2px;
+      transform: rotate(16deg);
+    }
+
+    .gift-bow::after {
+      right: 2px;
+      border-radius: 50% 50% 50% 10%;
+      transform: rotate(-16deg);
+    }
+
+    #giftModal.state-opening .gift-lid,
+    #giftModal.state-revealed .gift-lid {
+      transform: translateY(-135px) translateX(36px) rotate(32deg) scale(1.06);
+      opacity: 0;
+    }
+
+    /* ประกายคอนเฟตติตอนเปิดกล่อง */
+    .confetti-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: visible;
+      z-index: 6;
+    }
+
+    .confetti-piece {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      opacity: 0;
+      animation: confettiFly var(--dur) cubic-bezier(0.12, 0.85, 0.25, 1) forwards;
+    }
+
+    @keyframes confettiFly {
+      0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(0.4) rotate(0deg);
+      }
+      75% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+        transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(1.1) rotate(var(--rot));
+      }
+    }
+
+    /* การ์ดรูปภาพที่ลอยออกมาจากกล่อง */
+    .photo-reveal-card {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 580px;
+      background: linear-gradient(165deg, rgba(22, 28, 42, 0.94), rgba(10, 14, 24, 0.97));
+      border: 1px solid rgba(255, 224, 145, 0.35);
+      border-radius: 26px;
+      padding: 18px 18px 20px;
+      box-shadow: 0 28px 70px rgba(0, 0, 0, 0.72), 0 0 42px rgba(255, 200, 95, 0.16);
+      opacity: 0;
+      transform: translateY(95px) scale(0.35);
+      pointer-events: none;
+      transition: opacity 0.65s ease, transform 0.75s cubic-bezier(0.18, 1.12, 0.32, 1);
+    }
+
+    #giftModal.state-revealed .photo-reveal-card {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      pointer-events: auto;
+    }
+
+    .modal-top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      gap: 10px;
+    }
+
+    .modal-badge {
+      font-size: 0.84rem;
+      color: #ffe394;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .modal-top-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: #fff;
+      border-radius: 999px;
+      padding: 5px 12px;
+      font-size: 0.78rem;
+      font-family: 'Prompt', sans-serif;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .icon-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .photo-frame-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      max-height: 46vh;
+      background: #070a12;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 6px solid #fffdf7;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .photo-frame-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #0c101b;
+      transition: opacity 0.28s ease, transform 0.35s ease;
+    }
+
+    .photo-frame-wrap img.switching {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+
+    .nav-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      background: rgba(10, 14, 24, 0.62);
+      backdrop-filter: blur(6px);
+      color: #fff;
+      font-size: 1.15rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      z-index: 3;
+    }
+
+    .nav-arrow:hover {
+      background: rgba(255, 215, 115, 0.32);
+      border-color: #ffe394;
+      transform: translateY(-50%) scale(1.08);
+    }
+
+    .nav-arrow.prev { left: 10px; }
+    .nav-arrow.next { right: 10px; }
+    .nav-arrow.hidden { display: none; }
+
+    .photo-counter {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.62);
+      backdrop-filter: blur(6px);
+      color: #fff;
+      font-size: 0.75rem;
+      padding: 3px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+
+    .thumb-strip {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      overflow-x: auto;
+      padding: 2px 2px 6px;
+      justify-content: center;
+    }
+
+    .thumb-strip.hidden {
+      display: none;
+    }
+
+    .thumb-btn {
+      flex: 0 0 54px;
+      height: 54px;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 2px solid transparent;
+      padding: 0;
+      background: #0d1220;
+      cursor: pointer;
+      opacity: 0.55;
+      transition: all 0.22s ease;
+    }
+
+    .thumb-btn.active,
+    .thumb-btn:hover {
+      opacity: 1;
+      border-color: #ffd978;
+      transform: translateY(-2px);
+    }
+
+    .thumb-btn img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .modal-wish-box {
+      margin-top: 12px;
+      text-align: center;
+      padding: 10px 12px 2px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .modal-wish-title {
+      font-family: 'Great Vibes', cursive;
+      font-size: 1.75rem;
+      color: #ffe7a3;
+      line-height: 1.1;
+    }
+
+    .modal-wish-msg {
+      margin-top: 4px;
+      font-size: 0.88rem;
+      color: rgba(255, 255, 255, 0.86);
+      font-weight: 300;
+      line-height: 1.5;
+    }
+
+    /* Scrollbar สวยๆ */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(255,255,255,0.04); border-radius: 99px; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,220,140,0.32); border-radius: 99px; }
+
+    body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:2;background:radial-gradient(ellipse at 50% 55%,transparent 52%,rgba(0,0,0,.6) 100%);}
+    .title{animation:titleFloat 5s ease-in-out infinite;}
+    @keyframes titleFloat{0%,100%{transform:translateY(0);filter:brightness(1)}50%{transform:translateY(-4px);filter:brightness(1.22)}}
+    .wish-banner.show{animation:bannerGlow 4s ease-in-out infinite;}
+    @keyframes bannerGlow{0%,100%{box-shadow:0 8px 30px rgba(0,0,0,.35),0 0 20px rgba(255,215,120,.14)}50%{box-shadow:0 8px 30px rgba(0,0,0,.35),0 0 34px rgba(255,215,120,.38)}}
+  </style>
+</head>
+<body>
+  <div id="bgLayer"></div>
+
+  <!-- หัวข้อและคำอวยพร -->
+  <div class="title-wrap" id="titleWrap">
+    <div class="title" id="titleText">Merry Christmas</div>
+    <div class="subtitle">Make a Wish</div>
+    <div class="wish-banner" id="wishBanner">
+      <div class="wish-text" id="wishBannerText">ขอให้คริสต์มาสนี้เต็มไปด้วยความสุข รอยยิ้ม และความทรงจำดีๆ ตลอดไปนะ ✨</div>
+      <div class="wish-cta">🎁 คลิกที่กล่องของขวัญใต้ต้นไม้เพื่อเปิดดูรูปด้านใน</div>
+    </div>
+  </div>
+
+  <canvas id="canvas"></canvas>
+
+  <div class="hint hide" id="hint">ลากเมาส์เพื่อหมุน • คลิกกล่องของขวัญเพื่อเปิด • ดับเบิลคลิกเพื่อเต็มจอ</div>
+
+  <!-- แถบปุ่มควบคุม -->
+  <div class="controls hidden-ui" id="controls">
+    <button class="btn active" onclick="setTheme('classic', this)">🎄 Classic</button>
+    <button class="btn" onclick="setTheme('gold', this)">✨ Gold</button>
+    <button class="btn" onclick="setTheme('pink', this)">🌸 Pink</button>
+    <button class="btn" onclick="setTheme('blue', this)">❄️ Frozen</button>
+    <div class="divider"></div>
+    <button class="btn btn-gift-highlight" onclick="openGiftModal(0)">🎁 เปิดของขวัญ</button>
+    <button class="btn" onclick="openSetupModal()">🖼️ เลือกรูป</button>
+    <button class="btn" onclick="replayIntro()">🔄 เล่นใหม่</button>
+    <button class="btn" id="fsBtn" onclick="toggleFullscreen()">⛶ เต็มจอ</button>
+  </div>
+
+  <!-- หน้าต่างเตรียมรูปภาพและคำอวยพรก่อนเริ่มเล่น -->
+  <div class="overlay-backdrop open" id="setupModal">
+    <div class="setup-card">
+      <div class="setup-header">
+        <div class="setup-title">Christmas Gift Box</div>
+        <div class="setup-sub">เลือกรูปความทรงจำใส่ลงในกล่องของขวัญก่อนเริ่มแอนิเมชัน 🎁</div>
+      </div>
+
+      <label class="field-label" for="wishInput">
+        <span>✨ คำอวยพรที่จะแสดงเมื่อกล่องของขวัญปรากฏ</span>
+      </label>
+      <textarea id="wishInput" class="wish-input" rows="2" placeholder="พิมพ์คำอวยพรคริสต์มาสของคุณ...">ขอให้คริสต์มาสนี้เต็มไปด้วยความสุข รอยยิ้ม และความทรงจำที่แสนอบอุ่นตลอดไปนะ ✨🎄</textarea>
+
+      <div class="field-label">
+        <span>📸 รูปภาพในกล่องของขวัญ (<span id="photoCountText">0</span> รูป)</span>
+        <button type="button" class="clear-link" id="clearPhotosBtn" style="display:none;" onclick="clearUploadedPhotos()">ล้างรูปทั้งหมด</button>
+      </div>
+
+      <div class="upload-zone" id="uploadZone" onclick="document.getElementById('photoInput').click()">
+        <div class="upload-icon">🎁📷</div>
+        <div class="upload-text">คลิกเพื่อเลือกรูปภาพ (เลือกได้หลายรูปพร้อมกัน)</div>
+        <div class="upload-hint">รองรับ JPG, PNG, WEBP • หรือลากไฟล์มาวางตรงนี้ได้เลย</div>
+      </div>
+      <input type="file" id="photoInput" accept="image/*" multiple hidden />
+
+      <div class="preview-grid" id="previewGrid"></div>
+
+      <div class="setup-actions">
+        <button type="button" class="btn-secondary" id="closeSetupBtn" style="display:none;" onclick="closeSetupWithoutReset()">กลับไปดูต้นไม้</button>
+        <button type="button" class="btn-primary" onclick="startExperience()">✨ เริ่มเล่นแอนิเมชันคริสต์มาส</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- หน้าต่างแอนิเมชันเปิดกล่องของขวัญ & แสดงรูป -->
+  <div class="overlay-backdrop" id="giftModal">
+    <div class="gift-modal-inner">
+      <!-- ส่วนแอนิเมชันกล่องสั่นและเปิดฝา -->
+      <div class="gift-stage">
+        <div class="css-gift" id="cssGiftBox">
+          <div class="gift-glow-core"></div>
+          <div class="gift-lid">
+            <div class="gift-bow"></div>
+          </div>
+          <div class="gift-body"></div>
+        </div>
+        <div class="stage-label" id="stageLabel">กำลังเปิดกล่องของขวัญ...</div>
+      </div>
+
+      <!-- ประกายกระดาษสี -->
+      <div class="confetti-layer" id="confettiLayer"></div>
+
+      <!-- การ์ดรูปภาพที่ลอยออกมา -->
+      <div class="photo-reveal-card">
+        <div class="modal-top-bar">
+          <div class="modal-badge">🎁 ความทรงจำในกล่องของขวัญ</div>
+          <div class="modal-top-actions">
+            <button type="button" class="icon-btn" onclick="replayGiftOpenAnimation()">✨ เปิดกล่องอีกครั้ง</button>
+            <button type="button" class="icon-btn" onclick="closeGiftModal()">✕ ปิด</button>
+          </div>
+        </div>
+
+        <div class="photo-frame-wrap">
+          <button type="button" class="nav-arrow prev" id="prevPhotoBtn" onclick="changePhoto(-1)">‹</button>
+          <img id="modalMainPhoto" src="" alt="Christmas Memory" />
+          <button type="button" class="nav-arrow next" id="nextPhotoBtn" onclick="changePhoto(1)">›</button>
+          <div class="photo-counter" id="photoCounter">1 / 1</div>
+        </div>
+
+        <div class="thumb-strip" id="thumbStrip"></div>
+
+        <div class="modal-wish-box">
+          <div class="modal-wish-title">Merry Christmas</div>
+          <div class="modal-wish-msg" id="modalWishMsg"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const bgLayer = document.getElementById('bgLayer');
+    const titleWrap = document.getElementById('titleWrap');
+    const titleText = document.getElementById('titleText');
+    const wishBanner = document.getElementById('wishBanner');
+    const wishBannerText = document.getElementById('wishBannerText');
+    const controls = document.getElementById('controls');
+    const hint = document.getElementById('hint');
+    const fsBtn = document.getElementById('fsBtn');
+
+    // Setup & Gift Modal elements
+    const setupModal = document.getElementById('setupModal');
+    const wishInput = document.getElementById('wishInput');
+    const photoInput = document.getElementById('photoInput');
+    const uploadZone = document.getElementById('uploadZone');
+    const previewGrid = document.getElementById('previewGrid');
+    const photoCountText = document.getElementById('photoCountText');
+    const clearPhotosBtn = document.getElementById('clearPhotosBtn');
+    const closeSetupBtn = document.getElementById('closeSetupBtn');
+
+    const giftModal = document.getElementById('giftModal');
+    const cssGiftBox = document.getElementById('cssGiftBox');
+    const stageLabel = document.getElementById('stageLabel');
+    const confettiLayer = document.getElementById('confettiLayer');
+    const modalMainPhoto = document.getElementById('modalMainPhoto');
+    const photoCounter = document.getElementById('photoCounter');
+    const prevPhotoBtn = document.getElementById('prevPhotoBtn');
+    const nextPhotoBtn = document.getElementById('nextPhotoBtn');
+    const thumbStrip = document.getElementById('thumbStrip');
+    const modalWishMsg = document.getElementById('modalWishMsg');
+
+    let width = 0, height = 0, dpr = 1;
+    let treeHeight = 520, maxRadius = 210;
+
+    // กลุ่มอนุภาคต่างๆ
+    let bgStars = [];
+    let treeParticles = [];
+    let groundParticles = [];
+    let snowParticles = [];
+    let sparkTrail = [];
+    let burstParticles = [];
+    let fireflies = [], shootingStars = [], cursorSparks = [], lastStarPulse = 0, lastTwinkle = 0, nextShoot = 2;
+    let giftBoxes = [];
+
+    // แคช Sprite แสงฟุ้ง
+    const spriteCache = new Map();
+
+    // สถานะแอนิเมชัน
+    let hasStarted = false;
+    let introTime = 0;
+    const INTRO_DURATION = 4.6;
+    const GIFTS_START_TIME = 4.95;
+    const WISH_SHOW_TIME = 6.15;
+    let starBursted = false;
+    let wishShown = false;
+    let starScale = 0;
+    let starFlash = 0;
+
+    // การหมุนและควบคุมเมาส์
+    let rotationY = 0;
+    let tiltX = 0.09;
+    let autoRotateSpeed = 0.0042;
+    let isDragging = false;
+    let hasDragged = false;
+    let downX = 0, downY = 0;
+    let lastX = 0;
+    let dragVelocity = 0;
+    let hoveredGiftIndex = -1;
+    let uiTimer = null;
+
+    // รูปภาพที่ผู้ใช้เลือก & สถานะแกลเลอรี
+    let uploadedPhotos = []; // [{ url, name }]
+    let activeGallery = [];
+    let currentPhotoIdx = 0;
+    let activeGiftBoxColor = null;
+    let giftTimers = [];
+
+    const themes = {
+      classic: {
+        bg: 'radial-gradient(circle at 50% 62%, #0c221b 0%, #03080b 60%, #000000 100%)',
+        treeColors: ['#16c964', '#26eb80', '#0d8f47', '#ffd76b', '#ff4d5a'],
+        ribbonColor: '#ffe799',
+        leadColor: '#fff4c2',
+        starColor: '#ffe999',
+        titleShadow: '0 0 14px rgba(255, 225, 140, 0.9), 0 0 36px rgba(255, 175, 70, 0.55)',
+        giftPalettes: [
+          { main: '#d62839', dark: '#8f1622', top: '#f04252', ribbon: '#ffd76b', ribbonDark: '#d99e26' },
+          { main: '#1a936f', dark: '#0f5c45', top: '#28b88d', ribbon: '#ffdf85', ribbonDark: '#d99f2b' },
+          { main: '#e6a82e', dark: '#a67114', top: '#f7c454', ribbon: '#d62839', ribbonDark: '#961522' },
+          { main: '#f2f5fa', dark: '#b8c4d6', top: '#ffffff', ribbon: '#e63946', ribbonDark: '#a61c28' },
+          { main: '#9b2242', dark: '#5e1125', top: '#c43158', ribbon: '#ffe294', ribbonDark: '#d49d2a' }
+        ]
+      },
+      gold: {
+        bg: 'radial-gradient(circle at 50% 62%, #241908 0%, #090603 60%, #000000 100%)',
+        treeColors: ['#ffd166', '#ffbe3b', '#fff0b3', '#ff9f1c', '#ffffff'],
+        ribbonColor: '#fff6d6',
+        leadColor: '#ffffff',
+        starColor: '#ffe082',
+        titleShadow: '0 0 16px rgba(255, 215, 110, 0.95), 0 0 40px rgba(255, 160, 40, 0.6)',
+        giftPalettes: [
+          { main: '#d49a2a', dark: '#8c6011', top: '#f2ba49', ribbon: '#fff5d1', ribbonDark: '#d9c282' },
+          { main: '#fff3d6', dark: '#c7b287', top: '#ffffff', ribbon: '#e09f24', ribbonDark: '#9e6a0b' },
+          { main: '#a8422a', dark: '#6b2312', top: '#cf5a3e', ribbon: '#ffe082', ribbonDark: '#c99724' },
+          { main: '#c97b1e', dark: '#824b0b', top: '#e89938', ribbon: '#ffffff', ribbonDark: '#d4c9b0' },
+          { main: '#2b241d', dark: '#14100c', top: '#453a2f', ribbon: '#ffd166', ribbonDark: '#c79324' }
+        ]
+      },
+      pink: {
+        bg: 'radial-gradient(circle at 50% 62%, #260f23 0%, #0a040c 60%, #000000 100%)',
+        treeColors: ['#ff7eb6', '#ffb8dc', '#ff4d94', '#ffffff', '#ffd9ec'],
+        ribbonColor: '#fff0f7',
+        leadColor: '#ffffff',
+        starColor: '#ffcae5',
+        titleShadow: '0 0 14px rgba(255, 150, 205, 0.95), 0 0 36px rgba(255, 80, 160, 0.6)',
+        giftPalettes: [
+          { main: '#ff5c9e', dark: '#b52862', top: '#ff85b6', ribbon: '#fff2f8', ribbonDark: '#e0b8cb' },
+          { main: '#fff0f7', dark: '#ccb0be', top: '#ffffff', ribbon: '#ff4d94', ribbonDark: '#bf2262' },
+          { main: '#c94c8a', dark: '#822453', top: '#e66ca8', ribbon: '#ffe194', ribbonDark: '#d4a644' },
+          { main: '#ff8fab', dark: '#bd5572', top: '#ffb3c6', ribbon: '#ffffff', ribbonDark: '#d9c5ce' },
+          { main: '#9d4edd', dark: '#622394', top: '#b870f0', ribbon: '#ffd6ea', ribbonDark: '#d998b8' }
+        ]
+      },
+      blue: {
+        bg: 'radial-gradient(circle at 50% 62%, #091d36 0%, #030814 60%, #000000 100%)',
+        treeColors: ['#4cc9f0', '#90e0ef', '#4895ef', '#ffffff', '#caf0f8'],
+        ribbonColor: '#e6fbff',
+        leadColor: '#ffffff',
+        starColor: '#b8f2ff',
+        titleShadow: '0 0 14px rgba(130, 225, 255, 0.95), 0 0 36px rgba(72, 149, 239, 0.65)',
+        giftPalettes: [
+          { main: '#2a7de1', dark: '#154b8f', top: '#4c99f5', ribbon: '#e6fbff', ribbonDark: '#a8d5e5' },
+          { main: '#e8f7fc', dark: '#a9c7d4', top: '#ffffff', ribbon: '#3a86ff', ribbonDark: '#1c56b8' },
+          { main: '#0096c7', dark: '#005b7a', top: '#24b6e6', ribbon: '#ffffff', ribbonDark: '#b8dce8' },
+          { main: '#4361ee', dark: '#233594', top: '#6882ff', ribbon: '#90e0ef', ribbonDark: '#52b2c4' },
+          { main: '#7209b7', dark: '#460473', top: '#942bd9', ribbon: '#caf0f8', ribbonDark: '#8bc3d1' }
+        ]
+      }
+    };
+
+    let currentTheme = themes.classic;
+
+    function hexToRgba(hex, alpha) {
+      const clean = hex.replace('#', '');
+      const num = parseInt(clean, 16);
+      const r = (num >> 16) & 255;
+      const g = (num >> 8) & 255;
+      const b = num & 255;
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    }
+
+    function getGlowSprite(color) {
+      if (spriteCache.has(color)) return spriteCache.get(color);
+
+      const size = 64;
+      const off = document.createElement('canvas');
+      off.width = size;
+      off.height = size;
+      const octx = off.getContext('2d');
+      const half = size / 2;
+
+      const grad = octx.createRadialGradient(half, half, 0, half, half, half);
+      grad.addColorStop(0.0, '#ffffff');
+      grad.addColorStop(0.18, hexToRgba(color, 0.95));
+      grad.addColorStop(0.45, hexToRgba(color, 0.35));
+      grad.addColorStop(1.0, hexToRgba(color, 0));
+
+      octx.fillStyle = grad;
+      octx.fillRect(0, 0, size, size);
+
+      spriteCache.set(color, off);
+      return off;
+    }
+
+    function randomFrom(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    function easeOutCubic(t) {
+      return 1 - Math.pow(1 - t, 3);
+    }
+
+    function easeOutBack(t) {
+      const c1 = 1.70158;
+      const c3 = c1 + 1;
+      return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+    }
+
+    // สร้างการ์ดสำรองสวยๆ กรณีผู้ใช้ยังไม่ได้เลือกรูป
+    function createFallbackCard(title, subtitle, c1, c2, emoji) {
+      const c = document.createElement('canvas');
+      c.width = 900;
+      c.height = 675;
+      const g = c.getContext('2d');
+
+      const grad = g.createLinearGradient(0, 0, 900, 675);
+      grad.addColorStop(0, c1);
+      grad.addColorStop(1, c2);
+      g.fillStyle = grad;
+      g.fillRect(0, 0, 900, 675);
+
+      // ดาวระยิบระยับ
+      for (let i = 0; i < 65; i++) {
+        g.fillStyle = `rgba(255,255,255,${0.15 + Math.random() * 0.65})`;
+        g.beginPath();
+        g.arc(Math.random() * 900, Math.random() * 675, 1.5 + Math.random() * 3.5, 0, Math.PI * 2);
+        g.fill();
+      }
+
+      // กรอบทอง
+      g.strokeStyle = 'rgba(255, 232, 165, 0.55)';
+      g.lineWidth = 4;
+      g.strokeRect(36, 36, 828, 603);
+
+      // อีโมจิ
+      g.font = '120px sans-serif';
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.fillText(emoji, 450, 235);
+
+      // ข้อความหลัก
+      g.fillStyle = '#fff8e2';
+      g.font = '600 44px Prompt, sans-serif';
+      g.fillText(title, 450, 395);
+
+      g.fillStyle = 'rgba(255, 245, 220, 0.82)';
+      g.font = '300 26px Prompt, sans-serif';
+      g.fillText(subtitle, 450, 465);
+
+      g.fillStyle = 'rgba(255, 230, 150, 0.65)';
+      g.font = '300 20px Prompt, sans-serif';
+      g.fillText('สามารถกดปุ่ม "🖼️ เลือกรูป" เพื่อใส่รูปของคุณเองได้นะ', 450, 565);
+
+      return c.toDataURL('image/png');
+    }
+
+    let fallbackCards = null;
+    function getFallbackCards() {
+      if (!fallbackCards) {
+        fallbackCards = [
+          { url: createFallbackCard('Merry Christmas!', 'ขอให้ความสุขโอบกอดคุณในทุกๆ วัน', '#133b2e', '#071318', '🎄') },
+          { url: createFallbackCard('Make a Wish', 'ขอให้ทุกคำอธิษฐานในปีนี้กลายเป็นจริง', '#3b1d14', '#14080a', '⭐') },
+          { url: createFallbackCard('Warmest Wishes', 'ขอบคุณสำหรับความทรงจำดีๆ ตลอดทั้งปี', '#13284a', '#060c1a', '🎁') }
+        ];
+      }
+      return fallbackCards;
+    }
+
+    // ================= SETUP / PHOTO UPLOAD =================
+    function handleFiles(files) {
+      const validFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+      for (const file of validFiles) {
+        const url = URL.createObjectURL(file);
+        uploadedPhotos.push({ url, name: file.name });
+      }
+      renderPhotoPreviews();
+    }
+
+    function renderPhotoPreviews() {
+      previewGrid.innerHTML = '';
+      photoCountText.textContent = uploadedPhotos.length;
+      clearPhotosBtn.style.display = uploadedPhotos.length > 0 ? 'inline-block' : 'none';
+
+      uploadedPhotos.forEach((photo, idx) => {
+        const item = document.createElement('div');
+        item.className = 'preview-item';
+        item.innerHTML = `
+          <img src="${photo.url}" alt="preview" />
+          <button type="button" class="preview-remove" title="ลบรูปนี้" onclick="removePhoto(${idx})">✕</button>
+        `;
+        previewGrid.appendChild(item);
+      });
+    }
+
+    function removePhoto(index) {
+      const removed = uploadedPhotos.splice(index, 1);
+      if (removed[0]?.url) URL.revokeObjectURL(removed[0].url);
+      renderPhotoPreviews();
+    }
+
+    function clearUploadedPhotos() {
+      uploadedPhotos.forEach(p => URL.revokeObjectURL(p.url));
+      uploadedPhotos = [];
+      photoInput.value = '';
+      renderPhotoPreviews();
+    }
+
+    photoInput.addEventListener('change', (e) => {
+      if (e.target.files.length) {
+        handleFiles(e.target.files);
+        photoInput.value = '';
+      }
+    });
+
+    uploadZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadZone.classList.add('dragover');
+    });
+
+    uploadZone.addEventListener('dragleave', () => {
+      uploadZone.classList.remove('dragover');
+    });
+
+    uploadZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadZone.classList.remove('dragover');
+      if (e.dataTransfer.files.length) {
+        handleFiles(e.dataTransfer.files);
+      }
+    });
+
+    function getWishMessage() {
+      const val = wishInput.value.trim();
+      return val || 'ขอให้คริสต์มาสนี้เต็มไปด้วยความสุข รอยยิ้ม และความทรงจำดีๆ ตลอดไปนะ ✨🎄';
+    }
+
+    function startExperience() {
+      wishBannerText.textContent = getWishMessage();
+      setupModal.classList.remove('open');
+      hasStarted = true;
+      closeSetupBtn.style.display = 'inline-block';
+      controls.classList.remove('hidden-ui');
+      hint.classList.remove('hide');
+      buildScene(true);
+      wakeUI();
+    }
+
+    function openSetupModal() {
+      closeGiftModal();
+      setupModal.classList.add('open');
+    }
+
+    function closeSetupWithoutReset() {
+      wishBannerText.textContent = getWishMessage();
+      setupModal.classList.remove('open');
+    }
+
+    // ================= 3D SCENE & GIFT BOXES =================
+    function resize() {
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+      treeHeight = Math.min(height * 0.68, 630);
+      maxRadius = Math.min(width * 0.31, treeHeight * 0.42);
+
+      buildScene(false);
+    }
+
+    function buildGiftBoxes() {
+      giftBoxes = [];
+      const count = 5;
+      const baseScale = Math.max(0.7, Math.min(1.15, treeHeight / 540));
+      const palettes = currentTheme.giftPalettes;
+
+      // จัดวางกล่องของขวัญรอบฐานต้นคริสต์มาส
+      const configs = [
+        { angle: -0.45, dist: 0.78, w: 46, h: 42, d: 46, rot: 0.28 },
+        { angle: 0.62,  dist: 0.86, w: 38, h: 34, d: 38, rot: -0.35 },
+        { angle: 1.88,  dist: 0.82, w: 44, h: 38, d: 42, rot: 0.5 },
+        { angle: 3.12,  dist: 0.84, w: 40, h: 44, d: 40, rot: -0.2 },
+        { angle: 4.55,  dist: 0.76, w: 36, h: 32, d: 36, rot: 0.42 }
+      ];
+
+      for (let i = 0; i < count; i++) {
+        const cfg = configs[i];
+        const r = maxRadius * cfg.dist;
+        const w = cfg.w * baseScale;
+        const h = cfg.h * baseScale;
+        const d = cfg.d * baseScale;
+
+        giftBoxes.push({
+          index: i,
+          x: Math.cos(cfg.angle) * r,
+          y: treeHeight / 2 + 16 - h / 2,
+          z: Math.sin(cfg.angle) * r,
+          w, h, d,
+          localRot: cfg.rot,
+          palette: palettes[i % palettes.length],
+          appearTime: GIFTS_START_TIME + i * 0.17,
+          bursted: false,
+          opened: false,
+          hoverAmount: 0,
+          phase: i * 1.3,
+          screenBounds: null,
+          centerZ: 0
+        });
+      }
+    }
+
+    function buildScene(resetIntro = true) {
+      bgStars = [];
+      treeParticles = [];
+      groundParticles = [];
+      snowParticles = [];
+
+      if (resetIntro) {
+        introTime = 0;
+        starBursted = false;
+        wishShown = false;
+        starScale = 0;
+        starFlash = 0;
+        sparkTrail = [];
+        burstParticles = [];
+        titleWrap.classList.remove('show');
+        wishBanner.classList.remove('show');
+      }
+
+      // 1. ดาวพื้นหลัง
+      for (let i = 0; i < 110; i++) {
+        bgStars.push({
+          x: Math.random() * width,
+          y: Math.random() * height * 0.85,
+          r: 0.6 + Math.random() * 1.4,
+          phase: Math.random() * Math.PI * 2,
+          speed: 0.8 + Math.random() * 2.2
+        });
+      }
+
+      // 2. อนุภาคต้นคริสต์มาส
+      const count = 1700;
+      for (let i = 0; i < count; i++) {
+        const h = 1 - Math.sqrt(Math.random());
+        const y = (treeHeight / 2) - h * treeHeight;
+
+        const branchWave = 1 + 0.08 * Math.sin(h * Math.PI * 16);
+        const coneR = maxRadius * Math.pow(1 - h, 0.93) * branchWave;
+        const r = coneR * (0.45 + Math.random() * 0.58);
+        const angle = Math.random() * Math.PI * 2;
+
+        const isOrnament = Math.random() < 0.14;
+        const color = randomFrom(currentTheme.treeColors);
+
+        const tx = Math.cos(angle) * r;
+        const tz = Math.sin(angle) * r;
+
+        const scatterAngle = angle - 0.9;
+        const scatterR = r + 35 + Math.random() * 65;
+
+        treeParticles.push({
+          h,
+          tx, ty: y, tz,
+          sx: Math.cos(scatterAngle) * scatterR,
+          sy: y + 35 + Math.random() * 35,
+          sz: Math.sin(scatterAngle) * scatterR,
+          size: isOrnament ? 6.5 + Math.random() * 5.5 : 3.2 + Math.random() * 3.8,
+          color,
+          phase: Math.random() * Math.PI * 2,
+          isOrnament,
+          revealDelay: Math.random() * 0.08
+        });
+      }
+
+      // 3. สายไฟเกลียว
+      const ribbonCount = 500;
+      for (let i = 0; i < ribbonCount; i++) {
+        const h = i / ribbonCount;
+        const y = (treeHeight / 2) - h * treeHeight;
+        const angle = h * Math.PI * 2 * 7.5;
+        const r = maxRadius * Math.pow(1 - h, 0.93) * 1.05;
+
+        treeParticles.push({
+          h,
+          tx: Math.cos(angle) * r,
+          ty: y + (Math.random() - 0.5) * 4,
+          tz: Math.sin(angle) * r,
+          sx: Math.cos(angle - 0.4) * (r + 18),
+          sy: y + 18,
+          sz: Math.sin(angle - 0.4) * (r + 18),
+          size: 5.0 + Math.random() * 3.2,
+          color: currentTheme.ribbonColor,
+          phase: h * 18,
+          isOrnament: true,
+          revealDelay: 0
+        });
+      }
+
+      // 4. วงแหวนแสงที่ฐาน
+      for (let i = 0; i < 320; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const distNorm = Math.pow(Math.random(), 0.7);
+        const r = maxRadius * (0.25 + distNorm * 1.38);
+
+        groundParticles.push({
+          angle,
+          r,
+          distNorm,
+          y: treeHeight / 2 + 16,
+          size: 2.8 + Math.random() * 4.2,
+          color: Math.random() > 0.35 ? currentTheme.ribbonColor : randomFrom(currentTheme.treeColors),
+          phase: Math.random() * Math.PI * 2
+        });
+      }
+
+      // 5. หิมะตก
+      for (let i = 0; i < 170; i++) {
+        const depth = 0.4 + Math.random() * 1.2;
+        snowParticles.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          r: (0.8 + Math.random() * 2.2) * depth,
+          vy: (0.45 + Math.random() * 1.1) * depth,
+          vx: (Math.random() - 0.5) * 0.5,
+          alpha: 0.18 + Math.random() * 0.55,
+          phase: Math.random() * Math.PI * 2
+        });
+      }
+
+      fireflies = [];
+      for (let i = 0; i < 46; i++) {
+        fireflies.push({
+          a: Math.random() * Math.PI * 2, sp: 0.15 + Math.random() * 0.35,
+          r: maxRadius * (0.5 + Math.random() * 1.1),
+          y: -treeHeight / 2 + Math.random() * treeHeight,
+          rise: 8 + Math.random() * 16, size: 7 + Math.random() * 8,
+          ph: Math.random() * 6.28,
+          color: randomFrom([currentTheme.starColor, currentTheme.leadColor, currentTheme.ribbonColor])
+        });
+      }
+
+      // 6. กล่องของขวัญ 3 มิติ
+      buildGiftBoxes();
+    }
+
+    function spawnBurstAt(x, y, z, count = 35, color = currentTheme.starColor) {
+      for (let i = 0; i < count; i++) {
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(2 * Math.random() - 1);
+        const speed = 1.4 + Math.random() * 4.2;
+        burstParticles.push({
+          x, y, z,
+          vx: Math.sin(phi) * Math.cos(theta) * speed,
+          vy: Math.cos(phi) * speed - 1.1,
+          vz: Math.sin(phi) * Math.sin(theta) * speed,
+          life: 1.0,
+          decay: 0.015 + Math.random() * 0.02,
+          size: 3.5 + Math.random() * 6,
+          color: Math.random() > 0.35 ? color : '#ffffff'
+        });
+      }
+    }
+
+    function triggerStarBurst() {
+      starBursted = true;
+      starFlash = 1.0;
+      titleWrap.classList.add('show');
+      spawnBurstAt(0, -treeHeight / 2 - 14, 0, 85, currentTheme.starColor);
+    }
+
+    function project(x, y, z, fov, centerX, centerY) {
+      const cosY = Math.cos(rotationY);
+      const sinY = Math.sin(rotationY);
+      const rx = x * cosY - z * sinY;
+      const rz1 = x * sinY + z * cosY;
+
+      const cosX = Math.cos(tiltX);
+      const sinX = Math.sin(tiltX);
+      const ry = y * cosX - rz1 * sinX;
+      const rz = y * sinX + rz1 * cosX;
+
+      const depth = fov + rz + 380;
+      if (depth <= 20) return null;
+      const scale = fov / depth;
+      return {
+        x: centerX + rx * scale,
+        y: centerY + ry * scale,
+        scale,
+        z: rz
+      };
+    }
+
+    function lerp2D(a, b, t) {
+      return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
+    }
+
+    function drawQuad(p0, p1, p2, p3, fillStyle, strokeStyle) {
+      ctx.beginPath();
+      ctx.moveTo(p0.x, p0.y);
+      ctx.lineTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+      ctx.lineTo(p3.x, p3.y);
+      ctx.closePath();
+      ctx.fillStyle = fillStyle;
+      ctx.fill();
+      if (strokeStyle) {
+        ctx.strokeStyle = strokeStyle;
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+      }
+    }
+
+    function drawGiftBox3D(box, popProgress, fov, centerX, centerY, dt) {
+      const targetHover = (hoveredGiftIndex === box.index) ? 1 : 0;
+      box.hoverAmount += (targetHover - box.hoverAmount) * Math.min(1, dt * 10);
+
+      const scale = Math.max(0.01, easeOutBack(popProgress) * (1 + box.hoverAmount * 0.1));
+      const floatY = -box.hoverAmount * 8 + Math.sin(totalTime * 2.6 + box.phase) * (box.opened ? 2.5 : 1.0);
+
+      const hw = box.w / 2;
+      const hh = box.h / 2;
+      const hd = box.d / 2;
+
+      const localVerts = [
+        { x: -hw, y: -hh, z: -hd },
+        { x:  hw, y: -hh, z: -hd },
+        { x:  hw, y: -hh, z:  hd },
+        { x: -hw, y: -hh, z:  hd },
+        { x: -hw, y:  hh, z: -hd },
+        { x:  hw, y:  hh, z: -hd },
+        { x:  hw, y:  hh, z:  hd },
+        { x: -hw, y:  hh, z:  hd }
+      ];
+
+      const cosL = Math.cos(box.localRot + box.hoverAmount * 0.14);
+      const sinL = Math.sin(box.localRot + box.hoverAmount * 0.14);
+
+      const projected = [];
+      let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+
+      for (const v of localVerts) {
+        // ขยายจากฐานด้านล่างขึ้นบน
+        const sx = v.x * scale;
+        const sy = hh + (v.y - hh) * scale + floatY;
+        const sz = v.z * scale;
+
+        const rx = sx * cosL - sz * sinL + box.x;
+        const ry = sy + box.y;
+        const rz = sx * sinL + sz * cosL + box.z;
+
+        const p = project(rx, ry, rz, fov, centerX, centerY);
+        if (!p) {
+          box.screenBounds = null;
+          return;
+        }
+        projected.push(p);
+        if (p.x < minX) minX = p.x;
+        if (p.x > maxX) maxX = p.x;
+        if (p.y < minY) minY = p.y;
+        if (p.y > maxY) maxY = p.y;
+      }
+
+      const centerP = project(box.x, box.y + floatY, box.z, fov, centerX, centerY);
+      box.centerZ = centerP ? centerP.z : 0;
+      box.screenBounds = { minX: minX - 12, maxX: maxX + 12, minY: minY - 18, maxY: maxY + 12 };
+
+      const pal = box.palette;
+      const faces = [
+        { idx: [0, 1, 2, 3], color: pal.top,  ribbonType: 'cross' }, // Top
+        { idx: [4, 5, 6, 7], color: pal.dark, ribbonType: 'none'  }, // Bottom
+        { idx: [3, 2, 6, 7], color: pal.main, ribbonType: 'vert'  }, // Front
+        { idx: [0, 1, 5, 4], color: pal.dark, ribbonType: 'vert'  }, // Back
+        { idx: [1, 2, 6, 5], color: pal.dark, ribbonType: 'vert'  }, // Right
+        { idx: [0, 3, 7, 4], color: pal.main, ribbonType: 'vert'  }  // Left
+      ];
+
+      // เรียงด้านจากไกลไปใกล้ (Painter's Algorithm)
+      faces.forEach(f => {
+        f.avgZ = (projected[f.idx[0]].z + projected[f.idx[1]].z + projected[f.idx[2]].z + projected[f.idx[3]].z) / 4;
+      });
+      faces.sort((a, b) => b.avgZ - a.avgZ);
+
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, popProgress * 1.6);
+
+      for (const f of faces) {
+        const p0 = projected[f.idx[0]];
+        const p1 = projected[f.idx[1]];
+        const p2 = projected[f.idx[2]];
+        const p3 = projected[f.idx[3]];
+
+        drawQuad(p0, p1, p2, p3, f.color, 'rgba(255,255,255,0.16)');
+
+        // ริบบิ้น 3 มิติบนแต่ละด้าน
+        if (f.ribbonType === 'vert') {
+          const r0 = lerp2D(p0, p1, 0.39);
+          const r1 = lerp2D(p0, p1, 0.61);
+          const r2 = lerp2D(p3, p2, 0.61);
+          const r3 = lerp2D(p3, p2, 0.39);
+          drawQuad(r0, r1, r2, r3, pal.ribbon);
+
+          // แถบฝากล่องด้านบนเล็กน้อยเพื่อความสมจริง
+          const l2 = lerp2D(p1, p2, 0.24);
+          const l3 = lerp2D(p0, p3, 0.24);
+          drawQuad(p0, p1, l2, l3, 'rgba(255,255,255,0.08)', 'rgba(0,0,0,0.22)');
+        } else if (f.ribbonType === 'cross') {
+          const a0 = lerp2D(p0, p1, 0.39);
+          const a1 = lerp2D(p0, p1, 0.61);
+          const a2 = lerp2D(p3, p2, 0.61);
+          const a3 = lerp2D(p3, p2, 0.39);
+          drawQuad(a0, a1, a2, a3, pal.ribbon);
+
+          const b0 = lerp2D(p0, p3, 0.39);
+          const b1 = lerp2D(p1, p2, 0.39);
+          const b2 = lerp2D(p1, p2, 0.61);
+          const b3 = lerp2D(p0, p3, 0.61);
+          drawQuad(b0, b1, b2, b3, pal.ribbon);
+        }
+      }
+
+      // วาดโบว์บนฝากล่อง
+      const topCenterY = hh + (-hh - hh) * scale + floatY + box.y;
+      const bowP = project(box.x, topCenterY - 2 * scale, box.z, fov, centerX, centerY);
+      if (bowP) {
+        const bs = Math.max(4, 10 * bowP.scale * scale);
+        ctx.strokeStyle = pal.ribbon;
+        ctx.lineWidth = Math.max(1.8, bs * 0.32);
+
+        ctx.beginPath();
+        ctx.ellipse(bowP.x - bs * 0.72, bowP.y - bs * 0.28, bs * 0.75, bs * 0.42, -0.35, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.ellipse(bowP.x + bs * 0.72, bowP.y - bs * 0.28, bs * 0.75, bs * 0.42, 0.35, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.fillStyle = '#fff9e6';
+        ctx.beginPath();
+        ctx.arc(bowP.x, bowP.y - bs * 0.1, bs * 0.28, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.restore();
+    }
+
+    function drawStar(cx, cy, outerR, innerR, color, pulse, flash) {
+      ctx.save();
+      ctx.translate(cx, cy);
+
+      const haloR = outerR * (4.2 + pulse * 0.5 + flash * 5.0);
+      const glow = ctx.createRadialGradient(0, 0, 1, 0, 0, haloR);
+      glow.addColorStop(0, '#ffffff');
+      glow.addColorStop(0.18, color);
+      glow.addColorStop(0.5, hexToRgba(color, 0.25));
+      glow.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(0, 0, haloR, 0, Math.PI * 2);
+      ctx.fill();
+
+      const flareLen = outerR * (2.8 + pulse * 0.4 + flash * 4.0);
+      ctx.strokeStyle = hexToRgba('#ffffff', 0.65 + flash * 0.35);
+      ctx.lineWidth = Math.max(1.2, outerR * 0.1);
+      ctx.beginPath();
+      ctx.moveTo(-flareLen, 0);
+      ctx.lineTo(flareLen, 0);
+      ctx.moveTo(0, -flareLen);
+      ctx.lineTo(0, flareLen);
+      ctx.stroke();
+
+      ctx.beginPath();
+      for (let i = 0; i < 10; i++) {
+        const r = i % 2 === 0 ? outerR : innerR;
+        const angle = -Math.PI / 2 + (i * Math.PI) / 5;
+        const px = Math.cos(angle) * r;
+        const py = Math.sin(angle) * r;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    // ================= MAIN ANIMATION LOOP =================
+    let lastTimestamp = 0;
+    let totalTime = 0;
+
+    function animate(timestamp) {
+      if (!lastTimestamp) lastTimestamp = timestamp;
+      const dt = Math.min((timestamp - lastTimestamp) / 1000, 0.05);
+      lastTimestamp = timestamp;
+
+      totalTime += dt;
+      if (hasStarted) {
+        introTime += dt;
+      }
+
+      ctx.clearRect(0, 0, width, height);
+
+      // เอฟเฟกต์: ออโรร่าเคลื่อนไหวช้าๆ
+      {
+        const auFade = hasStarted ? Math.min(introTime / 3, 1) : 0.6;
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        const auCols = [[currentTheme.treeColors[0], 0], [currentTheme.starColor, 2.1], [currentTheme.treeColors[1] || currentTheme.treeColors[0], 4.2]];
+        for (const [c, ph] of auCols) {
+          const ax = width * (0.2 + 0.6 * (0.5 + 0.5 * Math.sin(totalTime * 0.12 + ph)));
+          const ay = height * (0.2 + 0.08 * Math.sin(totalTime * 0.17 + ph * 1.3));
+          const ar = Math.max(width, height) * 0.5;
+          const ag = ctx.createRadialGradient(ax, ay, 0, ax, ay, ar);
+          ag.addColorStop(0, hexToRgba(c, 0.12 * auFade));
+          ag.addColorStop(1, hexToRgba(c, 0));
+          ctx.fillStyle = ag;
+          ctx.fillRect(0, 0, width, height);
+        }
+        ctx.restore();
+
+        // ดาวตก
+        if (totalTime > nextShoot) {
+          nextShoot = totalTime + 3 + Math.random() * 5;
+          const a = 0.5 + Math.random() * 0.3, v = 9 + Math.random() * 6;
+          shootingStars.push({ x: Math.random() * width * 0.8, y: Math.random() * height * 0.35, vx: Math.cos(a) * v, vy: Math.sin(a) * v, life: 1 });
+        }
+        ctx.save();
+        ctx.lineCap = 'round';
+        for (let i = shootingStars.length - 1; i >= 0; i--) {
+          const ss = shootingStars[i];
+          ss.x += ss.vx; ss.y += ss.vy; ss.life -= 0.016;
+          if (ss.life <= 0 || ss.x > width + 100 || ss.y > height) { shootingStars.splice(i, 1); continue; }
+          const tx = ss.x - ss.vx * 9, ty = ss.y - ss.vy * 9;
+          const lg = ctx.createLinearGradient(ss.x, ss.y, tx, ty);
+          lg.addColorStop(0, `rgba(255,255,255,${ss.life})`);
+          lg.addColorStop(1, 'rgba(255,255,255,0)');
+          ctx.strokeStyle = lg; ctx.lineWidth = 1.8;
+          ctx.beginPath(); ctx.moveTo(ss.x, ss.y); ctx.lineTo(tx, ty); ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      // การหมุนต้นไม้
+      const introNorm = Math.min(introTime / INTRO_DURATION, 1);
+      const speedBoost = (hasStarted && introNorm < 1) ? (1 - introNorm) * 0.009 : 0;
+      if (!isDragging) {
+        rotationY += autoRotateSpeed + speedBoost + dragVelocity;
+        dragVelocity *= 0.94;
+      }
+
+      const fov = Math.max(540, Math.min(width, height) * 0.85);
+      const centerX = width / 2;
+      const centerY = height * 0.57;
+
+      // 1. วาดดาวพื้นหลัง (ทำงานตลอดเพื่อให้หน้าแรกดูมีชีวิตชีวา)
+      ctx.save();
+      for (const st of bgStars) {
+        const a = 0.12 + 0.38 * (0.5 + 0.5 * Math.sin(totalTime * st.speed + st.phase));
+        ctx.fillStyle = `rgba(255, 255, 255, ${a})`;
+        ctx.beginPath();
+        ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+
+      // 2. วาดหิมะตก
+      const snowFade = hasStarted ? Math.min(introTime / 2.0, 1) : 0.7;
+      ctx.save();
+      for (const s of snowParticles) {
+        s.y += s.vy;
+        s.x += s.vx + Math.sin(totalTime * 0.9 + s.phase) * 0.35;
+        if (s.y > height + 6) {
+          s.y = -6;
+          s.x = Math.random() * width;
+        }
+        if (s.x > width + 6) s.x = -6;
+        if (s.x < -6) s.x = width + 6;
+
+        ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha * snowFade * (0.7 + 0.3 * Math.sin(totalTime * 2 + s.phase))})`;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+
+      if (!hasStarted) {
+        requestAnimationFrame(animate);
+        return;
+      }
+
+      const riseRaw = Math.max(0, Math.min((introTime - 0.35) / (INTRO_DURATION - 0.35), 1));
+      const riseHeight = 1 - Math.pow(1 - riseRaw, 1.35);
+
+      // เอฟเฟกต์: แสงสะท้อนพื้นใต้ต้นไม้
+      {
+        const g0 = project(0, treeHeight / 2 + 16, 0, fov, centerX, centerY);
+        if (g0) {
+          const gr0 = maxRadius * 1.7 * g0.scale;
+          ctx.save();
+          ctx.globalCompositeOperation = 'lighter';
+          ctx.translate(g0.x, g0.y);
+          ctx.scale(1, 0.28);
+          ctx.globalAlpha = 0.3 * Math.min(introTime / 2, 1) * (0.85 + 0.15 * Math.sin(totalTime * 1.8));
+          ctx.drawImage(getGlowSprite(currentTheme.treeColors[0]), -gr0, -gr0, gr0 * 2, gr0 * 2);
+          ctx.restore();
+        }
+      }
+
+      // 3. วาดวงแหวนแสงที่พื้นก่อน
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const groundExpand = easeOutCubic(Math.min(introTime / 1.6, 1));
+      for (const g of groundParticles) {
+        if (groundExpand < g.distNorm * 0.65) continue;
+        const localP = easeOutCubic(Math.min((groundExpand - g.distNorm * 0.65) / 0.35, 1));
+        const curR = g.r * (0.35 + 0.65 * localP);
+        const gx = Math.cos(g.angle) * curR;
+        const gz = Math.sin(g.angle) * curR;
+
+        const proj = project(gx, g.y, gz, fov, centerX, centerY);
+        if (!proj) continue;
+
+        const twinkle = 0.3 + 0.55 * (0.5 + 0.5 * Math.sin(totalTime * 2.5 + g.phase));
+        const drawR = Math.max(1.5, g.size * proj.scale * localP);
+        const sprite = getGlowSprite(g.color);
+
+        ctx.globalAlpha = twinkle * localP * 0.8;
+        ctx.drawImage(sprite, proj.x - drawR, proj.y - drawR, drawR * 2, drawR * 2);
+      }
+      ctx.restore();
+
+      // 4. วาดกล่องของขวัญ 3 มิติ (โผล่มาหลังดาวสว่าง เรียงจากไกลไปใกล้)
+      const visibleGifts = [];
+      for (const box of giftBoxes) {
+        if (introTime >= box.appearTime) {
+          const p = Math.min((introTime - box.appearTime) / 0.55, 1);
+          if (!box.bursted) {
+            box.bursted = true;
+            spawnBurstAt(box.x, box.y - box.h * 0.3, box.z, 18, box.palette.ribbon);
+          }
+          const cp = project(box.x, box.y, box.z, fov, centerX, centerY);
+          visibleGifts.push({ box, p, z: cp ? cp.z : 0 });
+        } else {
+          box.screenBounds = null;
+        }
+      }
+      visibleGifts.sort((a, b) => b.z - a.z);
+      for (const item of visibleGifts) {
+        drawGiftBox3D(item.box, item.p, fov, centerX, centerY, dt);
+      }
+
+      // แสดงคำอวยพรอัตโนมัติเมื่อกล่องของขวัญโผล่ครบแล้ว
+      if (!wishShown && introTime >= WISH_SHOW_TIME) {
+        wishShown = true;
+        wishBanner.classList.add('show');
+      }
+
+      // 5. โหมด Additive Glow สำหรับต้นคริสต์มาส ลำแสง และออร่ากล่องของขวัญ
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+
+      // ออร่าเรืองแสงรอบกล่องของขวัญเมื่อเมาส์ชี้หรือเปิดแล้ว
+      for (const item of visibleGifts) {
+        const box = item.box;
+        const glowStrength = 0.22 + box.hoverAmount * 0.55 + (box.opened ? 0.2 : 0) + 0.1 * Math.sin(totalTime * 3.5 + box.phase);
+        const gp = project(box.x, box.y - 4, box.z, fov, centerX, centerY);
+        if (gp) {
+          const gr = (box.w * 1.15 + box.hoverAmount * 22) * gp.scale;
+          const sp = getGlowSprite(box.palette.ribbon);
+          ctx.globalAlpha = Math.min(0.85, glowStrength * item.p);
+          ctx.drawImage(sp, gp.x - gr, gp.y - gr, gr * 2, gr * 2);
+        }
+      }
+
+      // เอฟเฟกต์: ออร่ารอบต้นไม้
+      {
+        const hp = project(0, 20, 0, fov, centerX, centerY);
+        if (hp) {
+          const hr = treeHeight * 0.95 * hp.scale;
+          ctx.globalAlpha = (0.16 + 0.05 * Math.sin(totalTime * 1.6)) * riseRaw;
+          ctx.drawImage(getGlowSprite(currentTheme.treeColors[0]), hp.x - hr, hp.y - hr, hr * 2, hr * 2);
+        }
+      }
+
+      // เอฟเฟกต์: หิ่งห้อยแสงลอยรอบต้นไม้
+      for (const f of fireflies) {
+        f.a += f.sp * dt;
+        f.y -= f.rise * dt;
+        if (f.y < -treeHeight / 2 - 60) f.y = treeHeight / 2 + 10;
+        const fp = project(Math.cos(f.a) * f.r, f.y, Math.sin(f.a) * f.r, fov, centerX, centerY);
+        if (!fp) continue;
+        const tw = 0.5 + 0.5 * Math.sin(totalTime * 2 + f.ph);
+        const rr = f.size * fp.scale * (0.6 + 0.6 * tw);
+        ctx.globalAlpha = 0.75 * tw * Math.min(1, introTime / 3);
+        ctx.drawImage(getGlowSprite(f.color), fp.x - rr, fp.y - rr, rr * 2, rr * 2);
+      }
+
+      // อนุภาคต้นคริสต์มาส
+      for (const p of treeParticles) {
+        const triggerH = p.h + p.revealDelay;
+        if (riseHeight < triggerH - 0.02) continue;
+
+        const rawProgress = Math.min((riseHeight - (triggerH - 0.02)) / 0.14, 1);
+        const ease = easeOutCubic(Math.max(0, rawProgress));
+
+        const cx = p.sx + (p.tx - p.sx) * ease;
+        const cy = p.sy + (p.ty - p.sy) * ease;
+        const cz = p.sz + (p.tz - p.sz) * ease;
+
+        const proj = project(cx, cy, cz, fov, centerX, centerY);
+        if (!proj) continue;
+
+        const twinkle = 0.45 + 0.55 * Math.sin(totalTime * 3.4 + p.phase);
+        const spawnBoost = 1 + (1 - ease) * 1.1;
+        const wave = Math.pow(Math.max(0, Math.sin(p.h * 9 - totalTime * 2.6)), 8);
+        const drawR = Math.max(1.8, p.size * proj.scale * (0.25 + 0.75 * ease) * spawnBoost * (1 + wave * 0.6));
+        const sprite = getGlowSprite(p.color);
+
+        ctx.globalAlpha = Math.min(1, (p.isOrnament ? 0.65 + 0.35 * twinkle : 0.45 + 0.5 * twinkle + wave * 0.7) * ease);
+        ctx.drawImage(sprite, proj.x - drawR, proj.y - drawR, drawR * 2, drawR * 2);
+      }
+
+      // ลำแสงนำทาง
+      if (riseRaw > 0 && riseRaw < 1) {
+        const leadY = (treeHeight / 2) - riseHeight * treeHeight;
+        const leadAngle = riseHeight * Math.PI * 2 * 7.5;
+        const leadR = maxRadius * Math.pow(1 - riseHeight, 0.93) * 1.07;
+        const lx = Math.cos(leadAngle) * leadR;
+        const lz = Math.sin(leadAngle) * leadR;
+
+        for (let k = 0; k < 4; k++) {
+          sparkTrail.push({
+            x: lx + (Math.random() - 0.5) * 10,
+            y: leadY + (Math.random() - 0.5) * 10,
+            z: lz + (Math.random() - 0.5) * 10,
+            vx: (Math.random() - 0.5) * 1.2,
+            vy: 0.4 + Math.random() * 1.4,
+            vz: (Math.random() - 0.5) * 1.2,
+            life: 1.0,
+            decay: 0.025 + Math.random() * 0.025,
+            size: 4 + Math.random() * 5,
+            color: currentTheme.leadColor
+          });
+        }
+
+        const leadProj = project(lx, leadY, lz, fov, centerX, centerY);
+        if (leadProj) {
+          const r = 24 * leadProj.scale;
+          const leadSprite = getGlowSprite(currentTheme.leadColor);
+          ctx.globalAlpha = 1;
+          ctx.drawImage(leadSprite, leadProj.x - r, leadProj.y - r, r * 2, r * 2);
+        }
+      }
+
+      // หางประกายไฟ
+      for (let i = sparkTrail.length - 1; i >= 0; i--) {
+        const sp = sparkTrail[i];
+        sp.x += sp.vx;
+        sp.y += sp.vy;
+        sp.z += sp.vz;
+        sp.life -= sp.decay;
+        if (sp.life <= 0) {
+          sparkTrail.splice(i, 1);
+          continue;
+        }
+        const proj = project(sp.x, sp.y, sp.z, fov, centerX, centerY);
+        if (!proj) continue;
+        const r = sp.size * proj.scale * sp.life;
+        const sprite = getGlowSprite(sp.color);
+        ctx.globalAlpha = sp.life;
+        ctx.drawImage(sprite, proj.x - r, proj.y - r, r * 2, r * 2);
+      }
+
+      // ดาวยอดต้นไม้
+      if (riseRaw >= 1) {
+        if (!starBursted) {
+          triggerStarBurst();
+        }
+        starScale = Math.min(1, starScale + dt * 2.8);
+        starFlash = Math.max(0, starFlash - dt * 1.4);
+
+        const topProj = project(0, -treeHeight / 2 - 14, 0, fov, centerX, centerY);
+        if (topProj) {
+          ctx.globalAlpha = 1;
+          const pulse = Math.sin(totalTime * 3.2);
+          const popScale = easeOutCubic(starScale);
+          drawStar(
+            topProj.x,
+            topProj.y,
+            20 * topProj.scale * popScale,
+            8.5 * topProj.scale * popScale,
+            currentTheme.starColor,
+            pulse,
+            starFlash
+          );
+        }
+      }
+
+      // เอฟเฟกต์: รังสีรอบดาวยอดต้นไม้ + ประกายสุ่ม
+      if (riseRaw >= 1) {
+        const tp = project(0, -treeHeight / 2 - 14, 0, fov, centerX, centerY);
+        if (tp) {
+          const L = (95 + 20 * Math.sin(totalTime * 2.4)) * tp.scale * easeOutCubic(starScale);
+          ctx.save();
+          ctx.translate(tp.x, tp.y);
+          ctx.rotate(totalTime * 0.25);
+          for (let i = 0; i < 8; i++) {
+            ctx.rotate(Math.PI / 4);
+            const len = i % 2 ? L * 0.55 : L;
+            const rg = ctx.createLinearGradient(0, 0, len, 0);
+            rg.addColorStop(0, hexToRgba(currentTheme.starColor, 0.6));
+            rg.addColorStop(1, hexToRgba(currentTheme.starColor, 0));
+            ctx.fillStyle = rg;
+            ctx.globalAlpha = 0.4;
+            ctx.beginPath();
+            ctx.moveTo(0, -2.5 * tp.scale); ctx.lineTo(len, 0); ctx.lineTo(0, 2.5 * tp.scale);
+            ctx.fill();
+          }
+          ctx.restore();
+        }
+        if (totalTime - lastStarPulse > 4.5) {
+          lastStarPulse = totalTime;
+          spawnBurstAt(0, -treeHeight / 2 - 14, 0, 26, currentTheme.starColor);
+        }
+        if (totalTime - lastTwinkle > 0.35) {
+          lastTwinkle = totalTime;
+          const o = treeParticles[(Math.random() * treeParticles.length) | 0];
+          if (o && o.isOrnament && o.h < riseHeight) spawnBurstAt(o.tx, o.ty, o.tz, 4, o.color);
+        }
+      }
+
+      // เอฟเฟกต์: ประกายตามเมาส์/นิ้ว
+      for (let i = cursorSparks.length - 1; i >= 0; i--) {
+        const c = cursorSparks[i];
+        c.x += c.vx; c.y += c.vy; c.vy += 0.05; c.life -= 0.03;
+        if (c.life <= 0) { cursorSparks.splice(i, 1); continue; }
+        const cr = c.size * c.life;
+        ctx.globalAlpha = c.life;
+        ctx.drawImage(getGlowSprite(c.color), c.x - cr, c.y - cr, cr * 2, cr * 2);
+      }
+
+      // สะเก็ดไฟระเบิด
+      for (let i = burstParticles.length - 1; i >= 0; i--) {
+        const bp = burstParticles[i];
+        bp.x += bp.vx;
+        bp.y += bp.vy;
+        bp.z += bp.vz;
+        bp.vy += 0.06;
+        bp.vx *= 0.985;
+        bp.vz *= 0.985;
+        bp.life -= bp.decay;
+        if (bp.life <= 0) {
+          burstParticles.splice(i, 1);
+          continue;
+        }
+        const proj = project(bp.x, bp.y, bp.z, fov, centerX, centerY);
+        if (!proj) continue;
+        const r = bp.size * proj.scale * bp.life;
+        const sprite = getGlowSprite(bp.color);
+        ctx.globalAlpha = bp.life;
+        ctx.drawImage(sprite, proj.x - r, proj.y - r, r * 2, r * 2);
+      }
+
+      ctx.restore();
+      requestAnimationFrame(animate);
+    }
+
+    // ================= GIFT OPENING MODAL & ANIMATION =================
+    function clearGiftTimers() {
+      giftTimers.forEach(t => clearTimeout(t));
+      giftTimers = [];
+    }
+
+    function spawnModalConfetti() {
+      confettiLayer.innerHTML = '';
+      const colors = ['#ffd76b', '#ff4d5a', '#4cc9f0', '#26eb80', '#ff7eb6', '#ffffff'];
+      for (let i = 0; i < 55; i++) {
+        const piece = document.createElement('div');
+        piece.className = 'confetti-piece';
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 110 + Math.random() * 240;
+        const tx = Math.cos(angle) * dist;
+        const ty = Math.sin(angle) * dist - 60;
+        const rot = (Math.random() - 0.5) * 720;
+        const dur = 0.85 + Math.random() * 0.7;
+        const size = 6 + Math.random() * 7;
+
+        piece.style.width = `${size}px`;
+        piece.style.height = `${size * (Math.random() > 0.5 ? 1 : 0.55)}px`;
+        piece.style.background = randomFrom(colors);
+        piece.style.setProperty('--tx', `${tx}px`);
+        piece.style.setProperty('--ty', `${ty}px`);
+        piece.style.setProperty('--rot', `${rot}deg`);
+        piece.style.setProperty('--dur', `${dur}s`);
+        confettiLayer.appendChild(piece);
+      }
+    }
+
+    function renderGalleryView(instant = false) {
+      if (!activeGallery.length) return;
+      const photo = activeGallery[currentPhotoIdx];
+
+      if (instant) {
+        modalMainPhoto.src = photo.url;
+        modalMainPhoto.classList.remove('switching');
+      } else {
+        modalMainPhoto.classList.add('switching');
+        setTimeout(() => {
+          modalMainPhoto.src = photo.url;
+          modalMainPhoto.classList.remove('switching');
+        }, 140);
+      }
+
+      photoCounter.textContent = `${currentPhotoIdx + 1} / ${activeGallery.length}`;
+      const multi = activeGallery.length > 1;
+      prevPhotoBtn.classList.toggle('hidden', !multi);
+      nextPhotoBtn.classList.toggle('hidden', !multi);
+      thumbStrip.classList.toggle('hidden', !multi);
+
+      thumbStrip.innerHTML = '';
+      if (multi) {
+        activeGallery.forEach((p, idx) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'thumb-btn' + (idx === currentPhotoIdx ? ' active' : '');
+          btn.innerHTML = `<img src="${p.url}" alt="thumb" />`;
+          btn.onclick = () => {
+            currentPhotoIdx = idx;
+            renderGalleryView(false);
+          };
+          thumbStrip.appendChild(btn);
+        });
+      }
+    }
+
+    function changePhoto(delta) {
+      if (activeGallery.length <= 1) return;
+      currentPhotoIdx = (currentPhotoIdx + delta + activeGallery.length) % activeGallery.length;
+      renderGalleryView(false);
+    }
+
+    function runGiftOpenSequence() {
+      clearGiftTimers();
+      giftModal.classList.remove('state-shaking', 'state-opening', 'state-revealed');
+      confettiLayer.innerHTML = '';
+      stageLabel.textContent = 'กำลังเปิดกล่องของขวัญ...';
+
+      // บังคับ reflow เพื่อให้ animation เริ่มใหม่ทุกครั้ง
+      void cssGiftBox.offsetWidth;
+
+      giftModal.classList.add('state-shaking');
+
+      // 1.05 วิ -> ฝาเด้งเปิด + แสงพุ่ง + กระดาษสีระเบิด
+      giftTimers.push(setTimeout(() => {
+        stageLabel.textContent = '✨ เซอร์ไพรส์! ✨';
+        giftModal.classList.add('state-opening');
+        spawnModalConfetti();
+      }, 1050));
+
+      // 1.55 วิ -> รูปภาพลอยออกมาจากกล่อง
+      giftTimers.push(setTimeout(() => {
+        giftModal.classList.add('state-revealed');
+      }, 1550));
+    }
+
+    function openGiftModal(boxIndex = 0) {
+      if (!hasStarted) return;
+
+      const box = giftBoxes[boxIndex] || giftBoxes[0];
+      if (box) {
+        box.opened = true;
+        spawnBurstAt(box.x, box.y - box.h * 0.4, box.z, 36, box.palette.ribbon);
+        activeGiftBoxColor = box.palette;
+      } else {
+        activeGiftBoxColor = currentTheme.giftPalettes[0];
+      }
+
+      // ปรับสีกล่องใน Modal ให้ตรงกับกล่องที่คลิก
+      cssGiftBox.style.setProperty('--box-main', activeGiftBoxColor.main);
+      cssGiftBox.style.setProperty('--box-dark', activeGiftBoxColor.dark);
+      cssGiftBox.style.setProperty('--box-ribbon', activeGiftBoxColor.ribbon);
+      cssGiftBox.style.setProperty('--box-ribbon-dark', activeGiftBoxColor.ribbonDark);
+
+      activeGallery = uploadedPhotos.length > 0 ? uploadedPhotos : getFallbackCards();
+      currentPhotoIdx = boxIndex % activeGallery.length;
+      modalWishMsg.textContent = getWishMessage();
+
+      renderGalleryView(true);
+      giftModal.classList.add('open');
+      runGiftOpenSequence();
+    }
+
+    function replayGiftOpenAnimation() {
+      runGiftOpenSequence();
+    }
+
+    function closeGiftModal() {
+      clearGiftTimers();
+      giftModal.classList.remove('open', 'state-shaking', 'state-opening', 'state-revealed');
+    }
+
+    giftModal.addEventListener('click', (e) => {
+      if (e.target === giftModal && giftModal.classList.contains('state-revealed')) {
+        closeGiftModal();
+      }
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (!giftModal.classList.contains('open')) return;
+      if (e.key === 'Escape') closeGiftModal();
+      if (e.key === 'ArrowRight') changePhoto(1);
+      if (e.key === 'ArrowLeft') changePhoto(-1);
+    });
+
+    // ================= HIT TESTING & CONTROLS =================
+    function findGiftBoxAt(clientX, clientY) {
+      if (!hasStarted || setupModal.classList.contains('open') || giftModal.classList.contains('open')) {
+        return -1;
+      }
+      // ตรวจจากกล่องที่อยู่ใกล้หน้าจอที่สุดก่อน (centerZ น้อยสุด)
+      const candidates = giftBoxes
+        .filter(b => b.screenBounds &&
+          clientX >= b.screenBounds.minX && clientX <= b.screenBounds.maxX &&
+          clientY >= b.screenBounds.minY && clientY <= b.screenBounds.maxY)
+        .sort((a, b) => a.centerZ - b.centerZ);
+
+      return candidates.length ? candidates[0].index : -1;
+    }
+
+    function setTheme(name, btn) {
+      currentTheme = themes[name];
+      bgLayer.style.background = currentTheme.bg;
+      titleText.style.textShadow = currentTheme.titleShadow;
+
+      document.querySelectorAll('.controls .btn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      buildScene(true);
+    }
+
+    function replayIntro() {
+      closeGiftModal();
+      buildScene(true);
+    }
+
+    function toggleFullscreen() {
+      try {
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+          const el = document.documentElement;
+          if (el.requestFullscreen) el.requestFullscreen();
+          else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+        } else {
+          if (document.exitFullscreen) document.exitFullscreen();
+          else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+        }
+      } catch (err) {
+        console.warn('Fullscreen error:', err);
+      }
+    }
+
+    function updateFullscreenBtn() {
+      const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+      fsBtn.textContent = isFs ? '✕ ออกเต็มจอ' : '⛶ เต็มจอ';
+    }
+
+    function wakeUI() {
+      if (!hasStarted) return;
+      controls.classList.add('visible');
+      clearTimeout(uiTimer);
+      uiTimer = setTimeout(() => {
+        controls.classList.remove('visible');
+        hint.classList.add('hide');
+      }, 3600);
+    }
+
+    canvas.addEventListener('pointerdown', (e) => {
+      if (!hasStarted) return;
+      isDragging = true;
+      hasDragged = false;
+      downX = lastX = e.clientX;
+      downY = e.clientY;
+      wakeUI();
+    });
+
+    window.addEventListener('pointermove', (e) => {
+      if (!hasStarted) return;
+      wakeUI();
+
+      if (isDragging) {
+        const dx = e.clientX - lastX;
+        lastX = e.clientX;
+        if (Math.hypot(e.clientX - downX, e.clientY - downY) > 6) {
+          hasDragged = true;
+        }
+        dragVelocity = dx * 0.0055;
+        rotationY += dragVelocity;
+      } else {
+        hoveredGiftIndex = findGiftBoxAt(e.clientX, e.clientY);
+        canvas.classList.toggle('hover-gift', hoveredGiftIndex !== -1);
+      }
+    });
+
+    window.addEventListener('pointerup', (e) => {
+      if (!isDragging) return;
+      isDragging = false;
+      if (!hasDragged) {
+        const hitIdx = findGiftBoxAt(e.clientX, e.clientY);
+        if (hitIdx !== -1) {
+          openGiftModal(hitIdx);
+        }
+      }
+    });
+
+    canvas.addEventListener('dblclick', (e) => {
+      if (findGiftBoxAt(e.clientX, e.clientY) !== -1) return;
+      toggleFullscreen();
+    });
+
+    document.addEventListener('fullscreenchange', updateFullscreenBtn);
+    document.addEventListener('webkitfullscreenchange', updateFullscreenBtn);
+    window.addEventListener('resize', resize);
+
+    // เริ่มต้นเตรียมฉาก (ยังไม่เล่นต้นไม้จนกว่าผู้ใช้จะกดปุ่มเริ่ม)
+    window.addEventListener('pointermove', (e) => {
+      if (!hasStarted || setupModal.classList.contains('open') || giftModal.classList.contains('open')) return;
+      for (let i = 0; i < 2; i++) {
+        cursorSparks.push({
+          x: e.clientX, y: e.clientY,
+          vx: (Math.random() - 0.5) * 1.6, vy: (Math.random() - 0.8) * 1.4,
+          life: 1, size: 7 + Math.random() * 9,
+          color: Math.random() > 0.4 ? currentTheme.starColor : '#ffffff'
+        });
+      }
+      if (cursorSparks.length > 120) cursorSparks.splice(0, cursorSparks.length - 120);
+    });
+
+    resize();
+    buildScene(true);
+    requestAnimationFrame(animate);
+  </script>
+</body>
+</html>
