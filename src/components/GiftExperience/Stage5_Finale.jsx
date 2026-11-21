@@ -1,29 +1,32 @@
 import React, { useState } from 'react';
-import { Disc, ChevronLeft, ChevronRight, Check, Sparkles, Heart } from 'lucide-react';
-import { playSuccessFanfare, playTone } from '../../lib/soundEngine';
+import { ChevronLeft, ChevronRight, Check, Heart } from 'lucide-react';
+import { playSuccessFanfare } from '../../lib/soundEngine';
 import confetti from 'canvas-confetti';
-import { DEFAULT_PHOTOS } from '../../types/themePresets';
 
 export default function Stage5_Finale({
   voiceCaption = '"ขอบคุณที่เข้ามาเป็นความสุขของเรานะ ♡"',
-  photos = DEFAULT_PHOTOS,
+  photos = [],
   selectedSticker = '💖',
   coupons = [],
   isMusicPlaying = false,
   onToggleMusic
 }) {
-  const activePhotos = photos && photos.length > 0 ? photos : DEFAULT_PHOTOS;
+  const hasPhotos = photos && photos.length > 0 && photos.some(p => p.url);
+  const displayPhotos = hasPhotos ? photos : [
+    { url: '/assets/placeholder_photo.svg', caption: 'ยังไม่ได้อัปโหลดรูปภาพ (ปรับแต่งได้ใน Studio)' }
+  ];
+
   const [photoIdx, setPhotoIdx] = useState(0);
   const [photoAnimKey, setPhotoAnimKey] = useState(0);
   const [redeemedCoupons, setRedeemedCoupons] = useState({});
 
   const handlePrevPhoto = () => {
-    setPhotoIdx((prev) => (prev > 0 ? prev - 1 : activePhotos.length - 1));
+    setPhotoIdx((prev) => (prev > 0 ? prev - 1 : displayPhotos.length - 1));
     setPhotoAnimKey((k) => k + 1);
   };
 
   const handleNextPhoto = () => {
-    setPhotoIdx((prev) => (prev < activePhotos.length - 1 ? prev + 1 : 0));
+    setPhotoIdx((prev) => (prev < displayPhotos.length - 1 ? prev + 1 : 0));
     setPhotoAnimKey((k) => k + 1);
   };
 
@@ -40,7 +43,7 @@ export default function Stage5_Finale({
     });
   };
 
-  const currentPhoto = activePhotos[photoIdx] || activePhotos[0];
+  const currentPhoto = displayPhotos[photoIdx] || displayPhotos[0];
 
   return (
     <div className="flex-1 flex flex-col px-1 pb-4 overflow-y-auto space-y-4 select-none">
@@ -78,22 +81,27 @@ export default function Stage5_Finale({
 
       {/* 2. Polaroid Photo Frame with Pinned Sticker */}
       <div className="flex flex-col items-center">
-        <div className="relative bg-white text-stone-800 p-3 pb-4 rounded-md shadow-2xl border border-stone-200 w-64 transform -rotate-1 transition-all">
+        <div
+          className="relative bg-white text-stone-800 p-3 pb-4 rounded-md shadow-2xl border border-stone-200 w-64 transform -rotate-1 transition-all"
+          style={{
+            backgroundImage: 'linear-gradient(to bottom, rgba(255,255,255,0.95), rgba(255,255,255,0.98)), url(/assets/PhotoBG.jpg)',
+            backgroundSize: 'cover'
+          }}
+        >
           {/* Pinned Custom Sticker */}
           <div className="absolute -top-4 -right-3 text-3xl drop-shadow-md select-none transform rotate-12 z-20 animate-bounce">
             {selectedSticker}
           </div>
 
           {/* Photo container */}
-          <div className="w-full aspect-square bg-stone-900 overflow-hidden rounded-sm relative">
+          <div className="w-full aspect-square bg-stone-100 overflow-hidden rounded-sm relative border border-stone-200">
             <img
               key={photoAnimKey}
               src={currentPhoto.url}
               alt="Memory"
               className="w-full h-full object-cover polaroid-developing"
               onError={(e) => {
-                // Fallback to placeholder if broken link
-                e.target.src = '/assets/Background.jpg';
+                e.target.src = '/assets/placeholder_photo.svg';
               }}
             />
           </div>
@@ -113,7 +121,7 @@ export default function Stage5_Finale({
               <span>ก่อนหน้า</span>
             </button>
             <span className="font-semibold text-stone-700">
-              {photoIdx + 1} / {activePhotos.length}
+              {photoIdx + 1} / {displayPhotos.length}
             </span>
             <button
               onClick={handleNextPhoto}

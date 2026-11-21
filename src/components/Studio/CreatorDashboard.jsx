@@ -6,17 +6,21 @@ import {
   MessageCircle,
   HelpCircle,
   Sparkles,
+  Camera,
   Image as ImageIcon,
   Ticket,
   Plus,
   Trash2,
   Upload,
   Check,
-  AlertCircle,
   Eye,
-  Share2
+  Share2,
+  Layers,
+  TreePine,
+  Crosshair
 } from 'lucide-react';
-import { THEME_PRESETS, AVAILABLE_STICKERS } from '../../types/themePresets';
+import { PRESET_CATEGORIES, THEME_PRESETS, AVAILABLE_STICKERS } from '../../types/themePresets';
+import { FRAME_STYLES } from '../GiftExperience/Stage_Camera';
 import { compressImageFile } from '../../lib/imageCompressor';
 
 export default function CreatorDashboard({
@@ -25,11 +29,19 @@ export default function CreatorDashboard({
   onSwitchToPreview,
   onOpenShareModal
 }) {
-  const [activeTab, setActiveTab] = useState('theme');
+  const [activeTab, setActiveTab] = useState('category');
   const [compressing, setCompressing] = useState(false);
   const [compressMsg, setCompressMsg] = useState('');
 
-  const currentTheme = THEME_PRESETS[config.theme] || THEME_PRESETS.scrapbook;
+  const currentCategory = config.presetCategory || 'chat_scratch';
+
+  const handleSelectCategory = (catId) => {
+    onChangeConfig({
+      ...config,
+      presetCategory: catId,
+      revealType: catId === 'chat_camera' ? 'camera' : 'scratch'
+    });
+  };
 
   const handleSelectThemePreset = (themeKey) => {
     const preset = THEME_PRESETS[themeKey];
@@ -93,28 +105,44 @@ export default function CreatorDashboard({
     }
   };
 
-  const handleAddCoupon = () => {
-    const newCoupon = '🎁 คูปองพิเศษตามใจเธอ 1 อย่าง';
-    onChangeConfig({
-      ...config,
-      coupons: [...(config.coupons || []), newCoupon]
-    });
+  // Add / Remove custom chat dialog choice
+  const handleAddChatDialogChoice = () => {
+    const updatedDialog = [
+      ...(config.chatDialog || []),
+      {
+        userChoice: 'ข้อความตอบกลับใหม่ ✨',
+        botReplies: ['ข้อความที่คนส่งจะตอบกลับอัตโนมัติ ❤️']
+      }
+    ];
+    onChangeConfig({ ...config, chatDialog: updatedDialog });
   };
 
-  const handleRemoveCoupon = (idx) => {
-    const updated = (config.coupons || []).filter((_, i) => i !== idx);
-    onChangeConfig({ ...config, coupons: updated });
+  const handleRemoveChatDialogChoice = (idx) => {
+    const updatedDialog = (config.chatDialog || []).filter((_, i) => i !== idx);
+    onChangeConfig({ ...config, chatDialog: updatedDialog });
   };
 
-  const handleUpdateCoupon = (idx, text) => {
-    const updated = [...(config.coupons || [])];
-    updated[idx] = text;
-    onChangeConfig({ ...config, coupons: updated });
+  const handleUpdateChatChoiceText = (idx, text) => {
+    const updated = [...(config.chatDialog || [])];
+    if (updated[idx]) {
+      updated[idx].userChoice = text;
+      onChangeConfig({ ...config, chatDialog: updated });
+    }
+  };
+
+  const handleUpdateBotReplyText = (dialogIdx, replyIdx, text) => {
+    const updated = [...(config.chatDialog || [])];
+    if (updated[dialogIdx]) {
+      const replies = [...(updated[dialogIdx].botReplies || [])];
+      replies[replyIdx] = text;
+      updated[dialogIdx].botReplies = replies;
+      onChangeConfig({ ...config, chatDialog: updated });
+    }
   };
 
   return (
     <div className="w-full max-w-5xl mx-auto pt-16 pb-14 px-3 sm:px-6">
-      {/* Top Banner / Callout */}
+      {/* Top Banner */}
       <div className="bg-white rounded-3xl p-5 shadow-sm border border-stone-200 mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
@@ -124,10 +152,10 @@ export default function CreatorDashboard({
             <span className="text-xs text-stone-400">• Creator Mode</span>
           </div>
           <h2 className="text-xl font-extrabold text-stone-900 mt-1">
-            ออกแบบของขวัญดิจิทัล & เลือกธีมเทศกาล
+            ออกแบบของขวัญดิจิทัล & เลือกรูปแบบ Preset
           </h2>
           <p className="text-xs text-stone-500 mt-0.5">
-            ปรับแต่งเนื้อหา ใส่รูปภาพ บันทึกความทรงจำ แล้วสร้าง QR Code ส่งให้คนพิเศษได้ทันที
+            เลือกรูปแบบประสบการณ์ ปรับแต่งข้อความแชท ใส่รูปภาพ แล้วส่งต่อให้คนพิเศษ
           </p>
         </div>
 
@@ -149,51 +177,192 @@ export default function CreatorDashboard({
         </div>
       </div>
 
-      {/* Builder Layout: Category Tabs + Form Editor */}
+      {/* Builder Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Navigation Sidebar Tabs */}
         <div className="lg:col-span-1 space-y-1.5">
-          {[
-            { id: 'theme', label: '1. เลือกธีมเทศกาล', icon: Palette },
-            { id: 'entry', label: '2. หน้าแรก & ซองจดหมาย', icon: Mail },
-            { id: 'passcode', label: '3. รหัสผ่าน 6 หลัก', icon: Lock },
-            { id: 'chat', label: '4. แชทจำลองความรู้สึก', icon: MessageCircle },
-            { id: 'quiz', label: '5. แบบทดสอบ Mini Quiz', icon: HelpCircle },
-            { id: 'scratch', label: '6. การ์ดขูดรางวัลลับ', icon: Sparkles },
-            { id: 'photos', label: '7. รูปภาพ & สติกเกอร์', icon: ImageIcon },
-            { id: 'coupons', label: '8. คูปอง & โน้ตเสียง', icon: Ticket }
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
+          <button
+            onClick={() => setActiveTab('category')}
+            className={`w-full text-left px-3.5 py-3 rounded-2xl text-xs font-bold flex items-center gap-2.5 transition ${
+              activeTab === 'category'
+                ? 'bg-rose-500 text-white shadow-sm shadow-rose-200'
+                : 'bg-white hover:bg-stone-50 text-stone-700 border border-stone-200'
+            }`}
+          >
+            <Layers className="w-4 h-4" />
+            <span>1. เลือกหมวด Preset (4 แบบ)</span>
+          </button>
+
+          {(currentCategory === 'chat_scratch' || currentCategory === 'chat_camera') && (
+            <>
               <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => setActiveTab('theme')}
                 className={`w-full text-left px-3.5 py-3 rounded-2xl text-xs font-bold flex items-center gap-2.5 transition ${
-                  isActive
+                  activeTab === 'theme'
                     ? 'bg-rose-500 text-white shadow-sm shadow-rose-200'
                     : 'bg-white hover:bg-stone-50 text-stone-700 border border-stone-200'
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-stone-500'}`} />
-                <span>{tab.label}</span>
+                <Palette className="w-4 h-4" />
+                <span>2. เลือกธีมสี & บรรยากาศ</span>
               </button>
-            );
-          })}
+
+              <button
+                onClick={() => setActiveTab('entry')}
+                className={`w-full text-left px-3.5 py-3 rounded-2xl text-xs font-bold flex items-center gap-2.5 transition ${
+                  activeTab === 'entry'
+                    ? 'bg-rose-500 text-white shadow-sm shadow-rose-200'
+                    : 'bg-white hover:bg-stone-50 text-stone-700 border border-stone-200'
+                }`}
+              >
+                <Mail className="w-4 h-4" />
+                <span>3. หน้าแรก & ซองจดหมาย</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('passcode')}
+                className={`w-full text-left px-3.5 py-3 rounded-2xl text-xs font-bold flex items-center gap-2.5 transition ${
+                  activeTab === 'passcode'
+                    ? 'bg-rose-500 text-white shadow-sm shadow-rose-200'
+                    : 'bg-white hover:bg-stone-50 text-stone-700 border border-stone-200'
+                }`}
+              >
+                <Lock className="w-4 h-4" />
+                <span>4. รหัสผ่าน 6 หลัก</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('chat')}
+                className={`w-full text-left px-3.5 py-3 rounded-2xl text-xs font-bold flex items-center gap-2.5 transition ${
+                  activeTab === 'chat'
+                    ? 'bg-rose-500 text-white shadow-sm shadow-rose-200'
+                    : 'bg-white hover:bg-stone-50 text-stone-700 border border-stone-200'
+                }`}
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span>5. ปรับแต่งข้อความแชท</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('reveal')}
+                className={`w-full text-left px-3.5 py-3 rounded-2xl text-xs font-bold flex items-center gap-2.5 transition ${
+                  activeTab === 'reveal'
+                    ? 'bg-rose-500 text-white shadow-sm shadow-rose-200'
+                    : 'bg-white hover:bg-stone-50 text-stone-700 border border-stone-200'
+                }`}
+              >
+                {config.revealType === 'camera' ? (
+                  <Camera className="w-4 h-4" />
+                ) : (
+                  <Sparkles className="w-4 h-4" />
+                )}
+                <span>6. ขูดการ์ด หรือ กล้องถ่ายรูป</span>
+              </button>
+            </>
+          )}
+
+          {currentCategory === 'christmas_tree' && (
+            <button
+              onClick={() => setActiveTab('tree_settings')}
+              className={`w-full text-left px-3.5 py-3 rounded-2xl text-xs font-bold flex items-center gap-2.5 transition ${
+                activeTab === 'tree_settings'
+                  ? 'bg-rose-500 text-white shadow-sm shadow-rose-200'
+                  : 'bg-white hover:bg-stone-50 text-stone-700 border border-stone-200'
+              }`}
+            >
+              <TreePine className="w-4 h-4" />
+              <span>ปรับแต่งต้นคริสต์มาส & คำอวยพร</span>
+            </button>
+          )}
+
+          {currentCategory === 'arrow_birthday' && (
+            <button
+              onClick={() => setActiveTab('arrow_settings')}
+              className={`w-full text-left px-3.5 py-3 rounded-2xl text-xs font-bold flex items-center gap-2.5 transition ${
+                activeTab === 'arrow_settings'
+                  ? 'bg-rose-500 text-white shadow-sm shadow-rose-200'
+                  : 'bg-white hover:bg-stone-50 text-stone-700 border border-stone-200'
+              }`}
+            >
+              <Crosshair className="w-4 h-4" />
+              <span>ปรับแต่งยิงธนู & เค้กวันเกิด</span>
+            </button>
+          )}
+
+          <button
+            onClick={() => setActiveTab('photos')}
+            className={`w-full text-left px-3.5 py-3 rounded-2xl text-xs font-bold flex items-center gap-2.5 transition ${
+              activeTab === 'photos'
+                ? 'bg-rose-500 text-white shadow-sm shadow-rose-200'
+                : 'bg-white hover:bg-stone-50 text-stone-700 border border-stone-200'
+            }`}
+          >
+            <ImageIcon className="w-4 h-4" />
+            <span>อัปโหลดรูปภาพ (≤ 1000KB)</span>
+          </button>
         </div>
 
         {/* Right Editor Panels */}
         <div className="lg:col-span-3 bg-white rounded-3xl p-6 shadow-sm border border-stone-200">
-          {/* TAB 1: THEME & OCCASION */}
+          {/* TAB: PRESET CATEGORIES */}
+          {activeTab === 'category' && (
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-sm font-bold text-stone-800 flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-rose-500" />
+                  <span>เลือกรูปแบบประสบการณ์หลัก (4 Preset Categories)</span>
+                </h3>
+                <p className="text-xs text-stone-500 mt-0.5">
+                  เลือกหมวดหมู่ที่ต้องการสร้างสรรค์ แต่ละแบบจะให้ประสบการณ์และการโต้ตอบที่แตกต่างกัน
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2">
+                {PRESET_CATEGORIES.map((cat) => {
+                  const isSelected = currentCategory === cat.id;
+                  return (
+                    <div
+                      key={cat.id}
+                      onClick={() => handleSelectCategory(cat.id)}
+                      className={`p-4 rounded-3xl border-2 cursor-pointer transition text-left flex flex-col justify-between ${
+                        isSelected
+                          ? 'border-rose-500 bg-rose-50/50 shadow-md ring-2 ring-rose-200'
+                          : 'border-stone-200 hover:border-stone-300 bg-stone-50/50'
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-3xl">{cat.icon}</span>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                            isSelected ? 'bg-rose-500 text-white' : 'bg-stone-200 text-stone-700'
+                          }`}>
+                            {cat.badge}
+                          </span>
+                        </div>
+                        <h4 className="font-extrabold text-sm text-stone-900">{cat.name}</h4>
+                        <p className="text-xs text-stone-500 mt-1 leading-relaxed">{cat.desc}</p>
+                      </div>
+
+                      <div className="mt-4 pt-2.5 border-t border-stone-200/60 flex items-center justify-between text-xs font-bold text-rose-600">
+                        <span>{isSelected ? '✓ เลือกหมวดนี้แล้ว' : 'แตะเพื่อเลือกหมวดนี้'}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* TAB: THEME SELECTION */}
           {activeTab === 'theme' && (
             <div className="space-y-4">
               <div>
                 <h3 className="text-sm font-bold text-stone-800 flex items-center gap-2">
                   <Palette className="w-4 h-4 text-rose-500" />
-                  <span>เลือกธีม & บรรยากาศ (4 Visual Themes)</span>
+                  <span>เลือกธีม & บรรยากาศ (Theme Presets)</span>
                 </h3>
                 <p className="text-xs text-stone-500 mt-0.5">
-                  การเลือกธีมจะเปลี่ยนพาเลทสี เพลงสังเคราะห์ แอนิเมชัน และข้อความเริ่มต้นทั้งหมด
+                  เลือกพาเลทสี เพลงสังเคราะห์ประจำธีม และสไตล์การตกแต่ง
                 </p>
               </div>
 
@@ -222,10 +391,6 @@ export default function CreatorDashboard({
                         <h4 className="font-bold text-xs text-stone-800">{t.name}</h4>
                         <p className="text-[11px] text-stone-500 mt-0.5">{t.occasion}</p>
                       </div>
-
-                      <div className="mt-3 pt-2 border-t border-stone-200/60 flex items-center gap-1.5 text-[10px] text-stone-400">
-                        <span>โทน: {t.badge}</span>
-                      </div>
                     </div>
                   );
                 })}
@@ -233,160 +398,20 @@ export default function CreatorDashboard({
             </div>
           )}
 
-          {/* TAB 2: ENTRY & ENVELOPE */}
-          {activeTab === 'entry' && (
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-sm font-bold text-stone-800 flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-rose-500" />
-                  <span>หน้าแรก & ซองจดหมายเปิดของขวัญ</span>
-                </h3>
-                <p className="text-xs text-stone-500 mt-0.5">
-                  ข้อความต้อนรับและจดหมายที่ซ่อนอยู่ในซอง 3D
-                </p>
-              </div>
-
-              <div className="space-y-3 pt-2">
-                <div>
-                  <label className="block text-xs font-bold text-stone-700 mb-1">
-                    หัวข้อหน้าแรก (Intro Title)
-                  </label>
-                  <input
-                    type="text"
-                    value={config.introTitle || ''}
-                    onChange={(e) => onChangeConfig({ ...config, introTitle: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs text-stone-800 focus:outline-none focus:border-rose-500"
-                    placeholder="เช่น เรามีอะไรจะให้ดู..."
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-stone-700 mb-1">
-                    คำอธิบายสั้นๆ ใต้หัวข้อ (Intro Subtitle)
-                  </label>
-                  <input
-                    type="text"
-                    value={config.introSub || ''}
-                    onChange={(e) => onChangeConfig({ ...config, introSub: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs text-stone-800 focus:outline-none focus:border-rose-500"
-                    placeholder="เช่น แตะที่ตราประทับหัวใจเพื่อเปิดซองจดหมาย"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-stone-700 mb-1">
-                    ข้อความในการ์ดจดหมาย (Letter Text)
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={config.letterText || ''}
-                    onChange={(e) => onChangeConfig({ ...config, letterText: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs text-stone-800 focus:outline-none focus:border-rose-500"
-                    placeholder="ข้อความซึ้งๆ ที่อยากบอก..."
-                  />
-                </div>
-
-                {/* Time Capsule Lock Toggle */}
-                <div className="p-4 rounded-2xl bg-stone-50 border border-stone-200">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="text-xs font-bold text-stone-800">
-                        ล็อกเวลาเปิดของขวัญ (Time Capsule Feature)
-                      </h4>
-                      <p className="text-[11px] text-stone-500">
-                        หากเปิดใช้งาน ผู้รับจะไม่สามารถเปิดดูของขวัญได้จนกว่าจะถึงเวลาที่กำหนด
-                      </p>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={Boolean(config.timeLockEnabled)}
-                      onChange={(e) =>
-                        onChangeConfig({ ...config, timeLockEnabled: e.target.checked })
-                      }
-                      className="w-4 h-4 text-rose-500 rounded focus:ring-rose-400"
-                    />
-                  </div>
-
-                  {config.timeLockEnabled && (
-                    <div className="mt-3 pt-3 border-t border-stone-200">
-                      <label className="block text-xs font-bold text-stone-700 mb-1">
-                        วันและเวลาที่อนุญาตให้เปิด (Target Unlock Date)
-                      </label>
-                      <input
-                        type="datetime-local"
-                        value={config.timeLockDate || ''}
-                        onChange={(e) =>
-                          onChangeConfig({ ...config, timeLockDate: e.target.value })
-                        }
-                        className="px-3 py-2 rounded-xl border border-stone-200 text-xs text-stone-800 focus:outline-none focus:border-rose-500"
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 3: PASSCODE */}
-          {activeTab === 'passcode' && (
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-sm font-bold text-stone-800 flex items-center gap-2">
-                  <Lock className="w-4 h-4 text-rose-500" />
-                  <span>รหัสผ่าน 6 หลัก (Passcode System)</span>
-                </h3>
-                <p className="text-xs text-stone-500 mt-0.5">
-                  ตั้งรหัสผ่าน 6 หลักเพื่อเพิ่มความสนุกและตื่นเต้นให้ผู้รับ
-                </p>
-              </div>
-
-              <div className="space-y-3 pt-2">
-                <div>
-                  <label className="block text-xs font-bold text-stone-700 mb-1">
-                    รหัสผ่าน 6 หลัก (Passcode PIN)
-                  </label>
-                  <input
-                    type="text"
-                    maxLength={6}
-                    value={config.passcode || '231069'}
-                    onChange={(e) => {
-                      const val = e.target.value.replace(/\D/g, '').slice(0, 6);
-                      onChangeConfig({ ...config, passcode: val });
-                    }}
-                    className="w-full max-w-xs px-3.5 py-2.5 rounded-xl border border-stone-200 text-sm font-mono tracking-widest text-stone-800 focus:outline-none focus:border-rose-500"
-                    placeholder="231069"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-stone-700 mb-1">
-                    คำใบ้รหัสผ่าน (Passcode Hint)
-                  </label>
-                  <input
-                    type="text"
-                    value={config.passcodeHint || ''}
-                    onChange={(e) => onChangeConfig({ ...config, passcodeHint: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs text-stone-800 focus:outline-none focus:border-rose-500"
-                    placeholder="เช่น วันครบรอบของเรา หรือวันเกิดเธอ"
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 4: CHAT SIMULATOR */}
+          {/* TAB: CHAT MESSAGES EDITOR (Directly answering user's request for image 2) */}
           {activeTab === 'chat' && (
             <div className="space-y-4">
               <div>
                 <h3 className="text-sm font-bold text-stone-800 flex items-center gap-2">
                   <MessageCircle className="w-4 h-4 text-rose-500" />
-                  <span>แชทจำลองความรู้สึก (Simulated Chat)</span>
+                  <span>ปรับแต่งห้องแชท & เพิ่มข้อความพูดคุย (Chat Editor)</span>
                 </h3>
                 <p className="text-xs text-stone-500 mt-0.5">
-                  ปรับชื่อผู้ส่ง อิโมจิรูปโปรไฟล์ และข้อความแชททักทาย
+                  คุณสามารถแก้ไขชื่อ รูปโปรไฟล์ และเพิ่มข้อความตอบโต้ระหว่างผู้ส่งกับผู้รับได้อย่างอิสระ
                 </p>
               </div>
 
+              {/* Chat Contact Profile */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                 <div>
                   <label className="block text-xs font-bold text-stone-700 mb-1">
@@ -415,9 +440,10 @@ export default function CreatorDashboard({
                 </div>
               </div>
 
+              {/* First Bot message */}
               <div>
                 <label className="block text-xs font-bold text-stone-700 mb-1">
-                  ข้อความแชทข้อความแรก
+                  ข้อความแชทข้อความแรก (ที่ผู้ส่งทักไป)
                 </label>
                 <input
                   type="text"
@@ -427,125 +453,331 @@ export default function CreatorDashboard({
                   placeholder="เช่น เธอทำอะไรอยู่ ว่างไหม?"
                 />
               </div>
-            </div>
-          )}
 
-          {/* TAB 5: MINI QUIZ */}
-          {activeTab === 'quiz' && (
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-sm font-bold text-stone-800 flex items-center gap-2">
-                  <HelpCircle className="w-4 h-4 text-rose-500" />
-                  <span>คำถามทายใจ Mini Quiz</span>
-                </h3>
-                <p className="text-xs text-stone-500 mt-0.5">
-                  ตั้งคำถามทบทวนความทรงจำเพื่อความสนุกก่อนถึงของขวัญชิ้นใหญ่
-                </p>
-              </div>
+              {/* Dynamic Interactive Dialog Options */}
+              <div className="pt-2">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-bold text-stone-700">
+                    ตัวเลือกที่ให้ผู้รับกดตอบ และข้อความที่ระบบจะตอบกลับ:
+                  </label>
+                  <button
+                    onClick={handleAddChatDialogChoice}
+                    className="text-xs font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>เพิ่มข้อความแชท</span>
+                  </button>
+                </div>
 
-              <div className="space-y-4 pt-2">
-                {(config.quizzes || []).map((q, qIdx) => (
-                  <div key={qIdx} className="p-4 rounded-2xl bg-stone-50 border border-stone-200 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-stone-700">ข้อที่ {qIdx + 1}</span>
-                      <span className="text-[10px] text-rose-500 font-bold">
-                        (เลือกข้อที่ถูกต้องทางขวา)
-                      </span>
+                <div className="space-y-3">
+                  {(config.chatDialog || []).map((choice, dIdx) => (
+                    <div key={dIdx} className="p-3.5 rounded-2xl bg-stone-50 border border-stone-200 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-stone-600">
+                          ตัวเลือกที่ {dIdx + 1}
+                        </span>
+                        <button
+                          onClick={() => handleRemoveChatDialogChoice(dIdx)}
+                          className="p-1 text-stone-400 hover:text-rose-500 transition"
+                          title="ลบตัวเลือกนี้"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] text-stone-400 block mb-0.5">
+                          ข้อความบนปุ่มที่ผู้รับกดส่ง:
+                        </span>
+                        <input
+                          type="text"
+                          value={choice.userChoice || ''}
+                          onChange={(e) => handleUpdateChatChoiceText(dIdx, e.target.value)}
+                          className="w-full px-3 py-1.5 rounded-xl border border-stone-200 text-xs text-stone-800 bg-white"
+                        />
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] text-stone-400 block mb-0.5">
+                          ข้อความที่ตอบกลับกลับไป:
+                        </span>
+                        <input
+                          type="text"
+                          value={choice.botReplies?.[0] || ''}
+                          onChange={(e) => handleUpdateBotReplyText(dIdx, 0, e.target.value)}
+                          className="w-full px-3 py-1.5 rounded-xl border border-stone-200 text-xs text-stone-800 bg-white"
+                        />
+                      </div>
                     </div>
-
-                    <input
-                      type="text"
-                      value={q.question || ''}
-                      onChange={(e) => {
-                        const updated = [...config.quizzes];
-                        updated[qIdx].question = e.target.value;
-                        onChangeConfig({ ...config, quizzes: updated });
-                      }}
-                      className="w-full px-3.5 py-2 rounded-xl border border-stone-200 text-xs text-stone-800 bg-white"
-                      placeholder="คำถาม..."
-                    />
-
-                    <div className="space-y-2">
-                      {q.options.map((opt, optIdx) => (
-                        <div key={optIdx} className="flex items-center gap-2">
-                          <input
-                            type="radio"
-                            name={`correct_${qIdx}`}
-                            checked={q.correctIndex === optIdx}
-                            onChange={() => {
-                              const updated = [...config.quizzes];
-                              updated[qIdx].correctIndex = optIdx;
-                              onChangeConfig({ ...config, quizzes: updated });
-                            }}
-                            className="text-rose-500 focus:ring-rose-400"
-                          />
-                          <input
-                            type="text"
-                            value={opt || ''}
-                            onChange={(e) => {
-                              const updated = [...config.quizzes];
-                              updated[qIdx].options[optIdx] = e.target.value;
-                              onChangeConfig({ ...config, quizzes: updated });
-                            }}
-                            className="flex-1 px-3 py-1.5 rounded-xl border border-stone-200 text-xs text-stone-800 bg-white"
-                            placeholder={`ตัวเลือกที่ ${optIdx + 1}`}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
           )}
 
-          {/* TAB 6: SCRATCH CARD */}
-          {activeTab === 'scratch' && (
-            <div className="space-y-4">
+          {/* TAB: REVEAL TYPE (SCRATCH CARD VS INSTANT CAMERA + FRAME SHAPES) */}
+          {activeTab === 'reveal' && (
+            <div className="space-y-5">
               <div>
                 <h3 className="text-sm font-bold text-stone-800 flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-rose-500" />
-                  <span>การ์ดขูดรางวัลลับ (Scratch-to-Reveal)</span>
+                  <span>เลือกรูปแบบ: การ์ดขูด หรือ กล้องถ่ายรูป (ตามรูปที่ 3, 4, 5)</span>
                 </h3>
                 <p className="text-xs text-stone-500 mt-0.5">
-                  ข้อความลับที่จะปรากฏขึ้นเมื่อผู้รับใช้นิ้วหรือเมาส์ขูดแถบสีทอง
+                  เลือกรูปแบบการเปิดเผยความลับว่าจะให้ผู้รับขูดการ์ดสีทอง หรือกดชัตเตอร์กล้องถ่ายรูป
                 </p>
               </div>
 
-              <div className="pt-2">
-                <label className="block text-xs font-bold text-stone-700 mb-1">
-                  ของรางวัลลับที่ซ่อนอยู่ใต้การ์ดขูด
-                </label>
-                <input
-                  type="text"
-                  value={config.scratchSecret || ''}
-                  onChange={(e) => onChangeConfig({ ...config, scratchSecret: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs text-stone-800 focus:outline-none focus:border-rose-500"
-                  placeholder="เช่น คูปองตามใจเธอ 1 วันเต็ม! 💖"
-                />
+              {/* Option Selector: Scratch vs Camera */}
+              <div className="grid grid-cols-2 gap-3 pt-1">
+                <button
+                  onClick={() => onChangeConfig({ ...config, revealType: 'scratch' })}
+                  className={`p-4 rounded-2xl border-2 text-left transition flex items-center gap-3 ${
+                    config.revealType !== 'camera'
+                      ? 'border-rose-500 bg-rose-50/50 ring-2 ring-rose-200'
+                      : 'border-stone-200 bg-stone-50'
+                  }`}
+                >
+                  <span className="text-3xl">🪙</span>
+                  <div>
+                    <h4 className="font-bold text-xs text-stone-900">1. การ์ดขูดรางวัลลับ</h4>
+                    <p className="text-[10px] text-stone-500">ใช้นิ้วหรือเมาส์ขูดแถบสีทอง</p>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => onChangeConfig({ ...config, revealType: 'camera' })}
+                  className={`p-4 rounded-2xl border-2 text-left transition flex items-center gap-3 ${
+                    config.revealType === 'camera'
+                      ? 'border-rose-500 bg-rose-50/50 ring-2 ring-rose-200'
+                      : 'border-stone-200 bg-stone-50'
+                  }`}
+                >
+                  <span className="text-3xl">📸</span>
+                  <div>
+                    <h4 className="font-bold text-xs text-stone-900">2. กล้องถ่ายรูปปริ้นท์ภาพ</h4>
+                    <p className="text-[10px] text-stone-500">กดชัตเตอร์สีแดงแล้วรูปจะปริ้นท์ออกมา</p>
+                  </div>
+                </button>
+              </div>
+
+              {/* Conditional Settings based on selection */}
+              {config.revealType !== 'camera' ? (
+                /* Scratch Secret */
+                <div className="pt-2">
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
+                    ของรางวัลลับที่ซ่อนอยู่ใต้การ์ดขูด
+                  </label>
+                  <input
+                    type="text"
+                    value={config.scratchSecret || ''}
+                    onChange={(e) => onChangeConfig({ ...config, scratchSecret: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs text-stone-800 focus:outline-none focus:border-rose-500"
+                    placeholder="เช่น คูปองตามใจเธอ 1 วันเต็ม! 💖"
+                  />
+                </div>
+              ) : (
+                /* Camera Frame Shapes (Image 5) */
+                <div className="pt-2 space-y-3">
+                  <div>
+                    <label className="block text-xs font-bold text-stone-700 mb-1">
+                      เลือกรูปทรงกรอบรูป (Frame Shape Styles ตามรูปที่ 5):
+                    </label>
+                    <p className="text-[11px] text-stone-500 mb-3">
+                      เลือกทรงกรอบรูปที่ต้องการให้ปริ้นท์ออกมาจากกล้อง
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {FRAME_STYLES.map((frame) => {
+                      const isSelected = (config.cameraFrameStyle || 'square') === frame.id;
+                      return (
+                        <div
+                          key={frame.id}
+                          onClick={() => onChangeConfig({ ...config, cameraFrameStyle: frame.id })}
+                          className={`p-3 rounded-2xl border-2 cursor-pointer transition text-center flex flex-col items-center justify-between ${
+                            isSelected
+                              ? 'border-rose-500 bg-rose-50/50 shadow-sm ring-2 ring-rose-200'
+                              : 'border-stone-200 hover:border-stone-300 bg-stone-50/50'
+                          }`}
+                        >
+                          {/* Mini visual frame preview */}
+                          <div className="w-16 h-16 bg-stone-100 flex items-center justify-center my-2 border border-stone-300 shadow-xs overflow-hidden">
+                            {frame.id === 'circle' && (
+                              <div className="w-12 h-12 rounded-full border-2 border-stone-800 bg-amber-100" />
+                            )}
+                            {frame.id === 'square' && (
+                              <div className="w-12 h-12 rounded-xs border-2 border-stone-800 bg-rose-100" />
+                            )}
+                            {frame.id === 'oval' && (
+                              <div className="w-10 h-14 rounded-[20px] border-2 border-amber-500 bg-blue-100" />
+                            )}
+                            {frame.id === 'cloud' && (
+                              <div className="w-12 h-12 rounded-[16px] border-2 border-emerald-500 bg-emerald-100"
+                                   style={{ borderRadius: '42% 58% 62% 38% / 45% 45% 55% 55%' }} />
+                            )}
+                            {frame.id === 'dashed' && (
+                              <div className="w-12 h-12 rounded-xl border-2 border-dashed border-rose-500 bg-pink-100" />
+                            )}
+                            {frame.id === 'arch' && (
+                              <div className="w-10 h-14 rounded-t-full border-2 border-indigo-500 bg-indigo-100" />
+                            )}
+                          </div>
+                          <div>
+                            <span className="text-xs font-bold text-stone-800 block">{frame.name}</span>
+                            <span className="text-[10px] text-stone-400">{frame.desc}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB: 3D CHRISTMAS TREE SETTINGS */}
+          {activeTab === 'tree_settings' && (
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-sm font-bold text-stone-800 flex items-center gap-2">
+                  <TreePine className="w-4 h-4 text-emerald-600" />
+                  <span>ปรับแต่งต้นคริสต์มาส 3D & กล่องของขวัญ</span>
+                </h3>
+                <p className="text-xs text-stone-500 mt-0.5">
+                  ปรับหัวข้อ คำอวยพร และรูปภาพในกล่องของขวัญใต้ต้นไม้
+                </p>
+              </div>
+
+              <div className="space-y-3 pt-2">
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
+                    หัวข้อบนต้นไม้ (Title)
+                  </label>
+                  <input
+                    type="text"
+                    value={config.treeTitle || 'Merry Christmas'}
+                    onChange={(e) => onChangeConfig({ ...config, treeTitle: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs text-stone-800 focus:outline-none focus:border-rose-500"
+                    placeholder="Merry Christmas"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
+                    คำบรรยายย่อย (Subtitle)
+                  </label>
+                  <input
+                    type="text"
+                    value={config.treeSubtitle || 'A SPECIAL WISH FOR YOU'}
+                    onChange={(e) => onChangeConfig({ ...config, treeSubtitle: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs text-stone-800 focus:outline-none focus:border-rose-500"
+                    placeholder="A SPECIAL WISH FOR YOU"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
+                    ข้อความคำอวยพรในกล่องของขวัญ (Wish Message)
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={config.treeWish || 'ขอให้เทศกาลนี้เต็มไปด้วยความสุข ความอบอุ่น และรอยยิ้ม ขอให้ปีที่กำลังจะมาถึงใจดีกับเธอในทุกๆ วันนะ 🎄✨'}
+                    onChange={(e) => onChangeConfig({ ...config, treeWish: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs text-stone-800 focus:outline-none focus:border-rose-500"
+                  />
+                </div>
               </div>
             </div>
           )}
 
-          {/* TAB 7: PHOTOS & STICKERS */}
+          {/* TAB: 3D ARROW BIRTHDAY SETTINGS */}
+          {activeTab === 'arrow_settings' && (
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-sm font-bold text-stone-800 flex items-center gap-2">
+                  <Crosshair className="w-4 h-4 text-pink-500" />
+                  <span>ปรับแต่งยิงธนู & เค้กวันเกิด 3D</span>
+                </h3>
+                <p className="text-xs text-stone-500 mt-0.5">
+                  ปรับข้อความอวยพรก่อนและหลังยิงธนูเปิดเค้กวันเกิด
+                </p>
+              </div>
+
+              <div className="space-y-3 pt-2">
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
+                    หัวข้อวันเกิด (Birthday Title)
+                  </label>
+                  <input
+                    type="text"
+                    value={config.arrowTitle || 'Happy Birthday'}
+                    onChange={(e) => onChangeConfig({ ...config, arrowTitle: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs text-stone-800 focus:outline-none focus:border-rose-500"
+                    placeholder="Happy Birthday"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
+                    คำบรรยายย่อย (Subtitle)
+                  </label>
+                  <input
+                    type="text"
+                    value={config.arrowSubtitle || 'WISHING YOU ENDLESS HAPPINESS ✨'}
+                    onChange={(e) => onChangeConfig({ ...config, arrowSubtitle: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs text-stone-800 focus:outline-none focus:border-rose-500"
+                    placeholder="WISHING YOU ENDLESS HAPPINESS ✨"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
+                    ข้อความการ์ดอวยพรวันเกิด (Wish Letter)
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={config.arrowWish || 'สุขสันต์วันเกิดนะ! 🎂✨ ขอให้ปีนี้เป็นปีที่ใจดีกับเธอมากๆ เต็มไปด้วยรอยยิ้ม เสียงหัวเราะ และความสุขในทุกๆ วัน เติบโตอย่างสดใสที่สุดเลยนะ 💖'}
+                    onChange={(e) => onChangeConfig({ ...config, arrowWish: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs text-stone-800 focus:outline-none focus:border-rose-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
+                    ลงชื่อผู้ส่ง (Sign Off)
+                  </label>
+                  <input
+                    type="text"
+                    value={config.arrowSign || '— จากคนที่หวังดีเสมอ ✨'}
+                    onChange={(e) => onChangeConfig({ ...config, arrowSign: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs text-stone-800 focus:outline-none focus:border-rose-500"
+                    placeholder="— จากคนที่หวังดีเสมอ ✨"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB: PHOTOS & AUTO COMPRESSION */}
           {activeTab === 'photos' && (
             <div className="space-y-5">
               <div>
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-bold text-stone-800 flex items-center gap-2">
                     <ImageIcon className="w-4 h-4 text-rose-500" />
-                    <span>รูปภาพในกรอบ Polaroid & สติกเกอร์</span>
+                    <span>รูปภาพความทรงจำ & สติกเกอร์</span>
                   </h3>
                   <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">
-                    จำกัดรูป & บีบอัดอัตโนมัติ ≤ 1000KB
+                    บีบอัดอัตโนมัติ ≤ 1000KB
                   </span>
                 </div>
                 <p className="text-xs text-stone-500 mt-0.5">
-                  อัปโหลดรูปภาพความทรงจำ โดยระบบจะบีบอัดให้อัตโนมัติไม่เกิน 1000KB ตามข้อกำหนด
+                  อัปโหลดรูปภาพของคุณเอง หากยังไม่ได้อัปโหลด ระบบจะแสดงรูปภาพแบบว่าง (Placeholder)
                 </p>
               </div>
 
-              {/* Upload Action */}
+              {/* Upload Dropzone */}
               <div className="p-4 rounded-2xl border-2 border-dashed border-stone-300 hover:border-rose-400 bg-stone-50/50 text-center transition">
                 <input
                   type="file"
@@ -564,7 +796,7 @@ export default function CreatorDashboard({
                     {compressing ? 'กำลังบีบอัดรูปภาพ...' : 'คลิกเพื่ออัปโหลดรูปภาพใหม่'}
                   </span>
                   <span className="text-[10px] text-stone-400 mt-0.5">
-                    รองรับ JPG, PNG (สูงสุด 5MB บีบอัดลงเหลือ ≤ 1000KB)
+                    ขนาดไม่เกิน 5MB (ระบบจะบีบอัดลงมาไม่เกิน 1000KB โดยอัตโนมัติ)
                   </span>
                 </label>
                 {compressMsg && (
@@ -574,43 +806,49 @@ export default function CreatorDashboard({
 
               {/* Photo list */}
               <div className="space-y-3">
-                {(config.photos || []).map((photo, idx) => (
-                  <div
-                    key={idx}
-                    className="p-3 rounded-2xl bg-stone-50 border border-stone-200 flex items-center gap-3"
-                  >
-                    <img
-                      src={photo.url}
-                      alt="Thumbnail"
-                      className="w-14 h-14 rounded-xl object-cover shrink-0 border border-stone-300"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <label className="text-[10px] font-bold text-stone-500 block mb-0.5">
-                        คำบรรยายใต้ภาพรูปที่ {idx + 1}
-                      </label>
-                      <input
-                        type="text"
-                        value={photo.caption || ''}
-                        onChange={(e) => handleUpdatePhotoCaption(idx, e.target.value)}
-                        className="w-full px-3 py-1.5 rounded-xl border border-stone-200 text-xs text-stone-800 bg-white"
-                        placeholder="คำบรรยายความทรงจำ..."
-                      />
-                    </div>
-                    <button
-                      onClick={() => handleRemovePhoto(idx)}
-                      className="p-2 text-rose-500 hover:bg-rose-50 rounded-xl transition shrink-0"
-                      title="ลบรูปภาพนี้"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                {(!config.photos || config.photos.length === 0) ? (
+                  <div className="p-4 rounded-2xl bg-stone-50 text-center text-xs text-stone-400">
+                    ยังไม่มีรูปภาพที่อัปโหลด (ระบบจะแสดงภาพ Placeholder ที่สะอาดตาแทน)
                   </div>
-                ))}
+                ) : (
+                  config.photos.map((photo, idx) => (
+                    <div
+                      key={idx}
+                      className="p-3 rounded-2xl bg-stone-50 border border-stone-200 flex items-center gap-3"
+                    >
+                      <img
+                        src={photo.url}
+                        alt="Thumbnail"
+                        className="w-14 h-14 rounded-xl object-cover shrink-0 border border-stone-300"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <label className="text-[10px] font-bold text-stone-500 block mb-0.5">
+                          คำบรรยายใต้ภาพรูปที่ {idx + 1}
+                        </label>
+                        <input
+                          type="text"
+                          value={photo.caption || ''}
+                          onChange={(e) => handleUpdatePhotoCaption(idx, e.target.value)}
+                          className="w-full px-3 py-1.5 rounded-xl border border-stone-200 text-xs text-stone-800 bg-white"
+                          placeholder="คำบรรยายความทรงจำ..."
+                        />
+                      </div>
+                      <button
+                        onClick={() => handleRemovePhoto(idx)}
+                        className="p-2 text-rose-500 hover:bg-rose-50 rounded-xl transition shrink-0"
+                        title="ลบรูปภาพนี้"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))
+                )}
               </div>
 
               {/* Sticker Selector */}
               <div className="pt-2 border-t border-stone-200">
                 <label className="block text-xs font-bold text-stone-700 mb-2">
-                  เลือกสติกเกอร์แปะบนกรอบ Polaroid
+                  เลือกสติกเกอร์ประดับ
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {AVAILABLE_STICKERS.map((stk) => {
@@ -634,66 +872,73 @@ export default function CreatorDashboard({
             </div>
           )}
 
-          {/* TAB 8: COUPONS & VOICE NOTE */}
-          {activeTab === 'coupons' && (
+          {/* TAB: ENTRY & PASSCODE */}
+          {activeTab === 'entry' && (
             <div className="space-y-4">
-              <div>
-                <h3 className="text-sm font-bold text-stone-800 flex items-center gap-2">
-                  <Ticket className="w-4 h-4 text-rose-500" />
-                  <span>คูปองสิทธิพิเศษ & คำพูดในโน้ตเสียง</span>
-                </h3>
-                <p className="text-xs text-stone-500 mt-0.5">
-                  คูปองที่ผู้รับสามารถกดใช้สิทธิ์ได้จริง พร้อมแอนิเมชันปั๊มตราประทับ
-                </p>
-              </div>
-
-              {/* Voice Caption */}
-              <div className="pt-2">
-                <label className="block text-xs font-bold text-stone-700 mb-1">
-                  คำพูดในโน้ตเสียง (Voice Note Quote)
-                </label>
-                <input
-                  type="text"
-                  value={config.voiceCaption || ''}
-                  onChange={(e) => onChangeConfig({ ...config, voiceCaption: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 text-xs text-stone-800 focus:outline-none focus:border-rose-500"
-                  placeholder='เช่น "ขอบคุณที่เข้ามาเป็นความสุขของเรานะ ♡"'
-                />
-              </div>
-
-              {/* Coupons list */}
-              <div className="space-y-2.5 pt-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-stone-700">
-                    รายการคูปองสิทธิพิเศษ
+              <h3 className="text-sm font-bold text-stone-800 flex items-center gap-2">
+                <Mail className="w-4 h-4 text-rose-500" />
+                <span>หน้าแรก & ข้อความซองจดหมาย</span>
+              </h3>
+              <div className="space-y-3 pt-1">
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
+                    หัวข้อหน้าแรก
                   </label>
-                  <button
-                    onClick={handleAddCoupon}
-                    className="text-xs font-bold text-rose-600 hover:text-rose-700 flex items-center gap-1"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>เพิ่มคูปอง</span>
-                  </button>
+                  <input
+                    type="text"
+                    value={config.introTitle || ''}
+                    onChange={(e) => onChangeConfig({ ...config, introTitle: e.target.value })}
+                    className="w-full px-3.5 py-2 rounded-xl border border-stone-200 text-xs"
+                  />
                 </div>
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
+                    ข้อความในซองจดหมาย
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={config.letterText || ''}
+                    onChange={(e) => onChangeConfig({ ...config, letterText: e.target.value })}
+                    className="w-full px-3.5 py-2 rounded-xl border border-stone-200 text-xs"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
-                {(config.coupons || []).map((cpn, idx) => (
-                  <div key={idx} className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={cpn || ''}
-                      onChange={(e) => handleUpdateCoupon(idx, e.target.value)}
-                      className="flex-1 px-3.5 py-2 rounded-xl border border-stone-200 text-xs text-stone-800"
-                      placeholder="ชื่อคูปอง..."
-                    />
-                    <button
-                      onClick={() => handleRemoveCoupon(idx)}
-                      className="p-2 text-stone-400 hover:text-rose-500 transition"
-                      title="ลบคูปองนี้"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
+          {activeTab === 'passcode' && (
+            <div className="space-y-4">
+              <h3 className="text-sm font-bold text-stone-800 flex items-center gap-2">
+                <Lock className="w-4 h-4 text-rose-500" />
+                <span>รหัสผ่าน 6 หลัก & คำใบ้</span>
+              </h3>
+              <div className="space-y-3 pt-1">
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
+                    รหัสผ่าน (6 หลัก)
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={6}
+                    value={config.passcode || '231069'}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+                      onChangeConfig({ ...config, passcode: val });
+                    }}
+                    className="w-full max-w-xs px-3.5 py-2 rounded-xl border border-stone-200 text-sm font-mono tracking-widest"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 mb-1">
+                    คำใบ้รหัสผ่าน
+                  </label>
+                  <input
+                    type="text"
+                    value={config.passcodeHint || ''}
+                    onChange={(e) => onChangeConfig({ ...config, passcodeHint: e.target.value })}
+                    className="w-full px-3.5 py-2 rounded-xl border border-stone-200 text-xs"
+                  />
+                </div>
               </div>
             </div>
           )}
