@@ -910,15 +910,14 @@
     .cd-cell b{display:block;font-size:1.25rem;font-weight:500;color:#fff8e2;font-variant-numeric:tabular-nums;line-height:1.15;text-shadow:0 0 10px rgba(255,215,120,.55)}
     .cd-cell span{font-size:.62rem;color:rgba(255,255,255,.6)}
     .cd-sub{margin-top:6px;font-size:.68rem;color:rgba(255,255,255,.62)}
-    .countdown.done .cd-row{display:none}
-    .countdown.done .cd-title{font-size:.95rem;margin:2px 0}
+    .countdown.done { display: none !important; }
     @media (max-width:1100px){
-      .countdown{top:auto;bottom:122px;right:auto;left:50%;transform:translate(-50%,10px);padding:6px 10px}
+      .countdown{top:70px;bottom:auto;right:auto;left:50%;transform:translate(-50%,0);padding:6px 10px;max-width:92vw}
       .countdown.show{transform:translate(-50%,0)}
       .cd-title,.cd-sub{display:none}
-      .cd-cell{min-width:40px}
-      .cd-cell b{font-size:1.05rem}
-      .countdown.done .cd-title{display:block}
+      .cd-cell{min-width:38px}
+      .cd-cell b{font-size:1.0rem}
+      .countdown.done{display:none !important}
     }
     /* ===== Lock toast ===== */
     .lock-toast{position:fixed;left:50%;bottom:112px;transform:translate(-50%,16px) scale(.96);z-index:20;max-width:min(440px,92vw);padding:14px 18px;border-radius:20px;text-align:center;background:linear-gradient(160deg,rgba(24,30,46,.94),rgba(10,14,24,.96));border:1px solid rgba(255,224,150,.4);box-shadow:0 18px 50px rgba(0,0,0,.6),0 0 30px rgba(255,200,95,.16);opacity:0;pointer-events:none;transition:opacity .4s ease,transform .5s cubic-bezier(.22,1,.36,1)}
@@ -2478,11 +2477,12 @@
 
     // ================= 3D SCENE & GIFT BOXES =================
     function resize() {
-      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const isMobile = window.innerWidth < 768;
+      dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1.35 : 2);
       width = window.innerWidth;
       height = window.innerHeight;
-      canvas.width = width * dpr;
-      canvas.height = height * dpr;
+      canvas.width = Math.round(width * dpr);
+      canvas.height = Math.round(height * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
       treeHeight = Math.min(height * 0.68, 630);
@@ -2566,8 +2566,9 @@
         });
       }
 
-      // 2. อนุภาคต้นคริสต์มาส
-      const count = 1700;
+      // 2. อนุภาคต้นคริสต์มาส (ปรับอัตราอนุภาคตามขนาดหน้าจอเพื่อความลื่นไหลบนมือถือ)
+      const isMobile = width < 768;
+      const count = isMobile ? 950 : 1700;
       for (let i = 0; i < count; i++) {
         const h = 1 - Math.sqrt(Math.random());
         const y = (treeHeight / 2) - h * treeHeight;
@@ -2601,7 +2602,7 @@
       }
 
       // 3. สายไฟเกลียว
-      const ribbonCount = 500;
+      const ribbonCount = isMobile ? 320 : 500;
       for (let i = 0; i < ribbonCount; i++) {
         const h = i / ribbonCount;
         const y = (treeHeight / 2) - h * treeHeight;
@@ -2625,7 +2626,8 @@
       }
 
       // 4. วงแหวนแสงที่ฐาน
-      for (let i = 0; i < 320; i++) {
+      const groundCount = isMobile ? 180 : 320;
+      for (let i = 0; i < groundCount; i++) {
         const angle = Math.random() * Math.PI * 2;
         const distNorm = Math.pow(Math.random(), 0.7);
         const r = maxRadius * (0.25 + distNorm * 1.38);
@@ -3942,7 +3944,11 @@
       cdS.textContent = pad2(sec);
 
       countdownEl.classList.toggle('done', isUnlockedAll);
-      countdownEl.style.display = showCountdownCard ? 'block' : 'none';
+      if (isUnlockedAll || window.self !== window.top) {
+        countdownEl.style.display = 'none';
+      } else {
+        countdownEl.style.display = showCountdownCard ? 'block' : 'none';
+      }
 
       cdTitle.textContent = isUnlockedAll
         ? '🎅 ปลดล็อกของขวัญแล้ว! Merry Christmas!'

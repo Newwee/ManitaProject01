@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Music, X, Volume2, Move } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Music, X } from 'lucide-react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { VolumeHighIcon, VolumeLowIcon } from '@hugeicons/core-free-icons';
 import ElasticSlider from '../UI/ElasticSlider';
@@ -27,39 +27,55 @@ export default function ChristmasMusicPlayer() {
   const [duration, setDuration] = useState(265); // Default Last Christmas duration ~4:25
   const audioRef = useRef(null);
 
-  // Position & Draggable state
+  // Position & Draggable state (null = responsive CSS default position)
   const [position, setPosition] = useState(null);
   const isDraggingRef = useRef(false);
-  const dragStartRef = useRef({ x: 0, y: 0, posX: 0, posY: 0 });
+  const dragRef = useRef({
+    startX: 0,
+    startY: 0,
+    initialLeft: 0,
+    initialTop: 0,
+    currentDx: 0,
+    currentDy: 0,
+    rafId: null
+  });
   const hasMovedRef = useRef(false);
   const cardRef = useRef(null);
 
-  // Set initial default position below countdown timer (top: 130px on desktop, 85px on mobile)
+  // Keep player inside screen bounds on resize
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const isMobile = window.innerWidth < 640;
-      const initialWidth = isMobile ? 330 : 370;
-      const defaultX = Math.max(16, window.innerWidth - initialWidth - (isMobile ? 12 : 24));
-      const defaultY = isMobile ? 85 : 130;
-      setPosition({ x: defaultX, y: defaultY });
-    }
+    const handleResize = () => {
+      setPosition(prev => {
+        if (!prev || !cardRef.current) return prev;
+        const rect = cardRef.current.getBoundingClientRect();
+        const maxX = Math.max(8, window.innerWidth - rect.width - 8);
+        const maxY = Math.max(8, window.innerHeight - rect.height - 8);
+        return {
+          x: Math.max(8, Math.min(maxX, prev.x)),
+          y: Math.max(8, Math.min(maxY, prev.y))
+        };
+      });
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const handlePointerDown = (e) => {
     if (e.button !== undefined && e.button !== 0) return;
+    if (!cardRef.current) return;
+
     isDraggingRef.current = true;
     hasMovedRef.current = false;
 
-    const currentPos = position || {
-      x: window.innerWidth - 380,
-      y: 130
-    };
-
-    dragStartRef.current = {
-      x: e.clientX,
-      y: e.clientY,
-      posX: currentPos.x,
-      posY: currentPos.y
+    const rect = cardRef.current.getBoundingClientRect();
+    dragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      initialLeft: rect.left,
+      initialTop: rect.top,
+      currentDx: 0,
+      currentDy: 0,
+      rafId: null
     };
 
     try {
@@ -69,32 +85,58 @@ export default function ChristmasMusicPlayer() {
 
   const handlePointerMove = (e) => {
     if (!isDraggingRef.current) return;
-    const dx = e.clientX - dragStartRef.current.x;
-    const dy = e.clientY - dragStartRef.current.y;
+    const dx = e.clientX - dragRef.current.startX;
+    const dy = e.clientY - dragRef.current.startY;
 
     if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
       hasMovedRef.current = true;
     }
 
-    const card = cardRef.current;
-    const width = card ? card.offsetWidth : (isOpen ? 360 : 200);
-    const height = card ? card.offsetHeight : (isOpen ? 220 : 50);
+    dragRef.current.currentDx = dx;
+    dragRef.current.currentDy = dy;
 
-    const maxX = Math.max(10, window.innerWidth - width - 10);
-    const maxY = Math.max(10, window.innerHeight - height - 10);
-
-    const newX = Math.min(maxX, Math.max(10, dragStartRef.current.posX + dx));
-    const newY = Math.min(maxY, Math.max(10, dragStartRef.current.posY + dy));
-
-    setPosition({ x: newX, y: newY });
+    if (!dragRef.current.rafId) {
+      dragRef.current.rafId = requestAnimationFrame(() => {
+        if (cardRef.current && isDraggingRef.current) {
+          cardRef.current.style.transform = `translate3d(${dragRef.current.currentDx}px, ${dragRef.current.currentDy}px, 0)`;
+        }
+        dragRef.current.rafId = null;
+      });
+    }
   };
 
   const handlePointerUp = (e) => {
     if (!isDraggingRef.current) return;
     isDraggingRef.current = false;
+
+    if (dragRef.current.rafId) {
+      cancelAnimationFrame(dragRef.current.rafId);
+      dragRef.current.rafId = null;
+    }
+
     try {
       e.currentTarget.releasePointerCapture(e.pointerId);
     } catch (err) {}
+
+    if (cardRef.current) {
+      cardRef.current.style.transform = '';
+      if (hasMovedRef.current) {
+        const card = cardRef.current;
+        const width = card.offsetWidth;
+        const height = card.offsetHeight;
+
+        const rawX = dragRef.current.initialLeft + dragRef.current.currentDx;
+        const rawY = dragRef.current.initialTop + dragRef.current.currentDy;
+
+        const maxX = Math.max(8, window.innerWidth - width - 8);
+        const maxY = Math.max(8, window.innerHeight - height - 8);
+
+        const finalX = Math.min(maxX, Math.max(8, rawX));
+        const finalY = Math.min(maxY, Math.max(8, rawY));
+
+        setPosition({ x: finalX, y: finalY });
+      }
+    }
   };
 
   // Initialize and auto-play Last Christmas when animation begins
@@ -201,7 +243,9 @@ export default function ChristmasMusicPlayer() {
       <div
         ref={cardRef}
         style={position ? { left: `${position.x}px`, top: `${position.y}px` } : undefined}
-        className={`fixed z-30 select-none touch-none ${!position ? 'top-28 sm:top-32 right-3 sm:right-6' : ''} animate-in fade-in zoom-in-95 duration-200`}
+        className={`fixed z-40 select-none touch-none ${
+          !position ? 'top-16 sm:top-28 right-3 sm:right-6' : ''
+        } animate-in fade-in zoom-in-95 duration-200`}
       >
         <div
           onPointerDown={handlePointerDown}
@@ -212,7 +256,7 @@ export default function ChristmasMusicPlayer() {
               setIsOpen(true);
             }
           }}
-          className="flex items-center gap-2.5 px-3.5 py-2 rounded-2xl bg-black/85 hover:bg-black/95 backdrop-blur-md border border-white/20 text-white shadow-2xl transition cursor-grab active:cursor-grabbing group"
+          className="flex items-center gap-2.5 px-3.5 py-2 rounded-2xl bg-[#14121cf0] hover:bg-black/95 backdrop-blur-xl border border-white/20 text-white shadow-2xl transition cursor-grab active:cursor-grabbing group will-change-transform"
           title="คลิกเพื่อเปิด หรือลากเพื่อเปลี่ยนตำแหน่ง"
         >
           <div className="w-6 h-6 rounded-full bg-rose-500/80 flex items-center justify-center text-xs pointer-events-none">
@@ -252,15 +296,17 @@ export default function ChristmasMusicPlayer() {
     <div
       ref={cardRef}
       style={position ? { left: `${position.x}px`, top: `${position.y}px` } : undefined}
-      className={`fixed z-30 select-none ${!position ? 'top-28 sm:top-32 right-3 sm:right-6' : ''} animate-in fade-in slide-in-from-top-3 duration-300`}
+      className={`fixed z-40 select-none ${
+        !position ? 'top-16 sm:top-28 right-3 sm:right-6' : ''
+      } animate-in fade-in slide-in-from-top-3 duration-300 will-change-transform`}
     >
-      <div className="w-[330px] sm:w-[370px] bg-[#14121cf0] backdrop-blur-xl text-white rounded-3xl p-4 sm:p-5 shadow-2xl border border-white/15 relative">
+      <div className="w-[calc(100vw-24px)] max-w-[340px] sm:max-w-[370px] bg-[#14121cf0] backdrop-blur-xl text-white rounded-3xl p-3.5 sm:p-5 shadow-2xl border border-white/15 relative">
         {/* Top Drag Handle Bar */}
         <div
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
-          className="w-full flex items-center justify-center cursor-grab active:cursor-grabbing pb-2.5 pt-0.5 select-none touch-none group"
+          className="w-full flex items-center justify-center cursor-grab active:cursor-grabbing pb-2 pt-0 select-none touch-none group"
           title="คลิกค้างแล้วลากเพื่อย้ายตำแหน่งเครื่องเล่นเพลง"
         >
           <div className="w-12 h-1 rounded-full bg-white/20 group-hover:bg-white/40 transition-colors" />
@@ -280,13 +326,13 @@ export default function ChristmasMusicPlayer() {
           <X className="w-4 h-4" />
         </button>
 
-        <div className="flex gap-3.5 items-center">
+        <div className="flex gap-3 items-center">
           {/* Cover Art (also acts as drag area) */}
           <div
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
-            className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden shrink-0 shadow-lg border border-white/15 relative bg-stone-900 group cursor-grab active:cursor-grabbing touch-none"
+            className="w-16 h-16 sm:w-22 sm:h-22 rounded-2xl overflow-hidden shrink-0 shadow-lg border border-white/15 relative bg-stone-900 group cursor-grab active:cursor-grabbing touch-none"
           >
             <img
               src="/assets/Background.jpg"
@@ -303,21 +349,21 @@ export default function ChristmasMusicPlayer() {
           </div>
 
           {/* Track Info & Progress */}
-          <div className="flex-1 min-w-0 pr-4">
+          <div className="flex-1 min-w-0 pr-3 sm:pr-4">
             <div
               onPointerDown={handlePointerDown}
               onPointerMove={handlePointerMove}
               onPointerUp={handlePointerUp}
               className="cursor-grab active:cursor-grabbing touch-none"
             >
-              <div className="flex items-center gap-1 text-[10px] font-bold text-rose-400 uppercase tracking-wider mb-0.5 pointer-events-none">
+              <div className="flex items-center gap-1 text-[9px] sm:text-[10px] font-bold text-rose-400 uppercase tracking-wider mb-0.5 pointer-events-none">
                 <Music className="w-3 h-3 animate-pulse" />
                 <span>🎄 Christmas Soundtrack</span>
               </div>
-              <h4 className="font-theme-display text-base font-bold text-white truncate leading-snug pointer-events-none">
+              <h4 className="font-theme-display text-sm sm:text-base font-bold text-white truncate leading-snug pointer-events-none">
                 Last Christmas
               </h4>
-              <p className="text-xs text-white/60 truncate mb-2 pointer-events-none">
+              <p className="text-[11px] sm:text-xs text-white/60 truncate mb-2 pointer-events-none">
                 Wham! • Festive Tree Edition
               </p>
             </div>
@@ -346,38 +392,38 @@ export default function ChristmasMusicPlayer() {
         </div>
 
         {/* Transport controls & Elastic Slider */}
-        <div className="mt-3 pt-3 border-t border-white/10 flex items-center justify-between gap-3">
+        <div className="mt-2.5 pt-2.5 border-t border-white/10 flex items-center justify-between gap-2 sm:gap-3">
           {/* Transport buttons */}
           <div
             onPointerDown={(e) => e.stopPropagation()}
-            className="flex items-center gap-2 shrink-0"
+            className="flex items-center gap-1.5 sm:gap-2 shrink-0"
           >
             <button
               onClick={() => handleSeek(0)}
-              className="p-1.5 rounded-full text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition"
+              className="p-1 sm:p-1.5 rounded-full text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition"
               title="เริ่มเล่นเพลงใหม่ตั้งแต่ต้น"
             >
-              <SkipBack className="w-4 h-4" />
+              <SkipBack className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
 
             <button
               onClick={handleTogglePlay}
-              className="w-10 h-10 rounded-full bg-rose-500 hover:bg-rose-600 text-white flex items-center justify-center shadow-lg shadow-rose-500/30 active:scale-90 transition"
+              className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-rose-500 hover:bg-rose-600 text-white flex items-center justify-center shadow-lg shadow-rose-500/30 active:scale-90 transition"
               title={isPlaying ? 'หยุดชั่วคราว' : 'เล่นเพลง Last Christmas'}
             >
               {isPlaying ? (
-                <Pause className="w-5 h-5 fill-current" />
+                <Pause className="w-4 h-4 sm:w-5 sm:h-5 fill-current" />
               ) : (
-                <Play className="w-5 h-5 fill-current ml-0.5" />
+                <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-current ml-0.5" />
               )}
             </button>
 
             <button
               onClick={() => handleSeek(Math.min(duration, currentTime + 15))}
-              className="p-1.5 rounded-full text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition"
+              className="p-1 sm:p-1.5 rounded-full text-white/70 hover:text-white hover:bg-white/10 active:scale-95 transition"
               title="ข้ามไปข้างหน้า 15 วินาที"
             >
-              <SkipForward className="w-4 h-4" />
+              <SkipForward className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
           </div>
 
@@ -388,18 +434,18 @@ export default function ChristmasMusicPlayer() {
           >
             <ElasticSlider
               defaultValue={50}
-              leftIcon={<HugeiconsIcon icon={VolumeLowIcon} size={20} />}
-              rightIcon={<HugeiconsIcon icon={VolumeHighIcon} size={20} />}
+              leftIcon={<HugeiconsIcon icon={VolumeLowIcon} size={18} />}
+              rightIcon={<HugeiconsIcon icon={VolumeHighIcon} size={18} />}
               onChange={handleVolumeChange}
-              maxStretch={50}
+              maxStretch={35}
               bounce={0.5}
               growOnHover
               wheel={false}
               orientation="horizontal"
               iconPlacement="outside"
               valuePosition="top"
-              thickness={6}
-              activeThickness={12}
+              thickness={5}
+              activeThickness={10}
               radius={40}
               restOpacity={0.7}
               fillFrom={0}
@@ -410,7 +456,7 @@ export default function ChristmasMusicPlayer() {
               jumpToClick
               trackColor="rgba(255, 255, 255, 0.2)"
               rangeColor="#f43f5e"
-              className="!w-32 sm:!w-36 text-white"
+              className="!w-28 sm:!w-36 text-white"
             />
           </div>
         </div>

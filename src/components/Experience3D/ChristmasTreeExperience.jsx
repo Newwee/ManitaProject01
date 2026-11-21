@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from 'react';
 import ChristmasMusicPlayer from './ChristmasMusicPlayer';
+import ChristmasCountdownCard from './ChristmasCountdownCard';
 
 export default function ChristmasTreeExperience({
   title = 'Merry Christmas',
@@ -85,11 +86,20 @@ export default function ChristmasTreeExperience({
     <div className="w-full h-full relative bg-black overflow-hidden flex-1">
       <iframe
         ref={iframeRef}
-        src={`/experiences/ChristmasTree.html?view=${viewMode}&theme=${treeTheme}&v=2.4`}
+        src={`/experiences/ChristmasTree.html?view=${viewMode}&theme=${treeTheme}&v=2.5`}
         className="w-full h-full border-0 absolute inset-0 block"
         title="MANITA 3D Christmas Tree Experience"
         allow="autoplay; fullscreen"
       />
+
+      {/* React Bits Odometer Countdown Card */}
+      {showCountdown && lockMode !== 'immediate' && (
+        <ChristmasCountdownCard
+          unlockDate={unlockDate}
+          countdownTitle={countdownTitle}
+          lockMode={lockMode}
+        />
+      )}
 
       {/* Modern Christmas Soundtrack Player with ElasticSlider */}
       <ChristmasMusicPlayer />

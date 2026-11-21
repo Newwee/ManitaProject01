@@ -1024,38 +1024,53 @@ export default function CreatorDashboard({
                     </div>
 
                     {/* Show Countdown Card Toggle */}
-                    <div 
-                      onClick={() => onChangeConfig({ ...config, treeShowCountdown: config.treeShowCountdown !== undefined ? !config.treeShowCountdown : false })}
-                      className="flex items-center justify-between p-3 rounded-2xl bg-stone-50 dark:bg-stone-800/60 border border-stone-200 dark:border-stone-700 cursor-pointer hover:border-rose-300 transition mb-3"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <span className="text-base">⏳</span>
-                        <div>
-                          <div className="text-xs font-bold text-stone-800 dark:text-stone-200">
-                            แสดงการ์ดนับถอยหลัง (Countdown Card)
-                          </div>
-                          <div className="text-[10px] text-stone-500 dark:text-stone-400">
-                            ลอยแสดงเวลานับถอยหลังหรือข้อความฉลองบนหน้าจอ
+                    <div className="p-3 rounded-2xl bg-stone-50 dark:bg-stone-800/60 border border-stone-200 dark:border-stone-700 transition mb-3">
+                      <div 
+                        onClick={() => onChangeConfig({ ...config, treeShowCountdown: config.treeShowCountdown !== undefined ? !config.treeShowCountdown : false })}
+                        className="flex items-center justify-between cursor-pointer hover:opacity-90"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-base">⏳</span>
+                          <div>
+                            <div className="text-xs font-bold text-stone-800 dark:text-stone-200">
+                              แสดงการ์ดนับถอยหลัง (Countdown Card)
+                            </div>
+                            <div className="text-[10px] text-stone-500 dark:text-stone-400">
+                              ลอยแสดงเวลานับถอยหลัง Odometer (PC อยู่จุดโล่ง / มือถือปรับขนาดกะทัดรัด)
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div
-                        className={`w-11 h-6 rounded-full transition-colors relative flex items-center p-0.5 shrink-0 ${
-                          (config.treeShowCountdown !== undefined ? config.treeShowCountdown : true)
-                            ? 'bg-rose-500'
-                            : 'bg-stone-300 dark:bg-stone-700'
-                        }`}
-                      >
                         <div
-                          className={`w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-200 flex items-center justify-center text-[10px] ${
+                          className={`w-11 h-6 rounded-full transition-colors relative flex items-center p-0.5 shrink-0 ${
                             (config.treeShowCountdown !== undefined ? config.treeShowCountdown : true)
-                              ? 'translate-x-5 text-rose-500 font-bold'
-                              : 'translate-x-0'
+                              ? 'bg-rose-500'
+                              : 'bg-stone-300 dark:bg-stone-700'
                           }`}
                         >
-                          {(config.treeShowCountdown !== undefined ? config.treeShowCountdown : true) && '✓'}
+                          <div
+                            className={`w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-200 flex items-center justify-center text-[10px] ${
+                              (config.treeShowCountdown !== undefined ? config.treeShowCountdown : true)
+                                ? 'translate-x-5 text-rose-500 font-bold'
+                                : 'translate-x-0'
+                            }`}
+                          >
+                            {(config.treeShowCountdown !== undefined ? config.treeShowCountdown : true) && '✓'}
+                          </div>
                         </div>
                       </div>
+
+                      {/* Optional custom countdown title if enabled */}
+                      {(config.treeShowCountdown !== undefined ? config.treeShowCountdown : true) && (
+                        <div className="mt-2.5 pt-2 border-t border-stone-200/60 dark:border-stone-700/60">
+                          <input
+                            type="text"
+                            value={config.treeCountdownTitle || ''}
+                            onChange={(e) => onChangeConfig({ ...config, treeCountdownTitle: e.target.value })}
+                            placeholder="หัวข้อการ์ด (เว้นว่างไว้จะใช้ค่าเริ่มต้น)"
+                            className="w-full px-3 py-1.5 rounded-xl border border-stone-200 dark:border-stone-700 text-xs text-stone-800 dark:text-stone-100 bg-white dark:bg-stone-900 focus:outline-none focus:border-rose-500 placeholder:text-stone-400"
+                          />
+                        </div>
+                      )}
                     </div>
 
                     {/* 3D Decoration Switches */}
