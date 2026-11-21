@@ -72,14 +72,28 @@ export default function Navbar({
             </button>
           </div>
         ) : (
-          <div className="flex items-center gap-1 text-xs font-medium text-stone-600 dark:text-stone-300 bg-stone-100 dark:bg-stone-800 px-3 py-1 rounded-full border border-stone-200 dark:border-stone-700">
+          <div className="hidden sm:flex items-center gap-1 text-xs font-medium text-stone-600 dark:text-stone-300 bg-stone-100 dark:bg-stone-800 px-3 py-1 rounded-full border border-stone-200 dark:border-stone-700">
             <span>🎁</span>
             <span>ของขวัญสำหรับคนพิเศษ</span>
           </div>
         )}
 
-        {/* Action Buttons: Studio Theme, Sound & Share */}
+        {/* Action Buttons: Studio Theme, Sound & Share / Create Card CTA */}
         <div className="flex items-center gap-1.5">
+          {/* Create Your Own Card CTA Button for Recipients */}
+          {isRecipientOnly && (
+            <button
+              onClick={() => {
+                // Clear query params and return to main studio
+                window.location.href = window.location.origin + window.location.pathname;
+              }}
+              title="คลิกเพื่อสร้างการ์ดของขวัญและความทรงจำด้วยตัวเองที่ MANITA Studio"
+              className="px-3.5 sm:px-4 py-1.5 rounded-full bg-gradient-to-r from-rose-500 via-pink-500 to-amber-400 hover:from-rose-600 hover:to-pink-600 text-white text-xs sm:text-xs font-black shadow-md shadow-rose-500/30 flex items-center gap-1.5 transition active:scale-95 whitespace-nowrap shrink-0 group animate-pulse hover:animate-none"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-200 group-hover:rotate-12 transition-transform" />
+              <span>สร้างการ์ดแบบนี้ ✨</span>
+            </button>
+          )}
           {/* Quick Studio Theme Toggle (Light / Dark / System) */}
           {onChangeStudioTheme && !isRecipientOnly && (
             <div className="hidden sm:flex items-center bg-stone-100 dark:bg-stone-800 p-0.5 rounded-xl border border-stone-200 dark:border-stone-700">

@@ -890,6 +890,36 @@
       line-height: 1.5;
     }
 
+    .modal-cta-box {
+      margin-top: 12px;
+      padding-top: 8px;
+    }
+    .btn-create-card {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      padding: 9px 14px;
+      border-radius: 9999px;
+      background: linear-gradient(135deg, #f43f5e, #ec4899, #f59e0b);
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.82rem;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(244, 63, 94, 0.4);
+      transition: all 0.2s ease;
+      text-decoration: none;
+    }
+    .btn-create-card:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(244, 63, 94, 0.55);
+    }
+    .btn-create-card:active {
+      transform: scale(0.97);
+    }
+
     /* Scrollbar สวยๆ */
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: rgba(255,255,255,0.04); border-radius: 99px; }
@@ -1361,6 +1391,12 @@
         <div class="modal-wish-box">
           <div class="modal-wish-title">Merry Christmas</div>
           <div class="modal-wish-msg" id="modalWishMsg"></div>
+        </div>
+
+        <div class="modal-cta-box" id="modalCtaBox">
+          <button type="button" class="btn-create-card" onclick="goToStudio()">
+            ✨ อยากส่งของขวัญแบบนี้บ้าง? สร้างเลยที่ MANITA
+          </button>
         </div>
       </div>
     </div>
@@ -4214,6 +4250,16 @@
       closeGiftModal();
       buildScene(true);
       sfxManager.play('introTime');
+    }
+
+    function goToStudio() {
+      try {
+        if (window.top && window.top.location) {
+          window.top.location.href = window.top.location.origin + window.top.location.pathname;
+          return;
+        }
+      } catch (e) {}
+      window.location.href = '/';
     }
 
     function toggleFullscreen() {
