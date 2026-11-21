@@ -889,12 +889,16 @@
     @keyframes titleFloat{0%,100%{transform:translateY(0);filter:brightness(1)}50%{transform:translateY(-4px);filter:brightness(1.22)}}
     .wish-banner.show{animation:bannerGlow 4s ease-in-out infinite;}
     @keyframes bannerGlow{0%,100%{box-shadow:0 8px 30px rgba(0,0,0,.35),0 0 20px rgba(255,215,120,.14)}50%{box-shadow:0 8px 30px rgba(0,0,0,.35),0 0 34px rgba(255,215,120,.38)}}
-    /* Recipient Mode - Hide all creator control bars */
+    /* Recipient & Preview Mode - Hide all creator control bars */
     body.recipient-mode .controls,
     body.recipient-mode #controls,
     .recipient-mode .controls,
     .recipient-mode #setupModal,
-    .recipient-mode .hint {
+    .recipient-mode .hint,
+    .manita-clean .controls,
+    .manita-clean #controls,
+    .manita-clean #setupModal,
+    .manita-clean .hint {
       display: none !important;
       visibility: hidden !important;
       pointer-events: none !important;
@@ -2434,13 +2438,13 @@
     buildScene(true);
     requestAnimationFrame(animate);
 
-    // MANITA Recipient / Creator Mode Integrator
+    // MANITA Recipient / Preview Mode Integrator
     (function initManitaTree() {
       const params = new URLSearchParams(window.location.search);
-      const isRecipient = params.get('view') === 'recipient' || window.location.hash.includes('recipient');
+      const isCleanView = params.get('view') === 'recipient' || params.get('view') === 'preview' || params.get('controls') === 'hide' || !params.has('raw');
       
-      if (isRecipient) {
-        document.body.classList.add('recipient-mode');
+      if (isCleanView) {
+        document.body.classList.add('recipient-mode', 'manita-clean');
         if (typeof controls !== 'undefined' && controls) {
           controls.classList.add('hidden-ui');
           controls.style.display = 'none';
@@ -2453,17 +2457,25 @@
           if (typeof startExperience === 'function' && !hasStarted) {
             startExperience();
           }
-        }, 300);
+        }, 200);
       }
 
-      // Sync custom wish & photos from parent window / storage
+      // Sync custom wish, theme & photos from parent window / storage
       function applyCustomData(data) {
         if (!data) return;
+        if (data.wishTitle && typeof titleText !== 'undefined' && titleText) {
+          titleText.textContent = data.wishTitle;
+        }
         if (data.wishMessage && typeof wishBannerText !== 'undefined' && wishBannerText) {
           wishBannerText.textContent = data.wishMessage;
         }
         if (data.wishMessage && typeof wishInput !== 'undefined' && wishInput) {
           wishInput.value = data.wishMessage;
+        }
+        if (data.treeTheme && typeof themes !== 'undefined' && themes[data.treeTheme]) {
+          if (typeof setTheme === 'function') {
+            setTheme(data.treeTheme);
+          }
         }
         if (data.photos && Array.isArray(data.photos) && data.photos.length > 0) {
           uploadedPhotos = data.photos.filter(p => p.url).map((p, i) => ({
@@ -2478,7 +2490,7 @@
         const raw = localStorage.getItem('manita_studio_draft_v1');
         if (raw) {
           const cfg = JSON.parse(raw);
-          applyCustomData({ wishMessage: cfg.treeWish, photos: cfg.photos });
+          applyCustomData({ wishMessage: cfg.treeWish, wishTitle: cfg.treeTitle, treeTheme: cfg.treeTheme, photos: cfg.photos });
         }
       } catch(e) {}
 

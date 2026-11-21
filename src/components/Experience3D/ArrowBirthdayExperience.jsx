@@ -26,16 +26,28 @@ export default function ArrowBirthdayExperience({
     const frame = iframeRef.current;
     if (frame) {
       frame.addEventListener('load', handleLoad);
+      try {
+        if (frame.contentWindow) {
+          frame.contentWindow.postMessage({
+            type: 'MANITA_ARROW_SYNC',
+            wishMessage,
+            wishTitle: title,
+            wishSign,
+            photos
+          }, '*');
+        }
+      } catch (e) {}
+
       return () => frame.removeEventListener('load', handleLoad);
     }
   }, [wishMessage, title, wishSign, photos]);
 
   return (
-    <div className="w-full h-full min-h-[640px] relative bg-[#04020a] overflow-hidden rounded-[30px]">
+    <div className="w-full h-full relative bg-[#04020a] overflow-hidden flex-1">
       <iframe
         ref={iframeRef}
-        src={`/experiences/arrow_birthday.html?view=${isRecipient ? 'recipient' : 'creator'}`}
-        className="w-full h-full border-0 absolute inset-0"
+        src={`/experiences/arrow_birthday.html?view=clean&v=2`}
+        className="w-full h-full border-0 absolute inset-0 block"
         title="MANITA Arrow Birthday Experience"
         allow="autoplay; fullscreen"
       />

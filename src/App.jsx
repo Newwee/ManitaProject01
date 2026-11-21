@@ -44,6 +44,7 @@ export default function App() {
     photos: [], // Empty initially so placeholder shows instead of background textures!
     selectedSticker: '💖',
     // 3D Christmas Tree settings
+    treeTheme: 'classic', // 'classic' | 'gold' | 'pink' | 'blue'
     treeTitle: 'Merry Christmas',
     treeSubtitle: 'A SPECIAL WISH FOR YOU',
     treeWish: 'ขอให้เทศกาลนี้เต็มไปด้วยความสุข ความอบอุ่น และรอยยิ้ม ขอให้ปีที่กำลังจะมาถึงใจดีกับเธอในทุกๆ วันนะ 🎄✨',
@@ -217,32 +218,33 @@ export default function App() {
 
       {/* Main Experience Router */}
       {appMode === 'preview' ? (
-        <main className="w-full max-w-md mx-auto pt-16 pb-6 px-2 flex-1 flex flex-col items-center justify-center z-10">
-          {/* Preset Category 3: 3D Christmas Tree */}
-          {category === 'christmas_tree' ? (
-            <div className="w-full max-w-[420px] mx-auto rounded-[38px] shadow-2xl border-[8px] border-stone-800 overflow-hidden relative min-h-[660px] max-h-[820px] bg-black">
-              <ChristmasTreeExperience
-                title={config.treeTitle || 'Merry Christmas'}
-                subtitle={config.treeSubtitle || 'A SPECIAL WISH FOR YOU'}
-                wishMessage={config.treeWish}
-                photos={config.photos}
-                isRecipient={isRecipientOnly}
-              />
-            </div>
-          ) : category === 'arrow_birthday' ? (
-            /* Preset Category 4: 3D Arrow Birthday Shooting */
-            <div className="w-full max-w-[420px] mx-auto rounded-[38px] shadow-2xl border-[8px] border-stone-800 overflow-hidden relative min-h-[660px] max-h-[820px] bg-[#05020A]">
-              <ArrowBirthdayExperience
-                title={config.arrowTitle || 'Happy Birthday'}
-                subtitle={config.arrowSubtitle || 'WISHING YOU ENDLESS HAPPINESS ✨'}
-                wishMessage={config.arrowWish}
-                wishSign={config.arrowSign}
-                photos={config.photos}
-                isRecipient={isRecipientOnly}
-              />
-            </div>
-          ) : (
-            /* Preset Category 1 & 2: Chat + Scratch OR Chat + Camera */
+        category === 'christmas_tree' ? (
+          /* Preset Category 3: 3D Christmas Tree - FULL SCREEN */
+          <div className="fixed inset-0 top-14 w-full h-[calc(100vh-56px)] bg-black z-10 overflow-hidden flex flex-col">
+            <ChristmasTreeExperience
+              title={config.treeTitle || 'Merry Christmas'}
+              subtitle={config.treeSubtitle || 'A SPECIAL WISH FOR YOU'}
+              wishMessage={config.treeWish}
+              photos={config.photos}
+              treeTheme={config.treeTheme || 'classic'}
+              isRecipient={isRecipientOnly}
+            />
+          </div>
+        ) : category === 'arrow_birthday' ? (
+          /* Preset Category 4: 3D Arrow Birthday Shooting - FULL SCREEN */
+          <div className="fixed inset-0 top-14 w-full h-[calc(100vh-56px)] bg-[#04020a] z-10 overflow-hidden flex flex-col">
+            <ArrowBirthdayExperience
+              title={config.arrowTitle || 'Happy Birthday'}
+              subtitle={config.arrowSubtitle || 'WISHING YOU ENDLESS HAPPINESS ✨'}
+              wishMessage={config.arrowWish}
+              wishSign={config.arrowSign}
+              photos={config.photos}
+              isRecipient={isRecipientOnly}
+            />
+          </div>
+        ) : (
+          /* Preset Category 1 & 2: Chat + Scratch OR Chat + Camera */
+          <main className="w-full max-w-md mx-auto pt-16 sm:pt-20 pb-6 px-2 sm:px-4 flex-1 flex flex-col items-center justify-center z-10">
             <PhoneFrame
               theme={config.theme}
               phoneBackground={config.phoneBackground}
@@ -319,8 +321,8 @@ export default function App() {
                 />
               )}
             </PhoneFrame>
-          )}
-        </main>
+          </main>
+        )
       ) : (
         /* Creator Studio Dashboard */
         <main className="w-full flex-1 z-10">

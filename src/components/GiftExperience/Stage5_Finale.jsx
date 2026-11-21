@@ -114,7 +114,9 @@ export default function Stage5_Finale({
 
           {/* Caption */}
           <p className="font-theme-display text-sm font-bold text-center mt-2.5 text-stone-800 line-clamp-2 min-h-[22px]">
-            {hasPhotos ? (currentPhoto?.caption || 'ความทรงจำของเรา ♡') : 'ยังไม่ได้อัปโหลดรูปภาพ'}
+            {hasPhotos
+              ? (currentPhoto?.caption?.replace(/\s*\(\d+(\.\d+)?\s*KB\)/i, '') || 'ความทรงจำของเรา ♡')
+              : 'ยังไม่ได้อัปโหลดรูปภาพ'}
           </p>
 
           {/* Prev/Next controls */}

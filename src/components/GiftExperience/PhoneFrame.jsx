@@ -26,7 +26,7 @@ export default function PhoneFrame({
   return (
     <div
       data-theme={theme}
-      className="w-full max-w-[420px] mx-auto rounded-[38px] shadow-2xl border-[8px] border-stone-800 flex flex-col overflow-hidden relative min-h-[660px] max-h-[820px] transition-all duration-300"
+      className="w-full max-w-[420px] mx-auto rounded-[32px] sm:rounded-[40px] shadow-2xl border-[6px] sm:border-[8px] border-stone-800 flex flex-col overflow-hidden relative h-[calc(100dvh-75px)] sm:h-[720px] min-h-[580px] max-h-[820px] transition-all duration-300"
       style={{
         backgroundImage: phoneBackground ? `url(${phoneBackground})` : undefined,
         backgroundSize: 'cover',

@@ -24,9 +24,10 @@ export default function Stage_Camera({
   const hasUserPhoto = photos && photos.length > 0 && photos[photoIndex]?.url;
   const activePhoto = hasUserPhoto ? photos[photoIndex].url : null;
 
-  const caption = hasUserPhoto && photos[photoIndex]?.caption
+  const rawCaption = hasUserPhoto && photos[photoIndex]?.caption
     ? photos[photoIndex].caption
     : 'ยังไม่มีรูปภาพ (อัปโหลดได้ใน Studio)';
+  const caption = rawCaption.replace(/\s*\(\d+(\.\d+)?\s*KB\)/i, '');
 
   const handleSnap = () => {
     if (isPrinted) return;

@@ -294,12 +294,16 @@
       margin-top: 24px;
     }
 
-    /* Recipient Mode - Hide all creator control bars */
+    /* Recipient & Preview Clean Mode - Hide all creator control bars */
     body.recipient-mode .controls,
     body.recipient-mode #controls,
     .recipient-mode .controls,
     .recipient-mode #wishModal,
-    .recipient-mode #photoInput {
+    .recipient-mode #photoInput,
+    .manita-clean .controls,
+    .manita-clean #controls,
+    .manita-clean #wishModal,
+    .manita-clean #photoInput {
       display: none !important;
       visibility: hidden !important;
       pointer-events: none !important;
@@ -2424,10 +2428,10 @@
     // MANITA Recipient / Creator Mode Integrator
     (function initManitaArrow() {
       const params = new URLSearchParams(window.location.search);
-      const isRecipient = params.get('view') === 'recipient' || window.location.hash.includes('recipient');
+      const isCleanView = params.get('view') === 'recipient' || params.get('view') === 'preview' || params.get('controls') === 'hide' || !params.has('raw');
       
-      if (isRecipient) {
-        document.body.classList.add('recipient-mode');
+      if (isCleanView) {
+        document.body.classList.add('recipient-mode', 'manita-clean');
         if (typeof controls !== 'undefined' && controls) {
           controls.style.display = 'none';
           controls.classList.remove('visible');
