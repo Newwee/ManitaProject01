@@ -61,6 +61,42 @@ export default function App() {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Studio Theme: 'light' | 'dark' | 'system'
+  const [studioTheme, setStudioTheme] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('manita_studio_ui_theme') || 'system';
+    }
+    return 'system';
+  });
+
+  const [isSystemDark, setIsSystemDark] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const listener = (e) => setIsSystemDark(e.matches);
+    media.addEventListener('change', listener);
+    return () => media.removeEventListener('change', listener);
+  }, []);
+
+  const isDarkMode = studioTheme === 'dark' || (studioTheme === 'system' && isSystemDark);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('manita_studio_ui_theme', studioTheme);
+      if (isDarkMode) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    }
+  }, [studioTheme, isDarkMode]);
+
   // Initialize from URL or Local Draft
   useEffect(() => {
     const initApp = async () => {
@@ -152,9 +188,13 @@ export default function App() {
   return (
     <div
       data-theme={config.theme}
-      className="min-h-screen flex flex-col items-center justify-center relative transition-colors duration-500"
+      className={`min-h-screen flex flex-col items-center justify-center relative transition-colors duration-500 ${
+        isDarkMode ? 'dark bg-[#121214] text-stone-100' : 'bg-[#EFE8DF] text-stone-800'
+      }`}
       style={{
-        backgroundImage: 'radial-gradient(rgba(200, 162, 124, 0.15) 1.5px, transparent 1.5px)',
+        backgroundImage: isDarkMode
+          ? 'radial-gradient(rgba(255, 255, 255, 0.08) 1.5px, transparent 1.5px)'
+          : 'radial-gradient(rgba(200, 162, 124, 0.15) 1.5px, transparent 1.5px)',
         backgroundSize: '24px 24px'
       }}
     >
@@ -170,6 +210,9 @@ export default function App() {
         onOpenShareModal={() => setIsShareModalOpen(true)}
         themeKey={config.theme}
         isRecipientOnly={isRecipientOnly}
+        studioTheme={studioTheme}
+        onChangeStudioTheme={setStudioTheme}
+        isDarkMode={isDarkMode}
       />
 
       {/* Main Experience Router */}
@@ -286,6 +329,9 @@ export default function App() {
             onChangeConfig={setConfig}
             onSwitchToPreview={() => setAppMode('preview')}
             onOpenShareModal={() => setIsShareModalOpen(true)}
+            studioTheme={studioTheme}
+            onChangeStudioTheme={setStudioTheme}
+            isDarkMode={isDarkMode}
           />
         </main>
       )}
@@ -295,6 +341,7 @@ export default function App() {
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
         config={config}
+        isDarkMode={isDarkMode}
       />
     </div>
   );

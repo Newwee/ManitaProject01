@@ -4,6 +4,10 @@
  */
 import { createClient } from '@supabase/supabase-js';
 
+// Default to working live Supabase instance with public manita_gifts table
+const FALLBACK_URL = 'https://nbmjzhhvpksbxvqcxjpn.supabase.co';
+const FALLBACK_KEY = 'sb_publishable_FPgzJvV7lu8WDqLoQs0c0g_zwAEuVdF';
+
 const getStoredSupabaseUrl = () => {
   if (typeof window !== 'undefined') {
     return localStorage.getItem('manita_supabase_url') || '';
@@ -12,11 +16,16 @@ const getStoredSupabaseUrl = () => {
 };
 
 export const getSupabaseUrl = () => {
-  return import.meta.env.VITE_SUPABASE_URL || getStoredSupabaseUrl();
+  return import.meta.env.VITE_SUPABASE_URL || getStoredSupabaseUrl() || FALLBACK_URL;
 };
 
 export const getSupabaseAnonKey = () => {
-  return import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_Xo74Bbfm9KhDDezjLrLdzg_HPoQqX8s';
+  // If user provided custom key in env, use it; otherwise use working fallback
+  const customKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  if (customKey && customKey !== 'sb_publishable_your_key_here') {
+    return customKey;
+  }
+  return FALLBACK_KEY;
 };
 
 export const setStoredSupabaseUrl = (url) => {
