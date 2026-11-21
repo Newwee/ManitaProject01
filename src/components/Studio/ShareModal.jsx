@@ -85,15 +85,30 @@ export default function ShareModal({
     canvas.width = size;
     canvas.height = size;
 
-    await QRCode.toCanvas(canvas, url, {
-      errorCorrectionLevel: 'H', // Tolerates up to 30% center overlay without losing scan accuracy
-      width: size,
-      margin: 2,
-      color: {
-        dark: theme.dark,
-        light: theme.light
+    // Multi-tier ECC fallback (H -> M -> L) so QR code never fails or goes blank
+    let rendered = false;
+    for (const ecc of ['H', 'M', 'L']) {
+      try {
+        await QRCode.toCanvas(canvas, url, {
+          errorCorrectionLevel: ecc,
+          width: size,
+          margin: 2,
+          color: {
+            dark: theme.dark,
+            light: theme.light
+          }
+        });
+        rendered = true;
+        break;
+      } catch (e) {
+        console.warn(`QR render with ECC ${ecc} failed, trying next:`, e);
       }
-    });
+    }
+
+    if (!rendered) {
+      console.error('All QR ECC levels failed');
+      return;
+    }
 
     const ctx = canvas.getContext('2d');
 
@@ -119,21 +134,28 @@ export default function ShareModal({
       ctx.restore();
 
       if (badge === 'logo') {
-        // Draw MANITA Logo
-        const logoImg = new Image();
-        logoImg.crossOrigin = 'anonymous';
-        logoImg.src = '/assets/ManitaLogo.png';
+        // Draw MANITA Logo with safety timeout
         await new Promise((resolve) => {
+          const logoImg = new Image();
+          logoImg.crossOrigin = 'anonymous';
+          const timer = setTimeout(() => resolve(), 600);
           logoImg.onload = () => {
-            ctx.save();
-            ctx.beginPath();
-            ctx.arc(center, center, badgeSize / 2 - 1, 0, Math.PI * 2);
-            ctx.clip();
-            ctx.drawImage(logoImg, center - badgeSize / 2, center - badgeSize / 2, badgeSize, badgeSize);
-            ctx.restore();
+            clearTimeout(timer);
+            try {
+              ctx.save();
+              ctx.beginPath();
+              ctx.arc(center, center, badgeSize / 2 - 1, 0, Math.PI * 2);
+              ctx.clip();
+              ctx.drawImage(logoImg, center - badgeSize / 2, center - badgeSize / 2, badgeSize, badgeSize);
+              ctx.restore();
+            } catch (err) {}
             resolve();
           };
-          logoImg.onerror = () => resolve();
+          logoImg.onerror = () => {
+            clearTimeout(timer);
+            resolve();
+          };
+          logoImg.src = '/assets/ManitaLogo.png';
         });
       } else {
         // Draw Emoji Badge

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Volume2, VolumeX, Eye, Edit3, Share2, Sparkles, Sun, Moon, Laptop, CheckCircle, Disc } from 'lucide-react';
-import MusicPlayerCard from './UI/MusicPlayerCard';
 import AboutModal from './UI/AboutModal';
 
 export default function Navbar({
@@ -16,7 +15,6 @@ export default function Navbar({
   onChangeStudioTheme,
   isDarkMode = false
 }) {
-  const [isMusicPlayerOpen, setIsMusicPlayerOpen] = useState(false);
   const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 dark:bg-stone-900/90 backdrop-blur-md border-b border-stone-200 dark:border-stone-800 px-3 py-2.5 shadow-sm transition-colors duration-300">
@@ -121,15 +119,12 @@ export default function Navbar({
             </div>
           )}
 
-          {/* Music Toggle & Elastic Slider Player Button */}
+          {/* Music Sound Toggle */}
           <button
             onClick={() => {
-              setIsMusicPlayerOpen(prev => !prev);
-              if (!isMusicPlaying && onToggleMusic) {
-                onToggleMusic();
-              }
+              if (onToggleMusic) onToggleMusic();
             }}
-            title={isMusicPlaying ? "เปิดเครื่องเล่นเพลง & ปรับระดับเสียง" : "เปิดเสียงดนตรีประจำธีม"}
+            title={isMusicPlaying ? "ปิดเสียงดนตรี" : "เปิดเสียงดนตรีประจำธีม"}
             className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
               isMusicPlaying
                 ? 'bg-rose-500 text-white shadow-md shadow-rose-200 animate-pulse'
@@ -153,17 +148,6 @@ export default function Navbar({
           )}
         </div>
       </div>
-
-      {/* Floating Modern Music Player Card with ElasticSlider */}
-      <MusicPlayerCard
-        isOpen={isMusicPlayerOpen}
-        onClose={() => setIsMusicPlayerOpen(false)}
-        themeKey={themeKey}
-        presetCategory={presetCategory}
-        isMusicPlaying={isMusicPlaying}
-        onToggleMusic={onToggleMusic}
-        isDarkMode={isDarkMode}
-      />
 
       {/* About MANITA Modal */}
       <AboutModal

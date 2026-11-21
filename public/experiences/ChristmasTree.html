@@ -4,6 +4,17 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>3D Cinematic Christmas Tree & Gift</title>
+  <script>
+    (function() {
+      try {
+        var p = new URLSearchParams(window.location.search);
+        var isClean = p.get('view') === 'recipient' || p.get('view') === 'preview' || p.get('controls') === 'hide' || !p.has('raw');
+        if (isClean) {
+          document.documentElement.classList.add('recipient-mode', 'manita-clean');
+        }
+      } catch (e) {}
+    })();
+  </script>
   <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
   <style>
     * {
@@ -917,15 +928,63 @@
     .lt-actions{margin-top:10px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
     .lock-opt{display:flex;align-items:flex-start;gap:9px;margin:-4px 0 16px;font-size:.8rem;color:rgba(255,255,255,.78);cursor:pointer;line-height:1.45}
     .lock-opt input{margin-top:3px;accent-color:#f7b733;width:16px;height:16px;flex:none}
+
+    /* Custom Checkbox Styling to replace native OS blue checkboxes */
+    .decor-label input[type="checkbox"],
+    .lock-opt input[type="checkbox"],
+    #toggleShowCountdown {
+      -webkit-appearance: none !important;
+      appearance: none !important;
+      width: 18px !important;
+      height: 18px !important;
+      border: 1.5px solid rgba(255, 200, 100, 0.6) !important;
+      border-radius: 6px !important;
+      background: rgba(12, 18, 28, 0.75) !important;
+      cursor: pointer !important;
+      position: relative !important;
+      outline: none !important;
+      transition: all 0.2s ease !important;
+      vertical-align: middle !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+    .decor-label input[type="checkbox"]:checked,
+    .lock-opt input[type="checkbox"]:checked,
+    #toggleShowCountdown:checked {
+      background: linear-gradient(135deg, #f43f5e, #be123c) !important;
+      border-color: #f43f5e !important;
+      box-shadow: 0 0 8px rgba(244, 63, 94, 0.4) !important;
+    }
+    .decor-label input[type="checkbox"]:checked::after,
+    .lock-opt input[type="checkbox"]:checked::after,
+    #toggleShowCountdown:checked::after {
+      content: '✓' !important;
+      color: #fff !important;
+      font-size: 12px !important;
+      font-weight: bold !important;
+      line-height: 1 !important;
+    }
   
     /* ================= MANITA RECIPIENT & PREVIEW MODE ================= */
+    html.recipient-mode #setupModal,
+    body.recipient-mode #setupModal,
+    html.recipient-mode .controls,
     body.recipient-mode .controls,
+    html.recipient-mode #controls,
     body.recipient-mode #controls,
     .recipient-mode .controls,
+    .recipient-mode #controls,
     .recipient-mode #setupModal,
     .recipient-mode .hint,
     .recipient-mode #previewUnlockBtn,
     .recipient-mode .creator-only-btn,
+    html.manita-clean #setupModal,
+    body.manita-clean #setupModal,
+    html.manita-clean .controls,
+    body.manita-clean .controls,
+    html.manita-clean #controls,
+    body.manita-clean #controls,
     .manita-clean .controls,
     .manita-clean #controls,
     .manita-clean #setupModal,
@@ -1127,7 +1186,7 @@
   </div>
 
   <!-- หน้าต่างเตรียมรูปภาพและคำอวยพรก่อนเริ่มเล่น -->
-  <div class="overlay-backdrop open" id="setupModal">
+  <div class="overlay-backdrop" id="setupModal">
     <div class="setup-card">
       <div class="setup-header">
         <div class="setup-title">Christmas Gift Box</div>
@@ -4064,7 +4123,6 @@
     updateCountdown();
     setInterval(updateCountdown, 1000);
     requestAnimationFrame(animate);
-  </script>
 
     // ================= MANITA RECIPIENT & DATA INTEGRATOR =================
     (function initManitaTree() {
@@ -4072,6 +4130,7 @@
       const isCleanView = params.get('view') === 'recipient' || params.get('view') === 'preview' || params.get('controls') === 'hide' || !params.has('raw');
 
       if (isCleanView) {
+        document.documentElement.classList.add('recipient-mode', 'manita-clean');
         document.body.classList.add('recipient-mode', 'manita-clean');
         isRecipientMode = true;
         if (typeof controls !== 'undefined' && controls) {
@@ -4086,7 +4145,7 @@
           if (typeof startExperience === 'function' && !hasStarted) {
             startExperience();
           }
-        }, 200);
+        }, 150);
       }
 
       function applyCustomData(data) {
@@ -4126,6 +4185,7 @@
         if (data.decorations) decorSettings = { ...decorSettings, ...data.decorations };
         if (data.isRecipient) {
           isRecipientMode = true;
+          document.documentElement.classList.add('recipient-mode', 'manita-clean');
           document.body.classList.add('recipient-mode', 'manita-clean');
         }
 
@@ -4159,6 +4219,6 @@
         }
       });
     })();
-
+  </script>
 </body>
 </html>

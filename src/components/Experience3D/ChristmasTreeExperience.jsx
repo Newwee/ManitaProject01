@@ -1,4 +1,5 @@
 import React, { useRef, useEffect } from 'react';
+import ChristmasMusicPlayer from './ChristmasMusicPlayer';
 
 export default function ChristmasTreeExperience({
   title = 'Merry Christmas',
@@ -89,6 +90,9 @@ export default function ChristmasTreeExperience({
         title="MANITA 3D Christmas Tree Experience"
         allow="autoplay; fullscreen"
       />
+
+      {/* Modern Christmas Soundtrack Player with ElasticSlider */}
+      <ChristmasMusicPlayer />
     </div>
   );
 }

@@ -1024,17 +1024,38 @@ export default function CreatorDashboard({
                     </div>
 
                     {/* Show Countdown Card Toggle */}
-                    <div className="flex items-center gap-2 mb-3">
-                      <input
-                        type="checkbox"
-                        id="treeShowCountdownCheck"
-                        checked={config.treeShowCountdown !== undefined ? config.treeShowCountdown : true}
-                        onChange={(e) => onChangeConfig({ ...config, treeShowCountdown: e.target.checked })}
-                        className="w-4 h-4 rounded text-rose-500 focus:ring-rose-400"
-                      />
-                      <label htmlFor="treeShowCountdownCheck" className="text-xs font-bold text-stone-700 dark:text-stone-300 cursor-pointer">
-                        แสดงการ์ดนับถอยหลังลอยบนหน้าจอ (Countdown Card)
-                      </label>
+                    <div 
+                      onClick={() => onChangeConfig({ ...config, treeShowCountdown: config.treeShowCountdown !== undefined ? !config.treeShowCountdown : false })}
+                      className="flex items-center justify-between p-3 rounded-2xl bg-stone-50 dark:bg-stone-800/60 border border-stone-200 dark:border-stone-700 cursor-pointer hover:border-rose-300 transition mb-3"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-base">⏳</span>
+                        <div>
+                          <div className="text-xs font-bold text-stone-800 dark:text-stone-200">
+                            แสดงการ์ดนับถอยหลัง (Countdown Card)
+                          </div>
+                          <div className="text-[10px] text-stone-500 dark:text-stone-400">
+                            ลอยแสดงเวลานับถอยหลังหรือข้อความฉลองบนหน้าจอ
+                          </div>
+                        </div>
+                      </div>
+                      <div
+                        className={`w-11 h-6 rounded-full transition-colors relative flex items-center p-0.5 shrink-0 ${
+                          (config.treeShowCountdown !== undefined ? config.treeShowCountdown : true)
+                            ? 'bg-rose-500'
+                            : 'bg-stone-300 dark:bg-stone-700'
+                        }`}
+                      >
+                        <div
+                          className={`w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-200 flex items-center justify-center text-[10px] ${
+                            (config.treeShowCountdown !== undefined ? config.treeShowCountdown : true)
+                              ? 'translate-x-5 text-rose-500 font-bold'
+                              : 'translate-x-0'
+                          }`}
+                        >
+                          {(config.treeShowCountdown !== undefined ? config.treeShowCountdown : true) && '✓'}
+                        </div>
+                      </div>
                     </div>
 
                     {/* 3D Decoration Switches */}
@@ -1042,7 +1063,7 @@ export default function CreatorDashboard({
                       <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-2">
                         สวิตช์เปิด/ปิดฟีเจอร์ตกแต่ง 3D (Decorations):
                       </label>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
                         {[
                           { key: 'santa', label: '🎅 ซานต้าบินผ่าน' },
                           { key: 'props', label: '⛄ มนุษย์หิมะ & หมี' },
@@ -1052,23 +1073,37 @@ export default function CreatorDashboard({
                           const decs = config.treeDecorations || { santa: true, props: true, balls: true, landscape: true };
                           const isEnabled = decs[item.key] !== false;
                           return (
-                            <label key={item.key} className="flex items-center gap-2 p-2 rounded-xl bg-stone-50 dark:bg-stone-800/40 border border-stone-200 dark:border-stone-700 cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={isEnabled}
-                                onChange={(e) => {
-                                  onChangeConfig({
-                                    ...config,
-                                    treeDecorations: {
-                                      ...decs,
-                                      [item.key]: e.target.checked
-                                    }
-                                  });
-                                }}
-                                className="w-3.5 h-3.5 rounded text-rose-500"
-                              />
-                              <span className="font-semibold text-stone-700 dark:text-stone-300 text-[11px]">{item.label}</span>
-                            </label>
+                            <button
+                              type="button"
+                              key={item.key}
+                              onClick={() => {
+                                onChangeConfig({
+                                  ...config,
+                                  treeDecorations: {
+                                    ...decs,
+                                    [item.key]: !isEnabled
+                                  }
+                                });
+                              }}
+                              className={`flex items-center justify-between p-2.5 rounded-2xl border transition-all text-left ${
+                                isEnabled
+                                  ? 'bg-rose-50/70 dark:bg-rose-950/30 border-rose-300 dark:border-rose-900 shadow-xs'
+                                  : 'bg-stone-50 dark:bg-stone-800/40 border-stone-200 dark:border-stone-700 opacity-60'
+                              }`}
+                            >
+                              <span className="font-bold text-stone-800 dark:text-stone-200 text-[11px] truncate">
+                                {item.label}
+                              </span>
+                              <div
+                                className={`w-5 h-5 rounded-lg flex items-center justify-center text-[10px] font-black transition shrink-0 ml-1.5 ${
+                                  isEnabled
+                                    ? 'bg-rose-500 text-white shadow-xs'
+                                    : 'border-2 border-stone-300 dark:border-stone-600 bg-white dark:bg-stone-900 text-transparent'
+                                }`}
+                              >
+                                ✓
+                              </div>
+                            </button>
                           );
                         })}
                       </div>

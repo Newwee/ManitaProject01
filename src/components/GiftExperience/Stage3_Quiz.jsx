@@ -74,8 +74,8 @@ export default function Stage3_Quiz({
           >
             <span>
               {revealType === 'camera'
-                ? 'ไปด่านถัดไป: กล้องถ่ายรูปความทรงจำ'
-                : 'ไปด่านถัดไป: ขูดการ์ดลุ้นรางวัลลับ'}
+                ? 'ไปด่านถัดไป: ถ่ายรูปกล้องความทรงจำ 📸'
+                : 'ไปด่านถัดไป: ขูดการ์ดลุ้นรางวัลลับ 🪙'}
             </span>
             <ChevronRight className="w-4 h-4 text-rose-300" />
           </button>
