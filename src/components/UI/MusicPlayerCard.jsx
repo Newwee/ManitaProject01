@@ -3,12 +3,13 @@ import { Play, Pause, SkipBack, SkipForward, Music, X } from 'lucide-react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { VolumeHighIcon, VolumeLowIcon } from '@hugeicons/core-free-icons';
 import ElasticSlider from './ElasticSlider';
-import { isAudioPlaying, toggleMusic } from '../../lib/soundEngine';
+import { isAudioPlaying, toggleMusic, setMusicVolume } from '../../lib/soundEngine';
 
 export default function MusicPlayerCard({
   isOpen,
   onClose,
   themeKey = 'scrapbook',
+  presetCategory = 'chat_scratch',
   isMusicPlaying = false,
   onToggleMusic,
   isDarkMode = false
@@ -16,33 +17,48 @@ export default function MusicPlayerCard({
   const [volume, setVolume] = useState(70);
   const [trackProgress, setTrackProgress] = useState(28);
 
-  // Theme-specific song metadata
-  const songMeta = {
-    scrapbook: {
-      title: 'Warm Memories',
-      artist: 'MANITA Acoustic',
-      cover: '/assets/Background.jpg'
-    },
-    y2k: {
-      title: 'Pixel Nostalgia',
-      artist: 'MANITA Chiptune',
-      cover: '/assets/ChatBG.jpg'
-    },
-    cinema: {
-      title: 'Midnight Serenade',
-      artist: 'MANITA Cinematic',
-      cover: '/assets/PhotoBG.jpg'
-    },
-    festive: {
-      title: 'Last Christmas',
-      artist: 'Wham! / Festive Tree',
-      cover: '/assets/Background.jpg'
+  // Compute active song metadata based on Preset and Theme
+  const getSongMeta = () => {
+    if (presetCategory === 'christmas_tree' || themeKey === 'festive') {
+      return {
+        title: 'Last Christmas',
+        artist: 'Wham! / Festive Tree - MANITA',
+        cover: '/assets/Background.jpg'
+      };
     }
-  }[themeKey] || {
-    title: 'Cirrus',
-    artist: 'Open Skies',
-    cover: '/assets/Background.jpg'
+    if (presetCategory === 'arrow_birthday') {
+      return {
+        title: 'Happy Birthday',
+        artist: 'MANITA Celebrations',
+        cover: '/assets/PhotoBG.jpg'
+      };
+    }
+    const themeMap = {
+      scrapbook: {
+        title: 'Warm Memories',
+        artist: 'MANITA Acoustic',
+        cover: '/assets/Background.jpg'
+      },
+      y2k: {
+        title: 'Pixel Nostalgia',
+        artist: 'MANITA Chiptune',
+        cover: '/assets/ChatBG.jpg'
+      },
+      cinema: {
+        title: 'Midnight Serenade',
+        artist: 'MANITA Cinematic',
+        cover: '/assets/PhotoBG.jpg'
+      },
+      festive: {
+        title: 'Last Christmas',
+        artist: 'Wham! / Festive Tree - MANITA',
+        cover: '/assets/Background.jpg'
+      }
+    };
+    return themeMap[themeKey] || themeMap.scrapbook;
   };
+
+  const songMeta = getSongMeta();
 
   useEffect(() => {
     let interval;
@@ -163,7 +179,10 @@ export default function MusicPlayerCard({
               thumb={false}
               leftIcon={<HugeiconsIcon icon={VolumeLowIcon} size={16} />}
               rightIcon={<HugeiconsIcon icon={VolumeHighIcon} size={16} />}
-              onChange={(val) => setVolume(val)}
+              onChange={(val) => {
+                setVolume(val);
+                setMusicVolume(val);
+              }}
             />
           </div>
         </div>

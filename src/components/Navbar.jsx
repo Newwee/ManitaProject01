@@ -9,6 +9,7 @@ export default function Navbar({
   onToggleMusic,
   onOpenShareModal,
   themeKey,
+  presetCategory = 'chat_scratch',
   isRecipientOnly = false,
   studioTheme = 'system',
   onChangeStudioTheme,
@@ -152,6 +153,7 @@ export default function Navbar({
         isOpen={isMusicPlayerOpen}
         onClose={() => setIsMusicPlayerOpen(false)}
         themeKey={themeKey}
+        presetCategory={presetCategory}
         isMusicPlaying={isMusicPlaying}
         onToggleMusic={onToggleMusic}
         isDarkMode={isDarkMode}

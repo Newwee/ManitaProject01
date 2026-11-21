@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Lock, Clock, Heart, Sparkles, ChevronRight, Gift } from 'lucide-react';
 import { playChime } from '../../lib/soundEngine';
 import confetti from 'canvas-confetti';
+import BlurText from '../UI/BlurText';
+import GlareHover from '../UI/GlareHover';
 
 export default function Stage0_Entry({
   theme = 'scrapbook',
@@ -113,23 +115,27 @@ export default function Stage0_Entry({
     <div className="flex-1 flex flex-col items-center justify-center px-4 text-center select-none py-6">
       {/* Headings */}
       <div className="mb-6">
-        <h2 className="font-theme-display text-2xl sm:text-3xl font-extrabold mb-1.5 leading-snug">
-          {introTitle}
-        </h2>
-        <p className="text-xs opacity-75 max-w-xs mx-auto">
+        <BlurText
+          text={introTitle}
+          delay={40}
+          animateBy="words"
+          className="font-theme-display text-2xl sm:text-3xl font-extrabold mb-1.5 leading-snug"
+        />
+        <p className="text-xs opacity-75 max-w-xs mx-auto mt-1">
           {introSub}
         </p>
       </div>
 
       {/* THEME 1: Warm Scrapbook Envelope */}
       {theme === 'scrapbook' && (
-        <div
-          onClick={handleOpen}
-          className={`envelope-wrapper relative w-72 h-48 cursor-pointer select-none mt-2 transition-transform duration-200 hover:scale-[1.02] active:scale-95 ${
-            isOpen ? 'envelope-open' : ''
-          }`}
-        >
-          {/* Envelope Pocket Body */}
+        <GlareHover maxTilt={7} glareOpacity={0.3} borderRadius="16px" className="mt-2">
+          <div
+            onClick={handleOpen}
+            className={`envelope-wrapper relative w-72 h-48 cursor-pointer select-none transition-transform duration-200 hover:scale-[1.02] active:scale-95 ${
+              isOpen ? 'envelope-open' : ''
+            }`}
+          >
+            {/* Envelope Pocket Body */}
           <div className="absolute inset-0 bg-[#E8DACB] rounded-2xl border-2 border-[#C8A27C] shadow-lg overflow-hidden z-10">
             <div
               className="absolute inset-0 opacity-40"
@@ -169,6 +175,7 @@ export default function Stage0_Entry({
             <Heart className="w-5 h-5 fill-white text-white" />
           </div>
         </div>
+        </GlareHover>
       )}
 
       {/* THEME 2: Y2K Cyber Pixel Box */}

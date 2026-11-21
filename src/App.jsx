@@ -13,6 +13,8 @@ import ArrowBirthdayExperience from './components/Experience3D/ArrowBirthdayExpe
 import CreatorDashboard from './components/Studio/CreatorDashboard';
 import ShareModal from './components/Studio/ShareModal';
 import FloatingParticles from './components/Effects/FloatingParticles';
+import ClickSpark from './components/UI/ClickSpark';
+import SoftAurora from './components/UI/SoftAurora';
 import { THEME_PRESETS, DEFAULT_QUIZZES } from './types/themePresets';
 import { saveLocalDraft, loadLocalDraft, resolveGiftFromUrl } from './lib/giftStorage';
 import { toggleMusic, stopMusic } from './lib/soundEngine';
@@ -158,9 +160,13 @@ export default function App() {
   }, []);
 
   const handleToggleMusic = () => {
-    toggleMusic(config.theme, (state) => {
-      setIsMusicPlaying(state);
-    });
+    toggleMusic(
+      config.theme,
+      (state) => {
+        setIsMusicPlaying(state);
+      },
+      config.presetCategory
+    );
   };
 
   const handleNextStage = () => {
@@ -201,6 +207,12 @@ export default function App() {
         backgroundSize: '24px 24px'
       }}
     >
+      {/* React Bits - Ambient Soft Aurora Background */}
+      <SoftAurora theme={config.theme} isDarkMode={isDarkMode} />
+
+      {/* React Bits - Interactive Click Spark Emitter */}
+      <ClickSpark sparkColor={isDarkMode ? '#fb7185' : '#f43f5e'} />
+
       {/* Background Floating Particles */}
       <FloatingParticles theme={config.theme} />
 
@@ -212,6 +224,7 @@ export default function App() {
         onToggleMusic={handleToggleMusic}
         onOpenShareModal={() => setIsShareModalOpen(true)}
         themeKey={config.theme}
+        presetCategory={config.presetCategory}
         isRecipientOnly={isRecipientOnly}
         studioTheme={studioTheme}
         onChangeStudioTheme={setStudioTheme}

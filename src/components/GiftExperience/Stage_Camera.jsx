@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Camera, Sparkles, ChevronRight, RotateCcw, ImageOff } from 'lucide-react';
 import { playKeyClick, playSuccessFanfare, playTone } from '../../lib/soundEngine';
 import confetti from 'canvas-confetti';
+import GlareHover from '../UI/GlareHover';
 
 export const FRAME_STYLES = [
   { id: 'square', name: 'สี่เหลี่ยมคลาสสิก', desc: 'กรอบโพลารอยด์ขอบขาว' },
@@ -211,7 +212,9 @@ export default function Stage_Camera({
           </div>
         ) : (
           <div className="w-full animate-bounce-soft">
-            {renderFramedPhoto()}
+            <GlareHover maxTilt={7} glareOpacity={0.35} borderRadius="16px" className="mx-auto inline-block">
+              {renderFramedPhoto()}
+            </GlareHover>
             {photos.length > 1 && (
               <div className="flex items-center justify-center gap-2 mt-2">
                 <button

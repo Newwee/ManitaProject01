@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ChevronLeft, ChevronRight, Check, Heart, ImageOff } from 'lucide-react';
 import { playSuccessFanfare } from '../../lib/soundEngine';
 import confetti from 'canvas-confetti';
+import GlareHover from '../UI/GlareHover';
 
 export default function Stage5_Finale({
   voiceCaption = '"ขอบคุณที่เข้ามาเป็นความสุขของเรานะ ♡"',
@@ -156,42 +157,43 @@ export default function Stage5_Finale({
           {coupons.map((coupon, idx) => {
             const isRedeemed = redeemedCoupons[idx];
             return (
-              <div
-                key={idx}
-                onClick={() => handleRedeemCoupon(idx)}
-                className={`ticket-cutout theme-card p-3.5 relative overflow-hidden cursor-pointer select-none border-2 transition-all duration-300 ${
-                  isRedeemed
-                    ? 'opacity-85 border-emerald-500/60 bg-emerald-50/30'
-                    : 'hover:scale-[1.01] hover:border-rose-400 active:scale-95'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">🎁</span>
-                    <span className="font-theme-display text-xs font-bold text-stone-800">
-                      {coupon}
-                    </span>
+              <GlareHover key={idx} maxTilt={5} glareOpacity={0.25} borderRadius="16px">
+                <div
+                  onClick={() => handleRedeemCoupon(idx)}
+                  className={`ticket-cutout theme-card p-3.5 relative overflow-hidden cursor-pointer select-none border-2 transition-all duration-300 ${
+                    isRedeemed
+                      ? 'opacity-85 border-emerald-500/60 bg-emerald-50/30'
+                      : 'hover:scale-[1.01] hover:border-rose-400 active:scale-95'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base">🎁</span>
+                      <span className="font-theme-display text-xs font-bold text-stone-800">
+                        {coupon}
+                      </span>
+                    </div>
+
+                    {!isRedeemed ? (
+                      <button className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500 text-white shadow-sm shrink-0">
+                        กดใช้
+                      </button>
+                    ) : (
+                      <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5">
+                        <Check className="w-3 h-3" />
+                        <span>ใช้แล้ว</span>
+                      </span>
+                    )}
                   </div>
 
-                  {!isRedeemed ? (
-                    <button className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500 text-white shadow-sm shrink-0">
-                      กดใช้
-                    </button>
-                  ) : (
-                    <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5">
-                      <Check className="w-3 h-3" />
-                      <span>ใช้แล้ว</span>
-                    </span>
+                  {/* Stamp Slam Overlay */}
+                  {isRedeemed && (
+                    <div className="stamp-redeemed absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border-4 border-emerald-600 text-emerald-700 px-3 py-0.5 rounded-lg font-black tracking-widest text-xs uppercase bg-white/90 shadow-lg pointer-events-none whitespace-nowrap">
+                      REDEEMED • ใช้สิทธิ์แล้ว
+                    </div>
                   )}
                 </div>
-
-                {/* Stamp Slam Overlay */}
-                {isRedeemed && (
-                  <div className="stamp-redeemed absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border-4 border-emerald-600 text-emerald-700 px-3 py-0.5 rounded-lg font-black tracking-widest text-xs uppercase bg-white/90 shadow-lg pointer-events-none whitespace-nowrap">
-                    REDEEMED • ใช้สิทธิ์แล้ว
-                  </div>
-                )}
-              </div>
+              </GlareHover>
             );
           })}
         </div>

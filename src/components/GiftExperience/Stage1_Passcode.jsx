@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Delete, KeyRound } from 'lucide-react';
 import { playKeyClick, playUnlockSuccess, playErrorBeep } from '../../lib/soundEngine';
 import confetti from 'canvas-confetti';
+import BlurText from '../UI/BlurText';
 
 export default function Stage1_Passcode({
   expectedPasscode = '231069',
@@ -63,6 +64,33 @@ export default function Stage1_Passcode({
     setFeedbackMsg('');
   };
 
+  // Keyboard and Numpad listener for PC
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Do not intercept if user is typing in form inputs elsewhere
+      if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
+        return;
+      }
+
+      if (/^[0-9]$/.test(e.key)) {
+        e.preventDefault();
+        handleDigit(e.key);
+      } else if (e.code && e.code.startsWith('Numpad') && /^[0-9]$/.test(e.code.replace('Numpad', ''))) {
+        e.preventDefault();
+        handleDigit(e.code.replace('Numpad', ''));
+      } else if (e.key === 'Backspace') {
+        e.preventDefault();
+        handleBackspace();
+      } else if (e.key === 'Escape' || e.key === 'Delete') {
+        e.preventDefault();
+        handleClear();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [digits, isSuccess, isError, expectedPasscode]);
+
   return (
     <div className="flex-1 flex flex-col justify-between px-3 py-3 select-none">
       {/* Top Header & Hint Card */}
@@ -70,9 +98,12 @@ export default function Stage1_Passcode({
         <div className="w-12 h-12 mx-auto rounded-2xl bg-rose-100/90 text-rose-600 flex items-center justify-center mb-1.5 shadow-xs">
           <KeyRound className="w-6 h-6" />
         </div>
-        <h3 className="font-theme-display text-xl font-bold text-stone-900">
-          กรอกรหัสผ่าน 6 หลัก
-        </h3>
+        <BlurText
+          text="กรอกรหัสผ่าน 6 หลัก"
+          delay={35}
+          animateBy="letters"
+          className="font-theme-display text-xl font-bold text-stone-900"
+        />
         <p className="text-xs text-stone-600 font-semibold mt-1 max-w-xs mx-auto">
           {passcodeHint}
         </p>
@@ -143,6 +174,12 @@ export default function Stage1_Passcode({
         >
           <Delete className="w-5 h-5" />
         </button>
+      </div>
+
+      {/* PC Keyboard & Numpad Hint */}
+      <div className="hidden sm:flex items-center justify-center gap-1.5 text-[11px] text-stone-500 font-medium pb-1 select-none">
+        <span>⌨️</span>
+        <span>PC: พิมพ์ตัวเลขหรือ Numpad บนคีย์บอร์ดได้ทันที</span>
       </div>
     </div>
   );
