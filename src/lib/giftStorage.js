@@ -1,6 +1,6 @@
 /**
  * MANITA Studio - Hybrid Gift Storage Manager
- * Combines Supabase Cloud, URL Hash fragment (immune to URI_TOO_LONG), and LocalStorage.
+ * Combines Supabase Cloud (Primary & Resilient Backup), URL Hash fragment, and LocalStorage.
  */
 import LZString from 'lz-string';
 import { isSupabaseConfigured, saveGiftToSupabase, loadGiftFromSupabase } from './supabase';
@@ -27,22 +27,9 @@ export function loadLocalDraft() {
 
 /**
  * Prepares a compact configuration for URL/QR code standalone sharing
- * (strips large base64 strings so QR code and URL remain compact & scan instantly)
  */
 export function prepareCompactConfig(config) {
   const compact = { ...config };
-
-  // If photos contain huge base64 strings, sanitize them for URL/QR
-  if (Array.isArray(compact.photos)) {
-    compact.photos = compact.photos.map((p) => {
-      // If photo is a massive base64, omit data URL for hash to keep QR scannable
-      if (p.url && p.url.startsWith('data:') && p.url.length > 500) {
-        return { caption: p.caption, isPlaceholder: true };
-      }
-      return p;
-    });
-  }
-
   return compact;
 }
 
@@ -70,46 +57,42 @@ export function decodeGiftFromUrlData(encodedData) {
 
 /**
  * Generate a shareable link for a gift:
- * - If Supabase is configured: uploads full config to Cloud and returns short link ?gift={id}
- * - If Supabase is not configured: generates a lightweight client-side URL Hash (#data=...)
- *   * Hash fragments are NEVER sent to Vercel/server, completely preventing 414 URI_TOO_LONG!
+ * Always produces a clean short URL (?gift={id}) saved to Cloud + LocalStorage
+ * This guarantees a high-contrast, low-density QR code that scans instantly.
  */
 export async function createShareableGift(giftId, config) {
   let isSavedToCloud = false;
+  let saveTarget = 'backup_project';
 
-  if (isSupabaseConfigured()) {
-    try {
-      await saveGiftToSupabase(giftId, config);
-      isSavedToCloud = true;
-    } catch (err) {
-      console.warn('Could not save to Supabase cloud, falling back to URL hash:', err);
-    }
+  // 1. Save full config to local browser storage as instant local cache
+  try {
+    localStorage.setItem('manita_gift_' + giftId, JSON.stringify(config));
+  } catch (e) {
+    console.warn('LocalStorage gift save warning:', e);
+  }
+
+  // 2. Save full config to Supabase Cloud
+  try {
+    const saveRes = await saveGiftToSupabase(giftId, config);
+    isSavedToCloud = true;
+    saveTarget = saveRes.target || 'backup_project';
+  } catch (err) {
+    console.warn('Could not save to Supabase cloud:', err);
   }
 
   const baseUrl = window.location.origin + window.location.pathname;
 
-  if (isSavedToCloud) {
-    return {
-      giftId,
-      url: `${baseUrl}?gift=${giftId}`,
-      method: 'supabase'
-    };
-  } else {
-    // Use URL Hash (#data=) instead of Query Parameter (?data=)
-    // RFC 3986: Hash fragments are never sent to the HTTP server,
-    // so Vercel will NEVER return 414 URI_TOO_LONG!
-    const compressed = encodeGiftToUrlData(config);
-    return {
-      giftId,
-      url: `${baseUrl}#data=${compressed}`,
-      method: 'hash_compressed'
-    };
-  }
+  return {
+    giftId,
+    url: `${baseUrl}?gift=${giftId}`,
+    method: isSavedToCloud ? saveTarget : 'local_storage',
+    isCloudSaved: isSavedToCloud
+  };
 }
 
 /**
  * Resolves gift configuration from URL:
- * Checks ?gift={id} (Supabase) first, then #data={compressed} or ?data={compressed}
+ * Checks ?gift={id} (Supabase Cloud + Local Cache) first, then #data={compressed}
  */
 export async function resolveGiftFromUrl() {
   const searchParams = new URLSearchParams(window.location.search);
@@ -125,9 +108,25 @@ export async function resolveGiftFromUrl() {
   }
 
   if (giftId) {
+    // 1. Try Supabase Cloud (checks primary user project then backup project)
     const cloudConfig = await loadGiftFromSupabase(giftId);
     if (cloudConfig) {
       return { config: cloudConfig, source: 'supabase', giftId };
+    }
+
+    // 2. Try Local browser cache by gift ID
+    try {
+      const localGiftRaw = localStorage.getItem('manita_gift_' + giftId);
+      if (localGiftRaw) {
+        const localConfig = JSON.parse(localGiftRaw);
+        return { config: localConfig, source: 'local_storage', giftId };
+      }
+    } catch (e) {}
+
+    // 3. Try Local draft if on the creator's device
+    const draft = loadLocalDraft();
+    if (draft) {
+      return { config: draft, source: 'local_draft', giftId };
     }
   }
 
@@ -136,6 +135,11 @@ export async function resolveGiftFromUrl() {
   if (dataParam) {
     const decodedConfig = decodeGiftFromUrlData(dataParam);
     if (decodedConfig) {
+      // If photos were missing or marked as placeholder, check local draft
+      const draft = loadLocalDraft();
+      if (draft && (!decodedConfig.photos || decodedConfig.photos.length === 0 || decodedConfig.photos.some(p => p.isPlaceholder))) {
+        decodedConfig.photos = draft.photos;
+      }
       return { config: decodedConfig, source: 'url_data', giftId: null };
     }
   }

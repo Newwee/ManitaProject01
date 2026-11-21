@@ -1,8 +1,27 @@
 import React, { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
-import { X, Copy, Check, Download, ExternalLink, QrCode as QrIcon, Sparkles, Database, CheckCircle, RefreshCw } from 'lucide-react';
+import {
+  X,
+  Copy,
+  Check,
+  Download,
+  ExternalLink,
+  QrCode as QrIcon,
+  Sparkles,
+  Database,
+  CheckCircle,
+  RefreshCw,
+  Terminal,
+  HelpCircle,
+  AlertCircle
+} from 'lucide-react';
 import { createShareableGift } from '../../lib/giftStorage';
-import { isSupabaseConfigured, getSupabaseUrl, setStoredSupabaseUrl } from '../../lib/supabase';
+import {
+  getSupabaseUrl,
+  setStoredSupabaseUrl,
+  MANITA_SQL_SETUP,
+  USER_PROJECT_URL
+} from '../../lib/supabase';
 
 export default function ShareModal({
   isOpen,
@@ -11,12 +30,13 @@ export default function ShareModal({
   isDarkMode = false
 }) {
   const [shareUrl, setShareUrl] = useState('');
-  const [copied, setCopied] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [copiedSql, setCopiedSql] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [saveMethod, setSaveMethod] = useState('');
-  const [supabaseInput, setSupabaseInput] = useState('');
-  const [showDbInput, setShowDbInput] = useState(false);
+  const [isCloudSaved, setIsCloudSaved] = useState(false);
+  const [showSqlGuide, setShowSqlGuide] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
   const generateLinkAndQR = async () => {
@@ -28,8 +48,9 @@ export default function ShareModal({
 
       setShareUrl(result.url);
       setSaveMethod(result.method);
+      setIsCloudSaved(result.isCloudSaved);
 
-      // Generate high-resolution, high-contrast QR Code (Error Correction M, Black on White)
+      // Generate high-resolution, low-density QR Code (Short URL = Easy Scanning 100%)
       const qr = await QRCode.toDataURL(result.url, {
         errorCorrectionLevel: 'M',
         width: 320,
@@ -50,15 +71,20 @@ export default function ShareModal({
 
   useEffect(() => {
     if (!isOpen) return;
-    setSupabaseInput(getSupabaseUrl() || '');
     generateLinkAndQR();
   }, [isOpen]);
 
   const handleCopyLink = () => {
     if (!shareUrl) return;
     navigator.clipboard.writeText(shareUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2500);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2500);
+  };
+
+  const handleCopySql = () => {
+    navigator.clipboard.writeText(MANITA_SQL_SETUP);
+    setCopiedSql(true);
+    setTimeout(() => setCopiedSql(false), 3000);
   };
 
   const handleDownloadQR = () => {
@@ -71,19 +97,11 @@ export default function ShareModal({
     document.body.removeChild(a);
   };
 
-  const handleSaveSupabaseUrl = () => {
-    if (supabaseInput && supabaseInput.trim().startsWith('http')) {
-      setStoredSupabaseUrl(supabaseInput.trim());
-      setShowDbInput(false);
-      generateLinkAndQR();
-    }
-  };
-
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 select-none overflow-y-auto">
-      <div className="bg-white dark:bg-stone-900 rounded-3xl max-w-sm sm:max-w-md w-full p-5 sm:p-6 shadow-2xl border border-stone-200 dark:border-stone-800 relative text-center my-auto transition-colors duration-300 max-h-[92vh] overflow-y-auto">
+      <div className="bg-white dark:bg-stone-900 rounded-3xl max-w-sm sm:max-w-md w-full p-5 sm:p-6 shadow-2xl border border-stone-200 dark:border-stone-800 relative text-center my-auto transition-colors duration-300 max-h-[94vh] overflow-y-auto">
         {/* Close Button */}
         <button
           onClick={onClose}
@@ -108,7 +126,7 @@ export default function ShareModal({
           {isGenerating ? (
             <div className="text-xs text-stone-500 dark:text-stone-400 animate-pulse flex flex-col items-center gap-2">
               <Sparkles className="w-6 h-6 text-rose-500 animate-spin" />
-              <span>กำลังบันทึกและสร้าง QR Code คมชัด...</span>
+              <span>กำลังบันทึกของขวัญและสร้าง QR Code คมชัด...</span>
             </div>
           ) : qrDataUrl ? (
             <div className="relative group">
@@ -117,9 +135,9 @@ export default function ShareModal({
                 alt="MANITA Gift QR Code"
                 className="w-48 h-48 rounded-2xl shadow-md border-2 border-stone-200 dark:border-stone-600 bg-white p-2 mx-auto"
               />
-              <div className="text-[11px] text-stone-500 dark:text-stone-400 mt-2 font-medium flex items-center justify-center gap-1">
+              <div className="text-[11px] text-stone-600 dark:text-stone-300 mt-2 font-medium flex items-center justify-center gap-1">
                 <span>📱</span>
-                <span>สแกนด้วยกล้องมือถือเพื่อเปิดของขวัญ</span>
+                <span>สแกนด้วยกล้องมือถือได้ทันที (สแกนติดง่าย 100%)</span>
               </div>
             </div>
           ) : (
@@ -136,24 +154,24 @@ export default function ShareModal({
           )}
         </div>
 
-        {/* URL Box & Copy */}
+        {/* Short URL Box & Copy Button */}
         <div className="mt-3 flex items-center gap-2">
           <input
             type="text"
             readOnly
             value={shareUrl}
-            className="flex-1 px-3 py-2 rounded-xl bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-[11px] text-stone-700 dark:text-stone-300 truncate focus:outline-none select-all"
+            className="flex-1 px-3 py-2 rounded-xl bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-[11px] font-mono text-stone-700 dark:text-stone-300 truncate focus:outline-none select-all"
           />
           <button
             onClick={handleCopyLink}
             className={`px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1 shrink-0 ${
-              copied
+              copiedLink
                 ? 'bg-emerald-500 text-white'
                 : 'bg-rose-500 hover:bg-rose-600 text-white shadow-sm shadow-rose-200'
             }`}
           >
-            {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-            <span>{copied ? 'คัดลอกแล้ว' : 'คัดลอก'}</span>
+            {copiedLink ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+            <span>{copiedLink ? 'คัดลอกแล้ว' : 'คัดลอก'}</span>
           </button>
         </div>
 
@@ -171,62 +189,78 @@ export default function ShareModal({
             href={shareUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="py-2.5 px-3 rounded-xl bg-stone-900 hover:bg-stone-800 dark:bg-rose-600 dark:hover:bg-rose-500 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm"
+            className="py-2.5 px-3 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-md shadow-rose-200 dark:shadow-none"
           >
-            <ExternalLink className="w-3.5 h-3.5 text-rose-300 dark:text-white" />
+            <ExternalLink className="w-3.5 h-3.5 text-white" />
             <span>ทดสอบเปิดดู</span>
           </a>
         </div>
 
-        {/* Storage Mode Status & Supabase Settings */}
-        <div className="mt-3 pt-2.5 border-t border-stone-200/80 dark:border-stone-800 text-[10px] text-stone-500 dark:text-stone-400">
-          {saveMethod === 'supabase' ? (
+        {/* Cloud Status Indicator */}
+        <div className="mt-3 pt-2.5 border-t border-stone-200/80 dark:border-stone-800 text-[11px]">
+          {isCloudSaved ? (
             <div className="flex items-center justify-center gap-1 text-emerald-600 dark:text-emerald-400 font-semibold">
               <CheckCircle className="w-3.5 h-3.5" />
-              <span>✓ บันทึกลง Supabase สำเร็จ (ลิงก์สั้น สแกนติดง่าย 100%)</span>
+              <span>✓ บันทึกลง Cloud สำเร็จ (รูปภาพ & ข้อมูลครบ 100%)</span>
             </div>
           ) : (
-            <div className="space-y-1.5">
-              <div className="flex items-center justify-center gap-1 text-stone-600 dark:text-stone-400 font-medium">
-                <span>⚡ โหมด Standalone Hash Link</span>
-              </div>
-              <div>
-                <button
-                  onClick={() => setShowDbInput(!showDbInput)}
-                  className="text-rose-600 dark:text-rose-400 hover:underline font-bold flex items-center justify-center gap-1 mx-auto"
-                >
-                  <Database className="w-3 h-3" />
-                  <span>{showDbInput ? 'ซ่อนการตั้งค่า Supabase' : 'เชื่อมต่อ Supabase URL เพื่อสร้างลิงก์สั้น'}</span>
-                </button>
-              </div>
-
-              {showDbInput && (
-                <div className="p-2.5 bg-stone-50 dark:bg-stone-800 rounded-xl border border-stone-200 dark:border-stone-700 mt-2 text-left space-y-1.5">
-                  <label className="text-[10px] font-bold text-stone-700 dark:text-stone-300 block">
-                    ใส่ Supabase Project URL ของคุณ:
-                  </label>
-                  <div className="flex items-center gap-1.5">
-                    <input
-                      type="text"
-                      value={supabaseInput}
-                      onChange={(e) => setSupabaseInput(e.target.value)}
-                      placeholder="https://xxxx.supabase.co"
-                      className="flex-1 px-2.5 py-1.5 rounded-lg border border-stone-200 dark:border-stone-700 text-xs bg-white dark:bg-stone-900 text-stone-800 dark:text-stone-100 focus:outline-none"
-                    />
-                    <button
-                      onClick={handleSaveSupabaseUrl}
-                      className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs"
-                    >
-                      เชื่อมต่อ
-                    </button>
-                  </div>
-                  <p className="text-[9px] text-stone-400 dark:text-stone-500">
-                    * เมื่อเชื่อมต่อแล้ว ของขวัญจะบันทึกลงตาราง manita_gifts และได้ลิงก์สั้น ?gift=... ทันที
-                  </p>
-                </div>
-              )}
+            <div className="flex items-center justify-center gap-1 text-stone-500">
+              <CheckCircle className="w-3.5 h-3.5" />
+              <span>บันทึกในเครื่องเรียบร้อยแล้ว</span>
             </div>
           )}
+
+          {/* Supabase Personal Setup Assistant */}
+          <div className="mt-2 text-left">
+            <button
+              onClick={() => setShowSqlGuide(!showSqlGuide)}
+              className="text-[10px] text-stone-500 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-200 font-medium flex items-center justify-center gap-1 mx-auto transition"
+            >
+              <Database className="w-3 h-3 text-rose-500" />
+              <span>{showSqlGuide ? 'ซ่อนคำแนะนำ Supabase' : 'วิธีเปิดใช้ตารางใน Supabase ส่วนตัวของคุณ'}</span>
+            </button>
+
+            {showSqlGuide && (
+              <div className="mt-2 p-3 bg-stone-50 dark:bg-stone-800/80 rounded-2xl border border-stone-200 dark:border-stone-700 text-[10px] text-stone-600 dark:text-stone-300 space-y-2">
+                <div className="flex items-start gap-1.5 font-bold text-stone-800 dark:text-stone-200">
+                  <Terminal className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" />
+                  <span>วิธีสร้างตาราง manita_gifts ใน Supabase ส่วนตัว (3 ขั้นตอน):</span>
+                </div>
+                <ol className="list-decimal list-inside space-y-1 text-[10px] text-stone-600 dark:text-stone-400 pl-1">
+                  <li>กดปุ่ม <b>"คัดลอกคำสั่ง SQL"</b> ด้านล่างนี้</li>
+                  <li>กดปุ่ม <b>"เปิด Supabase SQL Editor"</b> เพื่อไปที่หน้าแดชบอร์ดของคุณ</li>
+                  <li>วางโค้ดลงในช่องแล้วกดปุ่มสีเขียว <b>Run</b> เป็นอันเสร็จสิ้น!</li>
+                </ol>
+
+                <div className="flex items-center gap-1.5 pt-1">
+                  <button
+                    onClick={handleCopySql}
+                    className={`flex-1 py-1.5 px-2 rounded-xl text-[10px] font-bold flex items-center justify-center gap-1 transition ${
+                      copiedSql
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-stone-900 dark:bg-stone-700 text-white hover:bg-stone-800'
+                    }`}
+                  >
+                    {copiedSql ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                    <span>{copiedSql ? 'คัดลอก SQL แล้ว!' : 'คัดลอกคำสั่ง SQL'}</span>
+                  </button>
+                  <a
+                    href="https://supabase.com/dashboard/project/xaazsuwbkzplovdwanmm/sql/new"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 py-1.5 px-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold flex items-center justify-center gap-1 transition"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    <span>เปิด SQL Editor</span>
+                  </a>
+                </div>
+
+                <p className="text-[9px] text-stone-400 dark:text-stone-500 text-center">
+                  * ตอนนี้ระบบมี Cloud สำรองให้แล้ว ของขวัญสามารถส่งและสแกนใช้งานได้ทันที แม้ยังไม่ได้รัน SQL
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
