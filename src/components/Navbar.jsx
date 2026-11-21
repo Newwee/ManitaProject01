@@ -18,17 +18,19 @@ export default function Navbar({
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 dark:bg-stone-900/90 backdrop-blur-md border-b border-stone-200 dark:border-stone-800 px-3 py-2.5 shadow-sm transition-colors duration-300">
       <div className="max-w-5xl mx-auto flex items-center justify-between gap-2">
-        {/* Brand */}
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-rose-500 via-pink-500 to-amber-400 text-white flex items-center justify-center font-bold shadow-sm shadow-rose-200 shrink-0">
-            <Sparkles className="w-4 h-4 text-white" />
-          </div>
+        {/* Brand with ManitaLogo.png */}
+        <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+          <img
+            src="/assets/ManitaLogo.png"
+            alt="MANITA Logo"
+            className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl object-contain shadow-sm shrink-0"
+          />
           <div>
             <div className="flex items-center gap-1.5">
               <h1 className="text-sm font-extrabold text-stone-900 dark:text-stone-100 tracking-tight leading-none">
                 MANITA
               </h1>
-              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 font-bold">
+              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 font-bold leading-none">
                 Studio
               </span>
             </div>
@@ -135,7 +137,7 @@ export default function Navbar({
             <button
               onClick={onOpenShareModal}
               title="เสร็จสิ้นและบันทึกของขวัญ เพื่อสร้าง QR Code และลิงก์ส่งต่อ"
-              className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-black shadow-md shadow-emerald-500/20 flex items-center gap-1.5 transition active:scale-95"
+              className="px-3 sm:px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-black shadow-md shadow-emerald-500/20 flex items-center gap-1.5 transition active:scale-95 whitespace-nowrap shrink-0"
             >
               <CheckCircle className="w-3.5 h-3.5 text-emerald-100" />
               <span className="hidden md:inline">✓ เสร็จสิ้น (QR Code)</span>

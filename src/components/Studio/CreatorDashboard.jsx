@@ -23,7 +23,8 @@ import {
   Moon,
   Laptop,
   ArrowRight,
-  ArrowLeft
+  ArrowLeft,
+  Gift
 } from 'lucide-react';
 import { PRESET_CATEGORIES, THEME_PRESETS, AVAILABLE_STICKERS } from '../../types/themePresets';
 import { FRAME_STYLES } from '../GiftExperience/Stage_Camera';
@@ -73,32 +74,36 @@ export default function CreatorDashboard({
     });
   };
 
-  // Photo upload with auto-compression (cleansed from file size numbers)
+  // Multi-file photo upload with auto-compression (PNG, JPG, JPEG, GIF)
   const handlePhotoUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
 
     setCompressing(true);
-    setCompressMsg('กำลังบีบอัดรูปภาพ...');
+    setCompressMsg(`กำลังโหลดและจัดการรูปภาพ ${files.length} รูป (PNG, JPG, GIF)...`);
 
     try {
-      const res = await compressImageFile(file);
-      // Clean caption without numbers
-      const newPhoto = {
-        url: res.dataUrl,
-        caption: 'ภาพความทรงจำ'
-      };
+      const newPhotos = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const res = await compressImageFile(file);
+        newPhotos.push({
+          url: res.dataUrl,
+          caption: 'ภาพความทรงจำ'
+        });
+      }
 
-      const updatedPhotos = [...(config.photos || []), newPhoto];
+      const updatedPhotos = [...(config.photos || []), ...newPhotos];
       onChangeConfig({ ...config, photos: updatedPhotos });
 
-      setCompressMsg('✅ อัปโหลดรูปภาพสำเร็จ');
+      setCompressMsg(`✅ อัปโหลดรูปภาพสำเร็จ (${files.length} รูป)`);
       setTimeout(() => setCompressMsg(''), 3000);
     } catch (err) {
       console.error(err);
       setCompressMsg('❌ เกิดข้อผิดพลาดในการโหลดรูปภาพ');
     } finally {
       setCompressing(false);
+      if (e.target) e.target.value = '';
     }
   };
 
@@ -113,6 +118,26 @@ export default function CreatorDashboard({
       updated[idx].caption = caption;
       onChangeConfig({ ...config, photos: updated });
     }
+  };
+
+  // Coupons Customization Handlers (Image 2)
+  const handleAddCoupon = () => {
+    const updated = [
+      ...(config.coupons || []),
+      '🎁 คูปองพิเศษตามใจ 1 วันเต็ม'
+    ];
+    onChangeConfig({ ...config, coupons: updated });
+  };
+
+  const handleUpdateCoupon = (idx, text) => {
+    const updated = [...(config.coupons || [])];
+    updated[idx] = text;
+    onChangeConfig({ ...config, coupons: updated });
+  };
+
+  const handleRemoveCoupon = (idx) => {
+    const updated = (config.coupons || []).filter((_, i) => i !== idx);
+    onChangeConfig({ ...config, coupons: updated });
   };
 
   // Add / Remove custom chat dialog choice
@@ -158,7 +183,7 @@ export default function CreatorDashboard({
     if (currentCategory === 'arrow_birthday') {
       return ['category', 'arrow_settings', 'photos'];
     }
-    return ['category', 'theme', 'entry', 'passcode', 'chat', 'reveal', 'photos'];
+    return ['category', 'theme', 'entry', 'passcode', 'chat', 'reveal', 'photos', 'coupons'];
   };
 
   const handleNextTab = () => {
@@ -388,8 +413,22 @@ export default function CreatorDashboard({
               }`}
             >
               <ImageIcon className="w-4 h-4 shrink-0" />
-              <span>อัปโหลดรูปภาพ (ความทรงจำ)</span>
+              <span>{currentCategory === 'christmas_tree' || currentCategory === 'arrow_birthday' ? '3. อัปโหลดรูปภาพ (ความทรงจำ)' : '7. อัปโหลดรูปภาพ (ความทรงจำ)'}</span>
             </button>
+
+            {(currentCategory === 'chat_scratch' || currentCategory === 'chat_camera') && (
+              <button
+                onClick={() => setActiveTab('coupons')}
+                className={`shrink-0 whitespace-nowrap lg:whitespace-normal text-left px-3.5 py-2.5 lg:py-3 rounded-2xl text-xs font-bold flex items-center gap-2 transition ${
+                  activeTab === 'coupons'
+                    ? 'bg-rose-500 text-white shadow-sm shadow-rose-200'
+                    : 'bg-white dark:bg-stone-800 hover:bg-stone-50 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 border border-stone-200 dark:border-stone-700'
+                }`}
+              >
+                <Gift className="w-4 h-4 shrink-0" />
+                <span>8. คูปองสิทธิพิเศษ & โน้ตเสียง</span>
+              </button>
+            )}
           </div>
 
           {/* Desktop Sidebar Finish Box */}
@@ -680,7 +719,7 @@ export default function CreatorDashboard({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                   <button
-                    onClick={() => onChangeConfig({ ...config, revealType: 'scratch' })}
+                    onClick={() => onChangeConfig({ ...config, revealType: 'scratch', presetCategory: 'chat_scratch' })}
                     className={`p-4 rounded-2xl border-2 text-left transition flex items-center gap-3 ${
                       config.revealType !== 'camera'
                         ? 'border-rose-500 bg-rose-50/50 dark:bg-rose-950/20 ring-2 ring-rose-200 dark:ring-rose-800'
@@ -695,7 +734,7 @@ export default function CreatorDashboard({
                   </button>
 
                   <button
-                    onClick={() => onChangeConfig({ ...config, revealType: 'camera' })}
+                    onClick={() => onChangeConfig({ ...config, revealType: 'camera', presetCategory: 'chat_camera' })}
                     className={`p-4 rounded-2xl border-2 text-left transition flex items-center gap-3 ${
                       config.revealType === 'camera'
                         ? 'border-rose-500 bg-rose-50/50 dark:bg-rose-950/20 ring-2 ring-rose-200 dark:ring-rose-800'
@@ -960,7 +999,8 @@ export default function CreatorDashboard({
                   <input
                     type="file"
                     id="photo-upload-input"
-                    accept="image/*"
+                    accept="image/png, image/jpeg, image/jpg, image/gif, image/webp, image/*"
+                    multiple
                     onChange={handlePhotoUpload}
                     disabled={compressing}
                     className="hidden"
@@ -971,10 +1011,10 @@ export default function CreatorDashboard({
                   >
                     <Upload className="w-8 h-8 text-rose-500 mb-2 animate-bounce" />
                     <span className="text-xs sm:text-sm font-bold text-stone-800 dark:text-stone-200">
-                      {compressing ? 'กำลังประมวลผลรูปภาพ...' : 'คลิกเพื่ออัปโหลดรูปภาพใหม่'}
+                      {compressing ? 'กำลังประมวลผลรูปภาพ...' : 'คลิกเพื่อเลือกรูปภาพ (เลือกได้หลายรูปพร้อมกัน)'}
                     </span>
                     <span className="text-[10px] sm:text-xs text-stone-400 dark:text-stone-500 mt-1">
-                      รองรับไฟล์ JPG, PNG, WebP (ระบบจัดการขนาดและคุณภาพให้อัตโนมัติ)
+                      รองรับไฟล์ PNG, JPG, JPEG, GIF (เลือกหลายรูปได้ • จัดการขนาดและคุณภาพให้อัตโนมัติ)
                     </span>
                   </label>
                   {compressMsg && (
@@ -1120,54 +1160,150 @@ export default function CreatorDashboard({
                 </div>
               </div>
             )}
+
+            {/* TAB 8: COUPONS & VOICE NOTE (Image 2 customization) */}
+            {activeTab === 'coupons' && (
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-sm font-bold text-stone-800 dark:text-stone-100 flex items-center gap-2">
+                    <Gift className="w-4 h-4 text-rose-500" />
+                    <span>ปรับแต่งคูปองสิทธิพิเศษ & โน้ตเสียง</span>
+                  </h3>
+                  <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">
+                    คูปองของขวัญที่คนพิเศษสามารถกดรับสิทธิ์ได้จริง และข้อความเสียงในหน้าบทสรุป
+                  </p>
+                </div>
+
+                {/* Redeemable Coupons List */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-stone-700 dark:text-stone-300">
+                      รายการคูปอง ({config.coupons?.length || 0} ใบ)
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleAddCoupon}
+                      className="px-3 py-1.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold flex items-center gap-1.5 transition active:scale-95 shadow-sm shadow-rose-200"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>เพิ่มคูปองใหม่</span>
+                    </button>
+                  </div>
+
+                  {(!config.coupons || config.coupons.length === 0) ? (
+                    <div className="p-4 rounded-2xl bg-stone-50 dark:bg-stone-800/40 text-center text-xs text-stone-400">
+                      ยังไม่มีคูปอง (กดปุ่ม "เพิ่มคูปองใหม่" เพื่อสร้างคูปองน่ารักๆ)
+                    </div>
+                  ) : (
+                    config.coupons.map((coupon, idx) => (
+                      <div
+                        key={idx}
+                        className="p-3 rounded-2xl bg-stone-50 dark:bg-stone-800/60 border border-stone-200 dark:border-stone-700 flex items-center gap-2.5"
+                      >
+                        <div className="w-8 h-8 rounded-xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 flex items-center justify-center font-bold text-sm shrink-0">
+                          🎁
+                        </div>
+                        <input
+                          type="text"
+                          value={coupon}
+                          onChange={(e) => handleUpdateCoupon(idx, e.target.value)}
+                          className="flex-1 px-3 py-1.5 rounded-xl border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-stone-800 dark:text-stone-100 bg-white dark:bg-stone-800 focus:outline-none"
+                          placeholder="เช่น 🍜 คูปองเลี้ยงชาบู 1 มื้อ"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveCoupon(idx)}
+                          className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-xl transition shrink-0"
+                          title="ลบคูปองนี้"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))
+                  )}
+
+                  {/* Suggestion Chips */}
+                  <div className="pt-2">
+                    <span className="text-[10px] font-bold text-stone-500 dark:text-stone-400 block mb-1.5">
+                      💡 ข้อความคูปองแนะนำ (แตะเพื่อเพิ่มด่วน):
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[
+                        '🍜 คูปองเลี้ยงชาบู / หมูกระทะ 1 มื้อ',
+                        '🤗 คูปองกอดฟรี + ตามใจ 1 วันเต็ม',
+                        '☕ คูปองเลี้ยงกาแฟ / ชานม 1 แก้ว',
+                        '🎬 คูปองพาไปดูหนังเรื่องที่อยากดู',
+                        '🚗 คูปองคนขับรถพาเที่ยว 1 ทริป',
+                        '🍰 คูปองเลี้ยงขนมเค้ก & ของหวาน'
+                      ].map((item, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => {
+                            const updated = [...(config.coupons || []), item];
+                            onChangeConfig({ ...config, coupons: updated });
+                          }}
+                          className="text-[11px] px-2.5 py-1 rounded-lg bg-stone-100 dark:bg-stone-800 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-stone-700 text-stone-600 dark:text-stone-300 transition"
+                        >
+                          + {item}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Voice Note Caption Section */}
+                <div className="pt-4 border-t border-stone-200 dark:border-stone-700 space-y-2">
+                  <label className="text-xs font-bold text-stone-700 dark:text-stone-300 block">
+                    ข้อความเสียง / คำพูดตอนจบ (Voice Note Caption)
+                  </label>
+                  <input
+                    type="text"
+                    value={config.voiceCaption || ''}
+                    onChange={(e) => onChangeConfig({ ...config, voiceCaption: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-stone-800 dark:text-stone-100 bg-white dark:bg-stone-800"
+                    placeholder='เช่น "ขอบคุณที่เข้ามาเป็นความสุขของเรานะ ♡"'
+                  />
+                  <p className="text-[10px] text-stone-400">
+                    * ข้อความนี้จะแสดงข้างแผ่นเสียงไวนิลหมุนได้ในหน้าสุดท้าย
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Persistent Action Bar at bottom of each panel */}
-          <div className="mt-8 pt-5 border-t border-stone-200 dark:border-stone-800 flex flex-wrap items-center justify-between gap-3">
-            <button
-              onClick={handlePrevTab}
-              disabled={currentTabIdx === 0}
-              className="px-4 py-2.5 rounded-2xl border border-stone-300 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300 text-xs font-bold transition disabled:opacity-30 disabled:pointer-events-none flex items-center gap-1.5"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>ย้อนกลับ</span>
-            </button>
+          {/* Responsive Action Bar at bottom of each panel */}
+          <div className="mt-8 pt-5 border-t border-stone-200 dark:border-stone-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handlePrevTab}
+                disabled={currentTabIdx === 0}
+                className="flex-1 sm:flex-none px-4 py-2.5 rounded-2xl border border-stone-300 dark:border-stone-700 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300 text-xs font-bold transition disabled:opacity-30 disabled:pointer-events-none flex items-center justify-center gap-1.5"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>ย้อนกลับ</span>
+              </button>
 
-            <div className="flex items-center gap-2.5">
               {currentTabIdx < totalTabsCount - 1 && (
                 <button
                   onClick={handleNextTab}
-                  className="px-4 py-2.5 rounded-2xl bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 text-xs font-bold transition flex items-center gap-1.5"
+                  className="flex-1 sm:flex-none px-4 py-2.5 rounded-2xl bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 text-xs font-bold transition flex items-center justify-center gap-1.5"
                 >
                   <span>ขั้นตอนถัดไป</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               )}
-
-              <button
-                onClick={onOpenShareModal}
-                className="px-6 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-600 hover:to-teal-700 text-white text-xs sm:text-sm font-black shadow-lg shadow-emerald-500/25 active:scale-95 transition flex items-center gap-2 group ring-2 ring-emerald-300/40"
-              >
-                <CheckCircle className="w-4 h-4 text-emerald-100 group-hover:scale-110 transition-transform" />
-                <span>✓ เสร็จสิ้น (บันทึกและรับ QR Code)</span>
-              </button>
             </div>
+
+            <button
+              onClick={onOpenShareModal}
+              className="w-full sm:w-auto px-5 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-600 hover:to-teal-700 text-white text-xs sm:text-sm font-black shadow-md shadow-emerald-500/25 active:scale-95 transition flex items-center justify-center gap-2 group ring-2 ring-emerald-300/40"
+            >
+              <CheckCircle className="w-4 h-4 text-emerald-100 group-hover:scale-110 transition-transform" />
+              <span>✓ เสร็จสิ้น (บันทึกและรับ QR Code)</span>
+            </button>
           </div>
         </div>
-      </div>
-
-      {/* Floating Action Button for Instant Finish / Save */}
-      <div className="fixed bottom-4 right-4 z-40">
-        <button
-          onClick={onOpenShareModal}
-          className="px-4 sm:px-5 py-2.5 sm:py-3 rounded-full bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-600 hover:to-teal-700 text-white font-black text-xs sm:text-sm shadow-2xl shadow-emerald-600/40 active:scale-95 transition-all flex items-center gap-2 group border-2 border-white/20"
-        >
-          <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-100 animate-pulse group-hover:scale-110 transition-transform" />
-          <span>✓ เสร็จสิ้น / บันทึกของขวัญ</span>
-          <span className="hidden sm:inline text-[11px] opacity-90 font-medium bg-emerald-700/50 px-2 py-0.5 rounded-full">
-            รับ QR & ลิงก์
-          </span>
-        </button>
       </div>
     </div>
   );

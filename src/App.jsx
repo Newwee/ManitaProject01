@@ -173,11 +173,13 @@ export default function App() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#EFE8DF] text-stone-800">
-        <div className="w-12 h-12 rounded-2xl bg-rose-500 text-white flex items-center justify-center text-xl font-bold animate-pulse shadow-lg mb-3">
-          ✦
-        </div>
-        <p className="font-theme-display text-sm font-bold text-stone-700">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#EFE8DF] dark:bg-[#121214] text-stone-800 dark:text-stone-100">
+        <img
+          src="/assets/ManitaLogo.png"
+          alt="MANITA Logo"
+          className="w-16 h-16 rounded-2xl shadow-xl animate-pulse mb-3"
+        />
+        <p className="font-theme-display text-sm font-bold text-stone-700 dark:text-stone-300">
           กำลังเตรียมของขวัญพิเศษจาก MANITA...
         </p>
       </div>
@@ -289,6 +291,7 @@ export default function App() {
               {currentStage === 3 && (
                 <Stage3_Quiz
                   quizzes={config.quizzes}
+                  revealType={category === 'chat_camera' || config.revealType === 'camera' ? 'camera' : 'scratch'}
                   onNextStage={handleNextStage}
                 />
               )}

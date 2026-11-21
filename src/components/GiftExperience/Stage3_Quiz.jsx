@@ -6,6 +6,7 @@ import { DEFAULT_QUIZZES } from '../../types/themePresets';
 
 export default function Stage3_Quiz({
   quizzes = DEFAULT_QUIZZES,
+  revealType = 'scratch',
   onNextStage
 }) {
   const activeQuizzes = quizzes && quizzes.length > 0 ? quizzes : DEFAULT_QUIZZES;
@@ -62,14 +63,20 @@ export default function Stage3_Quiz({
           <p className="text-xs opacity-80 mb-6 leading-relaxed">
             {score === activeQuizzes.length
               ? 'เก่งมากกก! ความทรงจำระหว่างเราชัดเจนเสมอเลยนะ ✨'
-              : 'เก่งมากแล้ว! ความทรงจำดีๆ ยังมีอีกเพียบ ไปลุ้นการ์ดลับกันต่อเลย 🎉'}
+              : revealType === 'camera'
+                ? 'เก่งมากแล้ว! ความทรงจำดีๆ ยังมีอีกเพียบ ไปเปิดกล้องถ่ายรูปกันต่อเลย 📸'
+                : 'เก่งมากแล้ว! ความทรงจำดีๆ ยังมีอีกเพียบ ไปลุ้นการ์ดลับกันต่อเลย 🎉'}
           </p>
 
           <button
             onClick={onNextStage}
-            className="w-full py-3 rounded-2xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-2"
+            className="w-full py-3 rounded-2xl bg-stone-900 hover:bg-stone-800 text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-2 active:scale-95"
           >
-            <span>ไปด่านถัดไป: ขูดการ์ดลุ้นรางวัลลับ</span>
+            <span>
+              {revealType === 'camera'
+                ? 'ไปด่านถัดไป: กล้องถ่ายรูปความทรงจำ'
+                : 'ไปด่านถัดไป: ขูดการ์ดลุ้นรางวัลลับ'}
+            </span>
             <ChevronRight className="w-4 h-4 text-rose-300" />
           </button>
         </div>

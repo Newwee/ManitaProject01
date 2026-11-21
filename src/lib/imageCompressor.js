@@ -17,6 +17,20 @@ export async function compressImageFile(file) {
     console.warn(`File exceeds 5MB (${originalSizeKB} KB). Auto-compressing down to under 1000KB...`);
   }
 
+  // If GIF or PNG is already within limit (<= 1000KB), preserve raw data to keep animation & transparency
+  const isGif = file.type === 'image/gif' || file.name?.toLowerCase().endsWith('.gif');
+  const isPng = file.type === 'image/png' || file.name?.toLowerCase().endsWith('.png');
+
+  if ((isGif || isPng) && originalSize <= TARGET_MAX_OUTPUT_SIZE) {
+    const rawDataUrl = await readFileAsDataURL(file);
+    return {
+      dataUrl: rawDataUrl,
+      originalSizeKB,
+      compressedSizeKB: originalSizeKB,
+      ratio: 0
+    };
+  }
+
   // Load image into HTMLImageElement
   const dataUrl = await readFileAsDataURL(file);
   const img = await loadImage(dataUrl);

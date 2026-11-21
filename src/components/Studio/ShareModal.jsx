@@ -110,10 +110,12 @@ export default function ShareModal({
           <X className="w-5 h-5" />
         </button>
 
-        {/* Modal Header */}
-        <div className="w-12 h-12 mx-auto mb-2 rounded-2xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center shadow-sm">
-          <QrIcon className="w-6 h-6" />
-        </div>
+        {/* Modal Header with ManitaLogo.png */}
+        <img
+          src="/assets/ManitaLogo.png"
+          alt="MANITA Logo"
+          className="w-12 h-12 mx-auto mb-2 rounded-2xl shadow-sm object-contain"
+        />
         <h3 className="font-theme-display text-xl font-bold text-stone-900 dark:text-stone-100">
           ของขวัญพร้อมส่งแล้ว!
         </h3>
