@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Check, Heart } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Check, Heart, ImageOff } from 'lucide-react';
 import { playSuccessFanfare } from '../../lib/soundEngine';
 import confetti from 'canvas-confetti';
 
@@ -12,9 +12,7 @@ export default function Stage5_Finale({
   onToggleMusic
 }) {
   const hasPhotos = photos && photos.length > 0 && photos.some(p => p.url);
-  const displayPhotos = hasPhotos ? photos : [
-    { url: '/assets/placeholder_photo.svg', caption: 'ยังไม่ได้อัปโหลดรูปภาพ (ปรับแต่งได้ใน Studio)' }
-  ];
+  const displayPhotos = hasPhotos ? photos : [];
 
   const [photoIdx, setPhotoIdx] = useState(0);
   const [photoAnimKey, setPhotoAnimKey] = useState(0);
@@ -95,20 +93,28 @@ export default function Stage5_Finale({
 
           {/* Photo container */}
           <div className="w-full aspect-square bg-stone-100 overflow-hidden rounded-sm relative border border-stone-200">
-            <img
-              key={photoAnimKey}
-              src={currentPhoto.url}
-              alt="Memory"
-              className="w-full h-full object-cover polaroid-developing"
-              onError={(e) => {
-                e.target.src = '/assets/placeholder_photo.svg';
-              }}
-            />
+            {hasPhotos && currentPhoto?.url ? (
+              <img
+                key={photoAnimKey}
+                src={currentPhoto.url}
+                alt="Memory"
+                className="w-full h-full object-cover polaroid-developing"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                }}
+              />
+            ) : (
+              <div className="w-full h-full bg-stone-100 flex flex-col items-center justify-center text-stone-400 p-2">
+                <ImageOff className="w-8 h-8 text-stone-300 mb-1" />
+                <span className="text-[10px] font-mono font-bold text-stone-400">Image Not Loaded</span>
+                <span className="text-[9px] text-stone-400">(ยังไม่มีรูปภาพ)</span>
+              </div>
+            )}
           </div>
 
           {/* Caption */}
           <p className="font-theme-display text-sm font-bold text-center mt-2.5 text-stone-800 line-clamp-2 min-h-[22px]">
-            {currentPhoto.caption || 'ความทรงจำของเรา ♡'}
+            {hasPhotos ? (currentPhoto?.caption || 'ความทรงจำของเรา ♡') : 'ยังไม่ได้อัปโหลดรูปภาพ'}
           </p>
 
           {/* Prev/Next controls */}

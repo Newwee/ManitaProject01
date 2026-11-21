@@ -395,6 +395,51 @@ export default function CreatorDashboard({
                   );
                 })}
               </div>
+
+              {/* Background Image Selector (From Assets/Background) */}
+              <div className="pt-4 border-t border-stone-200 mt-3">
+                <h4 className="text-xs font-bold text-stone-800 mb-1 flex items-center gap-1.5">
+                  <span>🖼️</span>
+                  <span>เลือกภาพพื้นหลังโทรศัพท์ (Background จาก Assets ตามรูปที่ 2)</span>
+                </h4>
+                <p className="text-[11px] text-stone-500 mb-3">
+                  เลือกรูปภาพพื้นหลังที่จะแสดงบนหน้าจอโทรศัพท์ (หน้าซองจดหมาย, รหัสผ่าน, แชท, กล้อง, ขูดการ์ด)
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  {[
+                    { id: '/assets/Background.jpg', name: 'Background.jpg', desc: 'ภาพพื้นหลังอบอุ่น' },
+                    { id: '/assets/ChatBG.jpg', name: 'ChatBG.jpg', desc: 'ภาพพื้นหลังห้องแชท' },
+                    { id: '/assets/PhotoBG.jpg', name: 'PhotoBG.jpg', desc: 'ภาพพื้นหลังโพลารอยด์' },
+                    { id: '', name: 'ลายจุดประจำธีม', desc: 'Pattern ดั้งเดิม' }
+                  ].map((bg) => {
+                    const currentBg = config.phoneBackground !== undefined ? config.phoneBackground : '/assets/Background.jpg';
+                    const isSelected = currentBg === bg.id;
+                    return (
+                      <div
+                        key={bg.id}
+                        onClick={() => onChangeConfig({ ...config, phoneBackground: bg.id })}
+                        className={`p-2.5 rounded-2xl border-2 cursor-pointer transition text-left flex flex-col justify-between ${
+                          isSelected
+                            ? 'border-rose-500 bg-rose-50/60 shadow-sm ring-2 ring-rose-200'
+                            : 'border-stone-200 hover:border-stone-300 bg-stone-50'
+                        }`}
+                      >
+                        <div className="w-full h-16 rounded-xl overflow-hidden bg-stone-200 mb-2 border border-stone-300">
+                          {bg.id ? (
+                            <img src={bg.id} alt={bg.name} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full bg-[#EFE8DF] flex items-center justify-center text-[10px] text-stone-500 font-mono">
+                              Pattern
+                            </div>
+                          )}
+                        </div>
+                        <span className="text-xs font-bold text-stone-800 truncate block">{bg.name}</span>
+                        <span className="text-[10px] text-stone-400 truncate block">{bg.desc}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           )}
 

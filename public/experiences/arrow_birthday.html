@@ -1,0 +1,2488 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Arrow Crop — 3D ASCII Cake & Birthday Wishes</title>
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #04020a;
+      font-family: 'Prompt', sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+    }
+
+    #bgLayer {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at 50% 48%, #1e0d33 0%, #0b0517 56%, #020107 100%);
+      z-index: 0;
+    }
+
+    canvas {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      display: block;
+      z-index: 1;
+      cursor: crosshair;
+    }
+
+    /* แถบเส้นแสงบางๆ ด้านบนบอกความคืบหน้าเพลงก่อนเข้าหน้าคำอวยพร */
+    .song-progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 3px;
+      width: 0%;
+      background: linear-gradient(90deg, #ffd166, #ff6fa5, #70e4ff);
+      box-shadow: 0 0 12px rgba(255, 200, 120, 0.9);
+      z-index: 20;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+
+    .song-progress.active {
+      opacity: 0.85;
+    }
+
+    .guide {
+      position: fixed;
+      top: clamp(22px, 5vh, 46px);
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255, 244, 224, 0.92);
+      font-size: clamp(0.82rem, 1.4vw, 1rem);
+      padding: 10px 22px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 215, 145, 0.28);
+      backdrop-filter: blur(8px);
+      pointer-events: none;
+      z-index: 6;
+      white-space: nowrap;
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+    .guide.hide {
+      opacity: 0;
+      transform: translateX(-50%) translateY(-12px);
+    }
+
+    .crop-flash-text {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.85);
+      font-family: 'Prompt', sans-serif;
+      font-size: clamp(1.1rem, 2.8vw, 2rem);
+      letter-spacing: 8px;
+      text-transform: uppercase;
+      color: #fff6dc;
+      text-shadow: 0 0 22px rgba(255, 210, 120, 0.95);
+      pointer-events: none;
+      opacity: 0;
+      z-index: 8;
+      transition: opacity 0.35s ease, transform 0.5s ease;
+      white-space: nowrap;
+    }
+
+    .crop-flash-text.show {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1.04);
+    }
+
+    .title-wrap {
+      position: fixed;
+      top: clamp(12px, 2.8vh, 30px);
+      left: 0;
+      width: 100%;
+      text-align: center;
+      pointer-events: none;
+      z-index: 7;
+      opacity: 0;
+      transform: translateY(-20px) scale(0.9);
+      transition: opacity 1.1s ease, transform 1.1s cubic-bezier(0.22, 1, 0.36, 1);
+      padding: 0 16px;
+    }
+
+    .title-wrap.show {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+
+    .title {
+      font-family: 'Great Vibes', cursive;
+      font-size: clamp(2.6rem, 6vw, 4.9rem);
+      color: #fff8e8;
+      letter-spacing: 3px;
+      text-shadow:
+        0 0 14px rgba(255, 200, 110, 0.95),
+        0 0 38px rgba(255, 110, 175, 0.75),
+        0 4px 18px rgba(0, 0, 0, 0.6);
+      line-height: 1.1;
+    }
+
+    .subtitle {
+      margin-top: 2px;
+      font-size: clamp(0.8rem, 1.35vw, 1.05rem);
+      letter-spacing: 4px;
+      color: rgba(255, 240, 248, 0.88);
+      text-shadow: 0 2px 12px rgba(0, 0, 0, 0.8);
+      font-weight: 300;
+    }
+
+    /* ================= หน้าคำอวยพร (Wishes Page) ================= */
+    .wishes-overlay {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 18px 86px;
+      z-index: 12;
+      pointer-events: none;
+      opacity: 0;
+      transform: scale(0.94) translateY(24px);
+      transition: opacity 1.1s ease, transform 1.1s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .wishes-overlay.show {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+      pointer-events: auto;
+    }
+
+    .wishes-card {
+      position: relative;
+      width: min(640px, 94vw);
+      max-height: 82vh;
+      overflow-y: auto;
+      background: linear-gradient(155deg, rgba(32, 18, 54, 0.84), rgba(16, 9, 30, 0.90));
+      border: 1px solid rgba(255, 220, 160, 0.34);
+      border-radius: 28px;
+      padding: clamp(24px, 4vw, 38px) clamp(20px, 4.5vw, 42px);
+      box-shadow:
+        0 28px 80px rgba(0, 0, 0, 0.7),
+        0 0 45px rgba(255, 110, 175, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.18);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      text-align: center;
+      color: #fff;
+    }
+
+    /* แถบโพลารอยด์จิ๋วด้านบนการ์ดคำอวยพร */
+    .wishes-photos {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 0;
+      margin-bottom: 18px;
+      min-height: 76px;
+    }
+
+    .mini-polaroid {
+      width: 68px;
+      height: 80px;
+      background: #fffdf8;
+      padding: 5px 5px 14px;
+      border-radius: 4px;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.48);
+      margin: 0 -8px;
+      transition: transform 0.3s ease, z-index 0.3s ease;
+      cursor: pointer;
+    }
+
+    .mini-polaroid:hover {
+      transform: translateY(-10px) scale(1.18) rotate(0deg) !important;
+      z-index: 10;
+    }
+
+    .mini-polaroid img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 2px;
+      display: block;
+    }
+
+    .wishes-heading {
+      font-family: 'Great Vibes', cursive;
+      font-size: clamp(2.4rem, 5.5vw, 3.8rem);
+      color: #fff6dc;
+      text-shadow: 0 0 16px rgba(255, 200, 110, 0.85), 0 0 32px rgba(255, 95, 165, 0.55);
+      line-height: 1.15;
+    }
+
+    .wishes-sub {
+      font-size: clamp(0.85rem, 1.5vw, 1rem);
+      color: #ffd6ea;
+      letter-spacing: 2px;
+      margin-top: 2px;
+      margin-bottom: 18px;
+      font-weight: 300;
+    }
+
+    .wishes-divider {
+      width: 120px;
+      height: 1px;
+      margin: 0 auto 20px;
+      background: linear-gradient(90deg, transparent, rgba(255, 215, 140, 0.75), transparent);
+    }
+
+    .wishes-message {
+      font-size: clamp(0.96rem, 1.8vw, 1.12rem);
+      line-height: 1.95;
+      color: rgba(255, 248, 252, 0.94);
+      font-weight: 300;
+      white-space: pre-line;
+      min-height: 115px;
+      text-align: center;
+      padding: 0 6px;
+    }
+
+    .cursor-blink {
+      display: inline-block;
+      width: 2px;
+      height: 1.1em;
+      background: #ffd166;
+      margin-left: 3px;
+      vertical-align: -2px;
+      animation: blink 0.8s infinite;
+    }
+
+    @keyframes blink {
+      0%, 49% { opacity: 1; }
+      50%, 100% { opacity: 0; }
+    }
+
+    .wishes-sign {
+      margin-top: 20px;
+      font-size: clamp(0.9rem, 1.5vw, 1.05rem);
+      color: #ffe29e;
+      font-weight: 400;
+      text-align: right;
+      padding-right: 10px;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.8s ease, transform 0.8s ease;
+    }
+
+    .wishes-sign.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .wishes-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 24px;
+    }
+
+    /* Recipient Mode - Hide all creator control bars */
+    body.recipient-mode .controls,
+    body.recipient-mode #controls,
+    .recipient-mode .controls,
+    .recipient-mode #wishModal,
+    .recipient-mode #photoInput {
+      display: none !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+      opacity: 0 !important;
+    }
+
+    /* ================= แถบปุ่มควบคุมด้านล่าง ================= */
+    .controls {
+      position: fixed;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 6px;
+      background: rgba(12, 8, 24, 0.65);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 7px 13px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      z-index: 18;
+      opacity: 0.45;
+      transition: opacity 0.35s ease;
+      max-width: 97vw;
+    }
+
+    .controls:hover,
+    .controls.visible {
+      opacity: 1;
+    }
+
+    .btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      color: #fff;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 0.79rem;
+      font-family: 'Prompt', sans-serif;
+      cursor: pointer;
+      transition: all 0.22s ease;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.22);
+      border-color: rgba(255, 255, 255, 0.82);
+      transform: translateY(-1px);
+    }
+
+    .btn.primary {
+      background: linear-gradient(135deg, rgba(255, 195, 95, 0.36), rgba(255, 90, 155, 0.42));
+      border-color: rgba(255, 218, 150, 0.75);
+    }
+
+    .btn.danger {
+      background: rgba(255, 70, 95, 0.2);
+      border-color: rgba(255, 100, 120, 0.45);
+    }
+
+    /* ================= Modals ================= */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 3, 12, 0.78);
+      backdrop-filter: blur(10px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 30;
+      padding: 20px;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-card {
+      background: rgba(24, 16, 40, 0.96);
+      border: 1px solid rgba(255, 220, 160, 0.3);
+      border-radius: 20px;
+      padding: 22px;
+      width: min(470px, 94vw);
+      max-height: 86vh;
+      overflow-y: auto;
+      color: #fff;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.65);
+    }
+
+    .modal-card h3 {
+      font-weight: 500;
+      margin-bottom: 10px;
+      color: #ffe2a8;
+    }
+
+    .modal-card label {
+      display: block;
+      font-size: 0.8rem;
+      color: rgba(255, 255, 255, 0.74);
+      margin: 10px 0 4px;
+    }
+
+    .modal-card input,
+    .modal-card textarea {
+      width: 100%;
+      padding: 9px 13px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      font-family: 'Prompt', sans-serif;
+      font-size: 0.92rem;
+      outline: none;
+      resize: vertical;
+    }
+
+    .modal-card input:focus,
+    .modal-card textarea:focus {
+      border-color: #ffd07a;
+    }
+
+    .modal-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+      gap: 10px;
+      margin: 14px 0;
+      max-height: 44vh;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .gallery-item {
+      position: relative;
+      aspect-ratio: 1;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .gallery-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .gallery-del {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(0, 0, 0, 0.72);
+      color: #ff8599;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .gallery-del:hover {
+      background: #ff3b5c;
+      color: #fff;
+    }
+
+    .gallery-tip {
+      font-size: 0.78rem;
+      color: rgba(255, 255, 255, 0.62);
+      line-height: 1.5;
+    }
+
+    .polaroid-preview {
+      background: #fffdf8;
+      padding: 16px 16px 48px;
+      border-radius: 6px;
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.75);
+      max-width: min(420px, 88vw);
+      text-align: center;
+      transform: rotate(-1.5deg);
+      animation: popIn 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .polaroid-preview img {
+      display: block;
+      width: 100%;
+      max-height: 62vh;
+      object-fit: cover;
+      border-radius: 3px;
+    }
+
+    .polaroid-preview p {
+      margin-top: 14px;
+      color: #3a2d35;
+      font-size: 1rem;
+    }
+
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0.82) rotate(-4deg); }
+      to { opacity: 1; transform: scale(1) rotate(-1.5deg); }
+    }
+  </style>
+</head>
+<body>
+  <div id="bgLayer"></div>
+  <div class="song-progress" id="songProgress"></div>
+
+  <div class="guide" id="guide">🏹 ลากถอยหลังเพื่อดึงสายธนูแล้วยิง — หรือกด "ยิงอัตโนมัติ"</div>
+  <div class="crop-flash-text" id="cropFlashText">✨ Make a Wish ✨</div>
+
+  <div class="title-wrap" id="titleWrap">
+    <div class="title" id="titleText">Happy Birthday</div>
+    <div class="subtitle" id="subText">Wishing You Endless Happiness ✨</div>
+  </div>
+
+  <!-- หน้าคำอวยพร (แสดงอัตโนมัติเมื่อเล่นเพลงจบ) -->
+  <div class="wishes-overlay" id="wishesOverlay">
+    <div class="wishes-card">
+      <div class="wishes-photos" id="wishesPhotos"></div>
+      <div class="wishes-heading" id="wishHeading">Happy Birthday</div>
+      <div class="wishes-sub" id="wishSub">Wishing You Endless Happiness ✨</div>
+      <div class="wishes-divider"></div>
+      <div class="wishes-message" id="wishMessageEl"></div>
+      <div class="wishes-sign" id="wishSignEl">— จากคนที่หวังดีเสมอ 💖</div>
+      <div class="wishes-actions">
+        <button class="btn" onclick="backToCake()">🎂 กลับไปดูเค้ก</button>
+        <button class="btn primary" onclick="triggerAutoShoot()">🏹 ยิงธนูเล่นใหม่</button>
+        <button class="btn" onclick="openEditModal()">✏️ แก้คำอวยพร</button>
+      </div>
+    </div>
+  </div>
+
+  <canvas id="canvas"></canvas>
+
+  <input type="file" id="photoInput" accept="image/*" multiple style="display:none" />
+
+  <div class="controls visible" id="controls">
+    <button class="btn primary" onclick="triggerAutoShoot()">🏹 ยิงอัตโนมัติ</button>
+    <button class="btn" onclick="resetToBow()">🔄 ยิงใหม่</button>
+    <button class="btn" onclick="document.getElementById('photoInput').click()">🖼️ เพิ่มรูป</button>
+    <button class="btn" id="galleryBtn" onclick="openGalleryModal()">📂 คลังรูป (6)</button>
+    <button class="btn" onclick="openWishesPage()">💌 คำอวยพร</button>
+    <button class="btn" onclick="openEditModal()">✏️ แก้ข้อความ</button>
+    <button class="btn" id="soundBtn" onclick="toggleSound()">🔊 เสียง</button>
+    <button class="btn" id="fsBtn" onclick="toggleFullscreen()">⛶ เต็มจอ</button>
+  </div>
+
+  <!-- Modal แก้ไขข้อความ & คำอวยพร -->
+  <div class="modal-backdrop" id="editModal" onclick="closeEditModal()">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <h3>✏️ ปรับแต่งข้อความ & คำอวยพร</h3>
+      <label>หัวข้อหลัก</label>
+      <input type="text" id="inputTitle" />
+      <label>คำโปรยด้านล่างหัวข้อ</label>
+      <input type="text" id="inputSub" />
+      <label>เนื้อหาคำอวยพร (หน้าสุดท้ายหลังเพลงจบ)</label>
+      <textarea id="inputWishBody" rows="5"></textarea>
+      <label>ลงชื่อผู้ส่ง</label>
+      <input type="text" id="inputWishSign" />
+      <div class="modal-actions">
+        <button class="btn" onclick="closeEditModal()">ยกเลิก</button>
+        <button class="btn primary" onclick="saveText()">บันทึก</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal จัดการคลังรูป -->
+  <div class="modal-backdrop" id="galleryModal" onclick="closeGalleryModal()">
+    <div class="modal-card" onclick="event.stopPropagation()">
+      <h3>📂 คลังรูปที่ลอยลงมา (<span id="galleryCount">0</span> รูป)</h3>
+      <p class="gallery-tip">เลือกเพิ่มได้ทีละหลายๆ รูป หรือลากไฟล์รูปจากโฟลเดอร์มาวางบนหน้าจอได้เลย รูปเหล่านี้จะโชว์ทั้งตอนลอยลงมาและบนหน้าคำอวยพรด้วยครับ</p>
+      <div class="gallery-grid" id="galleryGrid"></div>
+      <div class="modal-actions">
+        <button class="btn danger" onclick="resetDefaultPhotos()">รีเซ็ตรูปเริ่มต้น</button>
+        <button class="btn primary" onclick="document.getElementById('photoInput').click()">➕ เลือกรูปเพิ่ม</button>
+        <button class="btn" onclick="closeGalleryModal()">ปิด</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal ขยายดูรูปโพลารอยด์ -->
+  <div class="modal-backdrop" id="photoModal" onclick="closePhotoModal()">
+    <div class="polaroid-preview" onclick="event.stopPropagation()">
+      <img id="previewImg" src="" alt="memory" />
+      <p id="previewCaption"></p>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const songProgress = document.getElementById('songProgress');
+    const guide = document.getElementById('guide');
+    const cropFlashText = document.getElementById('cropFlashText');
+    const titleWrap = document.getElementById('titleWrap');
+    const titleText = document.getElementById('titleText');
+    const subText = document.getElementById('subText');
+    const wishesOverlay = document.getElementById('wishesOverlay');
+    const wishesPhotos = document.getElementById('wishesPhotos');
+    const wishHeading = document.getElementById('wishHeading');
+    const wishSub = document.getElementById('wishSub');
+    const wishMessageEl = document.getElementById('wishMessageEl');
+    const wishSignEl = document.getElementById('wishSignEl');
+    const controls = document.getElementById('controls');
+    const galleryBtn = document.getElementById('galleryBtn');
+    const soundBtn = document.getElementById('soundBtn');
+    const fsBtn = document.getElementById('fsBtn');
+    const photoInput = document.getElementById('photoInput');
+
+    let width = 0, height = 0, dpr = 1;
+    let isPortrait = false;
+
+    // ข้อความคำอวยพร (แก้ไขได้จากปุ่ม ✏️ แก้ข้อความ)
+    let wishData = {
+      title: 'Happy Birthday',
+      sub: 'Wishing You Endless Happiness ✨',
+      body: 'สุขสันต์วันเกิดนะ! 🎂✨\nขอให้ปีนี้เป็นปีที่ใจดีกับเธอมากๆ เต็มไปด้วยรอยยิ้ม เสียงหัวเราะ และความสุขในทุกๆ วัน\nขอให้สมหวังในทุกสิ่งที่ตั้งใจ สุขภาพแข็งแรง มีแต่เรื่องดีๆ และคนดีๆ เข้ามาในชีวิตนะ\nเติบโตอย่างสดใสและมีความสุขที่สุดเลย! 💖',
+      sign: '— จากคนที่หวังดีเสมอ ✨'
+    };
+
+    // สถานะ: 'ready' -> 'autoDraw' -> 'flying' -> 'cropping' -> 'celebrate' -> 'wishes'
+    let state = 'ready';
+
+    // ระยะเวลาเล่นฉากเค้ก+เพลง ก่อนตัดเข้าหน้าคำอวยพรอัตโนมัติ (ตรงกับตอนเพลง Happy Birthday จบพอดี!)
+    const CELEBRATE_DURATION = 14.6;
+    let autoGoWishes = true;
+    let typewriterTimer = null;
+
+    // ตำแหน่งธนูและเป้าหมาย
+    let bowPos = { x: 0, y: 0 };
+    let targetPos = { x: 0, y: 0 };
+    let baseAngle = 0;
+    let aimAngle = 0;
+
+    // ฟิสิกส์สายธนู
+    let pull = 0;
+    let stringWave = 0;
+    let stringWaveVel = 0;
+    let isDrawingBow = false;
+    let dragStart = { x: 0, y: 0 };
+    let autoDrawTimer = 0;
+    let bowFade = 1;
+
+    // ลูกธนู
+    let arrow = { active: false, x: 0, y: 0, vx: 0, vy: 0, angle: 0, speed: 0 };
+
+    // Animation Crop & Celebrate
+    let cropTime = 0;
+    const CROP_DURATION = 1.65;
+    let celebrateTime = 0;
+    let screenShake = 0;
+    let flashAlpha = 0;
+
+    // ตัวแปรเค้ก ASCII 3 มิติ
+    let cakeRotY = 0;
+    let cakeSpinVel = 0;
+    let isDraggingCake = false;
+    let lastCakeDragX = 0;
+    let cakeDragDist = 0;
+    let cakePoints = [];
+    let candleTops = [];
+
+    // กลุ่มเอฟเฟกต์และรูปภาพ
+    let bgStars = [];
+    let chargeSparks = [];
+    let arrowTrail = [];
+    let shockwaves = [];
+    let explosionSparks = [];
+    let fireworks = [];
+    let confetti = [];
+
+    let photoLibrary = [];
+    let hasCustomPhotos = false;
+    let photoDeck = [];
+    let fallingPhotos = [];
+
+    const spriteCache = new Map();
+    let uiTimer = null;
+
+    // ระบบเสียง Web Audio API
+    let soundEnabled = true;
+    let audioCtx = null;
+    let melodyTimers = [];
+
+    function getAudioCtx() {
+      if (!soundEnabled) return null;
+      try {
+        if (!audioCtx) {
+          const AC = window.AudioContext || window.webkitAudioContext;
+          if (AC) audioCtx = new AC();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+        return audioCtx;
+      } catch {
+        return null;
+      }
+    }
+
+    function playShootSound() {
+      const ac = getAudioCtx();
+      if (!ac) return;
+      const now = ac.currentTime;
+
+      const osc = ac.createOscillator();
+      const gain = ac.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(195, now);
+      osc.frequency.exponentialRampToValueAtTime(66, now + 0.22);
+      gain.gain.setValueAtTime(0.28, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+      osc.connect(gain);
+      gain.connect(ac.destination);
+      osc.start(now);
+      osc.stop(now + 0.26);
+
+      const bufSize = ac.sampleRate * 0.34;
+      const buf = ac.createBuffer(1, bufSize, ac.sampleRate);
+      const data = buf.getChannelData(0);
+      for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+
+      const noise = ac.createBufferSource();
+      noise.buffer = buf;
+      const filter = ac.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(950, now);
+      filter.frequency.exponentialRampToValueAtTime(2700, now + 0.16);
+      filter.frequency.exponentialRampToValueAtTime(600, now + 0.33);
+      filter.Q.value = 1.6;
+
+      const nGain = ac.createGain();
+      nGain.gain.setValueAtTime(0.01, now);
+      nGain.gain.linearRampToValueAtTime(0.18, now + 0.08);
+      nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.34);
+
+      noise.connect(filter);
+      filter.connect(nGain);
+      nGain.connect(ac.destination);
+      noise.start(now);
+    }
+
+    function playImpactCropSound() {
+      const ac = getAudioCtx();
+      if (!ac) return;
+      const now = ac.currentTime;
+
+      const sub = ac.createOscillator();
+      const subG = ac.createGain();
+      sub.type = 'sine';
+      sub.frequency.setValueAtTime(135, now);
+      sub.frequency.exponentialRampToValueAtTime(36, now + 0.7);
+      subG.gain.setValueAtTime(0.35, now);
+      subG.gain.exponentialRampToValueAtTime(0.001, now + 0.75);
+      sub.connect(subG);
+      subG.connect(ac.destination);
+      sub.start(now);
+      sub.stop(now + 0.78);
+
+      [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((freq, i) => {
+        const o = ac.createOscillator();
+        const g = ac.createGain();
+        const t = now + i * 0.06;
+        o.type = 'sine';
+        o.frequency.setValueAtTime(freq, t);
+        g.gain.setValueAtTime(0.001, t);
+        g.gain.linearRampToValueAtTime(0.08, t + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.0008, t + 1.1);
+        o.connect(g);
+        g.connect(ac.destination);
+        o.start(t);
+        o.stop(t + 1.15);
+      });
+    }
+
+    function playWishesChime() {
+      const ac = getAudioCtx();
+      if (!ac) return;
+      const now = ac.currentTime;
+      [523.25, 659.25, 783.99, 1046.5, 1318.5, 1567.98].forEach((freq, i) => {
+        const o = ac.createOscillator();
+        const g = ac.createGain();
+        const t = now + i * 0.085;
+        o.type = 'sine';
+        o.frequency.setValueAtTime(freq, t);
+        g.gain.setValueAtTime(0.001, t);
+        g.gain.linearRampToValueAtTime(0.06, t + 0.03);
+        g.gain.exponentialRampToValueAtTime(0.0008, t + 1.5);
+        o.connect(g);
+        g.connect(ac.destination);
+        o.start(t);
+        o.stop(t + 1.55);
+      });
+    }
+
+    function stopBirthdayMelody() {
+      melodyTimers.forEach(id => clearTimeout(id));
+      melodyTimers = [];
+    }
+
+    function playBirthdayMelody() {
+      stopBirthdayMelody();
+      if (!soundEnabled) return;
+
+      const notes = [
+        [261.63, 0.0, 0.35], [261.63, 0.35, 0.25], [293.66, 0.6, 0.55], [261.63, 1.15, 0.55], [349.23, 1.7, 0.55], [329.63, 2.25, 1.0],
+        [261.63, 3.35, 0.35], [261.63, 3.7, 0.25], [293.66, 3.95, 0.55], [261.63, 4.5, 0.55], [392.00, 5.05, 0.55], [349.23, 5.6, 1.0],
+        [261.63, 6.7, 0.35], [261.63, 7.05, 0.25], [523.25, 7.3, 0.55], [440.00, 7.85, 0.55], [349.23, 8.4, 0.55], [329.63, 8.95, 0.55], [293.66, 9.5, 0.9],
+        [466.16, 10.5, 0.35], [466.16, 10.85, 0.25], [440.00, 11.1, 0.55], [349.23, 11.65, 0.55], [392.00, 12.2, 0.55], [349.23, 12.75, 1.2]
+      ];
+
+      notes.forEach(([freq, delay, dur]) => {
+        const id = setTimeout(() => {
+          const ac = getAudioCtx();
+          if (!ac || state !== 'celebrate') return;
+          const now = ac.currentTime;
+          const osc = ac.createOscillator();
+          const gain = ac.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq * 2, now);
+          gain.gain.setValueAtTime(0.001, now);
+          gain.gain.linearRampToValueAtTime(0.06, now + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.0008, now + dur + 0.55);
+          osc.connect(gain);
+          gain.connect(ac.destination);
+          osc.start(now);
+          osc.stop(now + dur + 0.6);
+        }, delay * 1000);
+        melodyTimers.push(id);
+      });
+    }
+
+    function hexToRgba(hex, alpha) {
+      const c = hex.replace('#', '');
+      const n = parseInt(c, 16);
+      return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
+    }
+
+    function getGlowSprite(color) {
+      if (spriteCache.has(color)) return spriteCache.get(color);
+      const size = 64;
+      const off = document.createElement('canvas');
+      off.width = size;
+      off.height = size;
+      const octx = off.getContext('2d');
+      const h = size / 2;
+
+      const grad = octx.createRadialGradient(h, h, 0, h, h, h);
+      grad.addColorStop(0.0, '#ffffff');
+      grad.addColorStop(0.18, hexToRgba(color, 0.95));
+      grad.addColorStop(0.46, hexToRgba(color, 0.34));
+      grad.addColorStop(1.0, hexToRgba(color, 0));
+
+      octx.fillStyle = grad;
+      octx.fillRect(0, 0, size, size);
+      spriteCache.set(color, off);
+      return off;
+    }
+
+    function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+    function easeInOutCubic(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+    function randomFrom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+    // =========================================================================
+    //  โมเดลเค้ก 3 มิติแบบ Colored ASCII Art (ปรับความแน่นให้ชั้นเค้กคมชัด)
+    // =========================================================================
+    function buildAsciiCakeModel() {
+      cakePoints = [];
+      candleTops = [];
+
+      const sprinkleColors = ['#70e4ff', '#ffd166', '#98f5a6', '#ff5fa2', '#c77dff', '#ffffff'];
+
+      function addCylinder(r, yMin, yMax, thetaSteps, ySteps, colorFn, topColorFn, rInnerTop = 0) {
+        for (let iy = 0; iy <= ySteps; iy++) {
+          const v = iy / ySteps;
+          const y = yMin + v * (yMax - yMin);
+          for (let it = 0; it < thetaSteps; it++) {
+            const theta = (it / thetaSteps) * Math.PI * 2;
+            const c = Math.cos(theta);
+            const s = Math.sin(theta);
+            const info = colorFn(theta, v, y);
+            cakePoints.push({
+              x: c * r, y, z: s * r,
+              nx: c, ny: 0.1, nz: s,
+              color: info.color,
+              forceChar: info.char || null
+            });
+          }
+        }
+        if (topColorFn) {
+          const rSteps = Math.max(5, Math.round((r - rInnerTop) * 10));
+          for (let ir = 0; ir <= rSteps; ir++) {
+            const rad = rInnerTop + (ir / rSteps) * (r - rInnerTop);
+            const tCount = Math.max(16, Math.round(rad * 42));
+            for (let it = 0; it < tCount; it++) {
+              const theta = (it / tCount) * Math.PI * 2;
+              const info = topColorFn(theta, rad);
+              cakePoints.push({
+                x: Math.cos(theta) * rad,
+                y: yMax,
+                z: Math.sin(theta) * rad,
+                nx: 0, ny: 1, nz: 0,
+                color: info.color,
+                forceChar: info.char || null
+              });
+            }
+          }
+        }
+      }
+
+      // 1. จานรองสีทอง
+      addCylinder(
+        2.10, -1.42, -1.30, 120, 3,
+        () => ({ color: '#ffd166', char: '=' }),
+        (theta, rad) => ({ color: rad > 1.94 ? '#ffe8a3' : '#cbd5e1' }),
+        1.64
+      );
+
+      // 2. เค้กชั้นล่าง
+      addCylinder(
+        1.72, -1.30, -0.44, 130, 18,
+        (theta, v) => {
+          const drip = 0.72 + 0.15 * Math.sin(theta * 9);
+          if (v >= drip) return { color: '#fff7fb' };
+          if (v > 0.44 && v < 0.56) return { color: '#ffe599' };
+          const hash = Math.sin(theta * 37.3 + v * 91.7) * 43758.5453;
+          if ((hash - Math.floor(hash)) > 0.92) {
+            return { color: sprinkleColors[Math.floor(Math.abs(hash) % sprinkleColors.length)], char: 'o' };
+          }
+          return { color: '#ff5c9e' };
+        },
+        (theta, rad) => (rad > 1.62 ? { color: '#ff9ec7', char: '@' } : { color: '#fff5fa' }),
+        1.16
+      );
+
+      // 3. เค้กชั้นกลาง
+      addCylinder(
+        1.20, -0.44, 0.34, 100, 16,
+        (theta, v) => {
+          if (v < 0.14) return { color: '#ffd166', char: '=' };
+          const drip = 0.70 + 0.16 * Math.sin(theta * 7 + 1.2);
+          if (v >= drip) return { color: '#fff9e6' };
+          const hash = Math.sin(theta * 53.1 + v * 73.9) * 19384.21;
+          if ((hash - Math.floor(hash)) > 0.91) {
+            return { color: sprinkleColors[Math.floor(Math.abs(hash) % sprinkleColors.length)], char: '*' };
+          }
+          return { color: '#b975ff' };
+        },
+        (theta, rad) => (rad > 1.11 ? { color: '#ffd166', char: '*' } : { color: '#fff8f0' }),
+        0.70
+      );
+
+      // 4. เค้กชั้นบน
+      addCylinder(
+        0.74, 0.34, 0.96, 76, 13,
+        (theta, v) => {
+          if (v < 0.16) return { color: '#70e4ff', char: '~' };
+          const drip = 0.72 + 0.14 * Math.sin(theta * 6 + 0.6);
+          if (v >= drip) return { color: '#ffffff' };
+          return { color: '#ff85b3' };
+        },
+        (theta, rad) => (rad > 0.65 ? { color: '#ff5fa2', char: 'o' } : { color: '#fff8fb' }),
+        0
+      );
+
+      // 5. เทียนวันเกิด 5 เล่ม
+      const candleConfigs = [
+        { cx: 0, cz: 0, h: 0.72, c1: '#ffd166', c2: '#ffffff' },
+        { cx: 0.42, cz: 0, h: 0.56, c1: '#70e4ff', c2: '#ffffff' },
+        { cx: -0.42, cz: 0, h: 0.56, c1: '#ff6fa5', c2: '#ffffff' },
+        { cx: 0, cz: 0.42, h: 0.56, c1: '#98f5a6', c2: '#ffffff' },
+        { cx: 0, cz: -0.42, h: 0.56, c1: '#c77dff', c2: '#ffffff' }
+      ];
+
+      candleConfigs.forEach((cd, idx) => {
+        const y0 = 0.96;
+        const y1 = y0 + cd.h;
+        const cr = 0.085;
+        for (let iy = 0; iy <= 10; iy++) {
+          const v = iy / 10;
+          const y = y0 + v * cd.h;
+          for (let it = 0; it < 16; it++) {
+            const theta = (it / 16) * Math.PI * 2;
+            const stripe = ((iy + Math.floor(it / 4)) % 2 === 0);
+            cakePoints.push({
+              x: cd.cx + Math.cos(theta) * cr,
+              y,
+              z: cd.cz + Math.sin(theta) * cr,
+              nx: Math.cos(theta), ny: 0.15, nz: Math.sin(theta),
+              color: stripe ? cd.c1 : cd.c2,
+              forceChar: '|'
+            });
+          }
+        }
+        candleTops.push({ x: cd.cx, y: y1, z: cd.cz, phase: idx * 1.4 });
+      });
+    }
+
+    function drawSpinningAsciiCake(cx, cy, time, revealScale) {
+      if (revealScale <= 0.02) return;
+
+      const cols = isPortrait ? 46 : 64;
+      const rows = isPortrait ? 28 : 34;
+
+      const fontSize = Math.max(9, Math.min(width * 0.0106, height * 0.0182)) * revealScale;
+      const charW = fontSize * 0.62;
+      const charH = fontSize * 1.04;
+
+      const totalW = cols * charW;
+      const totalH = rows * charH;
+      const startX = cx - totalW / 2;
+      const startY = cy - totalH / 2;
+
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const glowR = Math.max(totalW, totalH) * 0.55;
+      const aura = ctx.createRadialGradient(cx, cy - totalH * 0.05, 10, cx, cy, glowR);
+      aura.addColorStop(0, 'rgba(255, 165, 210, 0.20)');
+      aura.addColorStop(0.45, 'rgba(255, 200, 100, 0.10)');
+      aura.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = aura;
+      ctx.beginPath();
+      ctx.arc(cx, cy, glowR, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      const size = cols * rows;
+      const zBuf = new Float32Array(size);
+      const chBuf = new Array(size);
+      const colBuf = new Array(size);
+      zBuf.fill(-999);
+
+      const cosY = Math.cos(cakeRotY);
+      const sinY = Math.sin(cakeRotY);
+      const tilt = 0.44;
+      const cosT = Math.cos(tilt);
+      const sinT = Math.sin(tilt);
+
+      const camDist = 6.3;
+      const scaleY = rows * 1.45;
+      const scaleX = scaleY * (charH / charW);
+
+      const Lx = -0.36, Ly = 0.62, Lz = 0.70;
+      const ramp = '.,:-=+*#%@';
+
+      function plotPoint(x, y, z, nx, ny, nz, color, forceChar, isEmissive = false) {
+        const x1 = x * cosY - z * sinY;
+        const z1 = x * sinY + z * cosY;
+        const yCam = y * cosT - z1 * sinT;
+        const zCam = y * sinT + z1 * cosT;
+
+        const invZ = 1 / (camDist - zCam);
+        const col = Math.floor(cols / 2 + x1 * scaleX * invZ);
+        const row = Math.floor(rows * 0.54 - yCam * scaleY * invZ);
+
+        if (col < 0 || col >= cols || row < 0 || row >= rows) return;
+        const idx = row * cols + col;
+        if (zCam <= zBuf[idx]) return;
+
+        zBuf[idx] = zCam;
+        colBuf[idx] = color;
+
+        if (forceChar && isEmissive) {
+          chBuf[idx] = forceChar;
+          return;
+        }
+
+        const nx1 = nx * cosY - nz * sinY;
+        const nz1 = nx * sinY + nz * cosY;
+        const nyCam = ny * cosT - nz1 * sinT;
+        const nzCam = ny * sinT + nz1 * cosT;
+
+        let lum = nx1 * Lx + nyCam * Ly + nzCam * Lz;
+        lum = Math.max(0.18, Math.min(1, lum * 0.72 + 0.36));
+
+        if (forceChar) {
+          chBuf[idx] = lum > 0.35 ? forceChar : '.';
+        } else {
+          const ri = Math.min(ramp.length - 1, Math.floor(lum * ramp.length));
+          chBuf[idx] = ramp[ri];
+        }
+      }
+
+      for (let i = 0; i < cakePoints.length; i++) {
+        const p = cakePoints[i];
+        plotPoint(p.x, p.y, p.z, p.nx, p.ny, p.nz, p.color, p.forceChar, false);
+      }
+
+      const flameChars = ['^', '*', '(', ')', '@'];
+      const flameGlowCoords = [];
+
+      for (let i = 0; i < candleTops.length; i++) {
+        const ct = candleTops[i];
+        const flicker = Math.sin(time * 13 + ct.phase) * 0.04;
+        const stretch = 1 + Math.sin(time * 17 + ct.phase * 2) * 0.16;
+
+        plotPoint(ct.x, ct.y + 0.09, ct.z, 0, 0, 1, '#ffffff', '@', true);
+        plotPoint(ct.x + flicker * 0.5, ct.y + 0.18 * stretch, ct.z, 0, 0, 1, '#ffe066', '*', true);
+        plotPoint(ct.x + flicker, ct.y + 0.28 * stretch, ct.z, 0, 0, 1, '#ff8800', flameChars[Math.floor(time * 10 + i) % 3], true);
+
+        const x1 = ct.x * cosY - ct.z * sinY;
+        const z1 = ct.x * sinY + ct.z * cosY;
+        const yCam = (ct.y + 0.18) * cosT - z1 * sinT;
+        const zCam = (ct.y + 0.18) * sinT + z1 * cosT;
+        const invZ = 1 / (camDist - zCam);
+        flameGlowCoords.push({
+          sx: startX + (cols / 2 + x1 * scaleX * invZ) * charW,
+          sy: startY + (rows * 0.54 - yCam * scaleY * invZ) * charH,
+          pulse: 1 + Math.sin(time * 15 + ct.phase) * 0.18
+        });
+      }
+
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const flameSprite = getGlowSprite('#ffaa33');
+      for (const fg of flameGlowCoords) {
+        const r = fontSize * 2.2 * fg.pulse;
+        ctx.globalAlpha = 0.65;
+        ctx.drawImage(flameSprite, fg.sx - r, fg.sy - r, r * 2, r * 2);
+      }
+      ctx.restore();
+
+      ctx.save();
+      ctx.font = `bold ${fontSize.toFixed(1)}px "Courier New", Consolas, monospace`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.globalAlpha = Math.min(1, revealScale * 1.15);
+
+      for (let r = 0; r < rows; r++) {
+        const py = startY + r * charH + charH * 0.5;
+        for (let c = 0; c < cols; c++) {
+          const idx = r * cols + c;
+          const ch = chBuf[idx];
+          if (!ch) continue;
+          const px = startX + c * charW + charW * 0.5;
+          ctx.fillStyle = colBuf[idx];
+          ctx.fillText(ch, px, py);
+        }
+      }
+      ctx.restore();
+    }
+
+    // =========================================================================
+    //  หน้าคำอวยพร (Wishes Page + Typewriter + Mini Polaroid Strip)
+    // =========================================================================
+    function renderWishesPhotoStrip() {
+      wishesPhotos.innerHTML = '';
+      const displayCount = Math.min(5, photoLibrary.length);
+      const angles = [-10, -5, 0, 5, 10];
+      const offsetStart = Math.floor((5 - displayCount) / 2);
+
+      for (let i = 0; i < displayCount; i++) {
+        const item = photoLibrary[i];
+        const card = document.createElement('div');
+        card.className = 'mini-polaroid';
+        const deg = angles[offsetStart + i] || 0;
+        const liftY = Math.abs(deg) * 0.6;
+        card.style.transform = `rotate(${deg}deg) translateY(${liftY}px)`;
+        card.onclick = () => openPhotoModal(item);
+
+        const img = document.createElement('img');
+        img.src = item.src;
+        img.alt = item.caption;
+        card.appendChild(img);
+        wishesPhotos.appendChild(card);
+      }
+    }
+
+    function startWishTypewriter() {
+      clearInterval(typewriterTimer);
+      wishHeading.textContent = wishData.title;
+      wishSub.textContent = wishData.sub;
+      wishSignEl.textContent = wishData.sign;
+      wishSignEl.classList.remove('show');
+      wishMessageEl.innerHTML = '';
+
+      const fullText = wishData.body;
+      let idx = 0;
+
+      const textNode = document.createElement('span');
+      const cursor = document.createElement('span');
+      cursor.className = 'cursor-blink';
+      wishMessageEl.appendChild(textNode);
+      wishMessageEl.appendChild(cursor);
+
+      typewriterTimer = setInterval(() => {
+        idx++;
+        textNode.textContent = fullText.slice(0, idx);
+        if (idx >= fullText.length) {
+          clearInterval(typewriterTimer);
+          setTimeout(() => {
+            cursor.remove();
+            wishSignEl.classList.add('show');
+          }, 450);
+        }
+      }, 34);
+    }
+
+    function openWishesPage() {
+      stopBirthdayMelody();
+      state = 'wishes';
+      titleWrap.classList.remove('show');
+      guide.classList.add('hide');
+      cropFlashText.classList.remove('show');
+      songProgress.classList.remove('active');
+      canvas.style.cursor = 'default';
+
+      renderWishesPhotoStrip();
+      wishesOverlay.classList.add('show');
+      startWishTypewriter();
+      playWishesChime();
+
+      // ยิงพลุฉลองเบาๆ ด้านหลังการ์ดคำอวยพร
+      spawnFirework(width * 0.18, height * 0.24);
+      setTimeout(() => { if (state === 'wishes') spawnFirework(width * 0.82, height * 0.26); }, 420);
+    }
+
+    function backToCake() {
+      clearInterval(typewriterTimer);
+      wishesOverlay.classList.remove('show');
+      state = 'celebrate';
+      autoGoWishes = false; // พอกดกลับมาดูเค้กเอง จะไม่ตัดกลับอัตโนมัติ (ดูได้นานเท่าที่ต้องการ)
+      songProgress.classList.remove('active');
+      titleWrap.classList.add('show');
+      canvas.style.cursor = 'grab';
+      if (fallingPhotos.length === 0) initFallingPhotos();
+    }
+
+    // =========================================================================
+    //  ระบบคลังรูป
+    // =========================================================================
+    function updateGalleryUI() {
+      galleryBtn.textContent = `📂 คลังรูป (${photoLibrary.length})`;
+      const countEl = document.getElementById('galleryCount');
+      const grid = document.getElementById('galleryGrid');
+      if (countEl) countEl.textContent = photoLibrary.length;
+      if (!grid) return;
+
+      grid.innerHTML = '';
+      photoLibrary.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'gallery-item';
+
+        const img = document.createElement('img');
+        img.src = item.src;
+        img.alt = item.caption;
+        div.appendChild(img);
+
+        if (photoLibrary.length > 1) {
+          const del = document.createElement('button');
+          del.className = 'gallery-del';
+          del.textContent = '✕';
+          del.title = 'ลบรูปนี้';
+          del.onclick = () => removePhotoAt(index);
+          div.appendChild(del);
+        }
+        grid.appendChild(div);
+      });
+
+      if (state === 'wishes') renderWishesPhotoStrip();
+    }
+
+    function createDefaultPhotos() {
+      hasCustomPhotos = false;
+      const presets = [
+        { bg1: '#ff7eb3', bg2: '#3a1c71', icon: '🎂', caption: 'Make a Wish 🎂', sub: 'Special Day' },
+        { bg1: '#ffd194', bg2: '#d1913c', icon: '✨', caption: 'Shine Bright ✨', sub: 'Golden Year' },
+        { bg1: '#a18cd1', bg2: '#fbc2eb', icon: '🎈', caption: 'Stay Happy 🎈', sub: 'Always Smile' },
+        { bg1: '#f093fb', bg2: '#f5576c', icon: '💖', caption: 'Best Memories 💖', sub: 'With Love' },
+        { bg1: '#4facfe', bg2: '#00f2fe', icon: '🎁', caption: 'Just For You 🎁', sub: 'Surprise!' },
+        { bg1: '#fa709a', bg2: '#fee140', icon: '🎆', caption: 'Cheers to You 🎆', sub: 'Happy Moments' }
+      ];
+
+      photoLibrary = presets.map((p) => {
+        const c = document.createElement('canvas');
+        c.width = 360;
+        c.height = 360;
+        const g = c.getContext('2d');
+
+        const grad = g.createLinearGradient(0, 0, 360, 360);
+        grad.addColorStop(0, p.bg1);
+        grad.addColorStop(1, p.bg2);
+        g.fillStyle = grad;
+        g.fillRect(0, 0, 360, 360);
+
+        for (let i = 0; i < 18; i++) {
+          g.fillStyle = `rgba(255,255,255,${0.08 + Math.random() * 0.18})`;
+          g.beginPath();
+          g.arc(Math.random() * 360, Math.random() * 360, 8 + Math.random() * 36, 0, Math.PI * 2);
+          g.fill();
+        }
+
+        const rad = g.createRadialGradient(180, 155, 10, 180, 155, 110);
+        rad.addColorStop(0, 'rgba(255,255,255,0.45)');
+        rad.addColorStop(1, 'rgba(255,255,255,0)');
+        g.fillStyle = rad;
+        g.fillRect(0, 0, 360, 360);
+
+        g.font = '112px serif';
+        g.textAlign = 'center';
+        g.textBaseline = 'middle';
+        g.fillText(p.icon, 180, 158);
+
+        g.font = '500 26px Prompt, sans-serif';
+        g.fillStyle = 'rgba(255,255,255,0.92)';
+        g.fillText(p.sub, 180, 278);
+
+        return { img: c, src: c.toDataURL('image/png'), caption: p.caption, isDefault: true };
+      });
+
+      photoDeck = [];
+      updateGalleryUI();
+    }
+
+    function addUploadedFiles(fileList) {
+      const files = Array.from(fileList || []).filter(f => f.type.startsWith('image/'));
+      if (!files.length) return;
+
+      const captions = ['Happy Birthday 🎂', 'Best Memories ✨', 'Stay Happy 💖', 'Special Moment 🎈', 'Forever Shining 🌟', 'Make a Wish 🎁'];
+      const newlyLoaded = [];
+      let done = 0;
+
+      files.forEach((file, idx) => {
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => {
+          newlyLoaded.push({
+            img,
+            src: url,
+            caption: captions[(photoLibrary.length + idx) % captions.length],
+            isDefault: false
+          });
+          done++;
+          if (done === files.length) finishAddingPhotos(newlyLoaded);
+        };
+        img.onerror = () => {
+          done++;
+          if (done === files.length) finishAddingPhotos(newlyLoaded);
+        };
+        img.src = url;
+      });
+    }
+
+    function finishAddingPhotos(newlyLoaded) {
+      if (!newlyLoaded.length) return;
+      if (!hasCustomPhotos) {
+        photoLibrary = newlyLoaded;
+        hasCustomPhotos = true;
+      } else {
+        photoLibrary = photoLibrary.concat(newlyLoaded);
+      }
+      photoDeck = [];
+      updateGalleryUI();
+      if (state === 'celebrate') initFallingPhotos();
+    }
+
+    function removePhotoAt(index) {
+      if (photoLibrary.length <= 1) return;
+      const removed = photoLibrary.splice(index, 1)[0];
+      if (removed && !removed.isDefault && removed.src.startsWith('blob:')) {
+        URL.revokeObjectURL(removed.src);
+      }
+      photoDeck = [];
+      updateGalleryUI();
+      if (state === 'celebrate') initFallingPhotos();
+    }
+
+    function resetDefaultPhotos() {
+      photoLibrary.forEach(p => {
+        if (!p.isDefault && p.src.startsWith('blob:')) URL.revokeObjectURL(p.src);
+      });
+      createDefaultPhotos();
+      if (state === 'celebrate') initFallingPhotos();
+    }
+
+    function getNextPhotoFromDeck() {
+      if (photoDeck.length === 0) {
+        photoDeck = photoLibrary.slice();
+        for (let i = photoDeck.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [photoDeck[i], photoDeck[j]] = [photoDeck[j], photoDeck[i]];
+        }
+      }
+      return photoDeck.pop();
+    }
+
+    photoInput.addEventListener('change', (e) => {
+      addUploadedFiles(e.target.files);
+      photoInput.value = '';
+    });
+
+    window.addEventListener('dragover', (e) => e.preventDefault());
+    window.addEventListener('drop', (e) => {
+      e.preventDefault();
+      if (e.dataTransfer && e.dataTransfer.files) addUploadedFiles(e.dataTransfer.files);
+    });
+
+    function computeLayout() {
+      isPortrait = width < height * 0.85;
+      if (isPortrait) {
+        bowPos = { x: width * 0.5, y: height * 0.80 };
+        targetPos = { x: width * 0.5, y: height * 0.36 };
+      } else {
+        bowPos = { x: width * 0.19, y: height * 0.56 };
+        targetPos = { x: width * 0.66, y: height * 0.48 };
+      }
+      baseAngle = Math.atan2(targetPos.y - bowPos.y, targetPos.x - bowPos.x);
+      if (state === 'ready') aimAngle = baseAngle;
+    }
+
+    function initBackground() {
+      bgStars = [];
+      for (let i = 0; i < 140; i++) {
+        bgStars.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          r: 0.6 + Math.random() * 1.5,
+          phase: Math.random() * Math.PI * 2,
+          speed: 0.9 + Math.random() * 2.2
+        });
+      }
+    }
+
+    function pickBalancedLaneX(cardW, isFrontLayer) {
+      if (isPortrait) {
+        return cardW * 0.55 + Math.random() * (width - cardW * 1.1);
+      }
+      if (isFrontLayer) {
+        const leftSide = Math.random() < 0.5;
+        const minX = leftSide ? cardW * 0.58 : width * 0.72;
+        const maxX = leftSide ? width * 0.28 : width - cardW * 0.58;
+        return minX + Math.random() * Math.max(20, maxX - minX);
+      } else {
+        return cardW * 0.58 + Math.random() * (width - cardW * 1.16);
+      }
+    }
+
+    function initFallingPhotos() {
+      fallingPhotos = [];
+      const baseCount = isPortrait ? 14 : 24;
+      const count = Math.min(34, Math.max(baseCount, photoLibrary.length));
+
+      const staggeredOrder = Array.from({ length: count }, (_, i) => i);
+      for (let i = staggeredOrder.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [staggeredOrder[i], staggeredOrder[j]] = [staggeredOrder[j], staggeredOrder[i]];
+      }
+
+      for (let i = 0; i < count; i++) {
+        const isFront = i >= Math.floor(count * 0.35);
+        const depth = isFront ? (0.85 + Math.random() * 0.28) : (0.52 + Math.random() * 0.22);
+        const baseW = isPortrait ? 105 : 136;
+        const cardW = baseW * depth;
+        const cardH = cardW * 1.22;
+
+        let laneX;
+        if (!isPortrait && isFront) {
+          const isLeft = (i % 2 === 0);
+          const minX = isLeft ? cardW * 0.58 : width * 0.71;
+          const maxX = isLeft ? width * 0.29 : width - cardW * 0.58;
+          laneX = minX + Math.random() * Math.max(20, maxX - minX);
+        } else {
+          laneX = cardW * 0.58 + Math.random() * Math.max(20, width - cardW * 1.16);
+        }
+
+        const slot = staggeredOrder[i];
+        const startY = -cardH - (slot / count) * (height * 1.4) - Math.random() * 50;
+
+        fallingPhotos.push({
+          photo: getNextPhotoFromDeck(),
+          baseX: laneX,
+          x: laneX,
+          y: startY,
+          w: cardW,
+          h: cardH,
+          depth,
+          isFront,
+          vy: (42 + Math.random() * 44) * depth,
+          swayAmp: 14 + Math.random() * 20,
+          swaySpeed: 0.75 + Math.random() * 0.8,
+          phase: Math.random() * Math.PI * 2,
+          rotBase: (Math.random() - 0.5) * 0.30,
+          rotAmp: 0.05 + Math.random() * 0.07
+        });
+      }
+
+      fallingPhotos.sort((a, b) => a.depth - b.depth);
+
+      confetti = [];
+      const confColors = ['#ffd166', '#ff6fa5', '#90e0ef', '#ffffff', '#c77dff', '#98f5a6'];
+      for (let i = 0; i < 90; i++) {
+        confetti.push({
+          x: Math.random() * width,
+          y: Math.random() * height - height,
+          w: 4 + Math.random() * 6,
+          h: 3 + Math.random() * 5,
+          vy: 45 + Math.random() * 75,
+          vx: (Math.random() - 0.5) * 35,
+          rot: Math.random() * Math.PI * 2,
+          vRot: (Math.random() - 0.5) * 5,
+          color: randomFrom(confColors),
+          alpha: 0.55 + Math.random() * 0.45
+        });
+      }
+    }
+
+    function spawnFirework(x, y) {
+      const palette = ['#ffd166', '#ff5fa2', '#70e4ff', '#c77dff', '#ff9f43', '#ffffff'];
+      const mainColor = randomFrom(palette);
+      const count = 48;
+      for (let i = 0; i < count; i++) {
+        const a = (i / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.12;
+        const speed = 70 + Math.random() * 210;
+        fireworks.push({
+          x, y,
+          vx: Math.cos(a) * speed,
+          vy: Math.sin(a) * speed,
+          life: 1,
+          decay: 0.55 + Math.random() * 0.5,
+          size: 4 + Math.random() * 6,
+          color: Math.random() > 0.28 ? mainColor : '#ffffff'
+        });
+      }
+    }
+
+    function fireArrow() {
+      if (state !== 'ready' && state !== 'autoDraw') return;
+      state = 'flying';
+      guide.classList.add('hide');
+
+      const power = Math.max(0.55, pull);
+      const speed = Math.max(width, height) * (1.28 + power * 0.42);
+
+      arrow.active = true;
+      arrow.x = bowPos.x + Math.cos(aimAngle) * 26;
+      arrow.y = bowPos.y + Math.sin(aimAngle) * 26;
+      arrow.vx = Math.cos(aimAngle) * speed;
+      arrow.vy = Math.sin(aimAngle) * speed;
+      arrow.angle = aimAngle;
+      arrow.speed = speed;
+
+      stringWave = pull * 65;
+      stringWaveVel = -2200 * power;
+      pull = 0;
+      isDrawingBow = false;
+
+      playShootSound();
+    }
+
+    function triggerImpactAndCrop() {
+      arrow.active = false;
+      state = 'cropping';
+      cropTime = 0;
+      screenShake = 18;
+      flashAlpha = 0.85;
+
+      shockwaves.push(
+        { x: targetPos.x, y: targetPos.y, r: 8, maxR: Math.max(width, height) * 0.58, alpha: 1, lineWidth: 6, color: '#ffffff' },
+        { x: targetPos.x, y: targetPos.y, r: 5, maxR: Math.max(width, height) * 0.42, alpha: 0.9, lineWidth: 10, color: '#ff85b3' }
+      );
+
+      const colors = ['#ffd166', '#ff6fa5', '#ffe8a3', '#c77dff', '#ffffff'];
+      for (let i = 0; i < 150; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const sp = 110 + Math.random() * 580;
+        explosionSparks.push({
+          x: targetPos.x,
+          y: targetPos.y,
+          vx: Math.cos(a) * sp,
+          vy: Math.sin(a) * sp,
+          life: 1,
+          decay: 0.75 + Math.random() * 0.9,
+          size: 4 + Math.random() * 9,
+          color: randomFrom(colors)
+        });
+      }
+
+      playImpactCropSound();
+    }
+
+    function enterCelebrateStage() {
+      state = 'celebrate';
+      celebrateTime = 0;
+      autoGoWishes = true;
+      cropFlashText.classList.remove('show');
+      titleWrap.classList.add('show');
+      songProgress.classList.add('active');
+      songProgress.style.width = '0%';
+      canvas.style.cursor = 'grab';
+
+      initFallingPhotos();
+
+      spawnFirework(width * 0.24, height * 0.26);
+      setTimeout(() => { if (state === 'celebrate') spawnFirework(width * 0.76, height * 0.24); }, 320);
+      setTimeout(() => { if (state === 'celebrate') spawnFirework(width * 0.50, height * 0.20); }, 650);
+
+      playBirthdayMelody();
+    }
+
+    function drawCoverImage(img, x, y, w, h) {
+      const iw = img.naturalWidth || img.width;
+      const ih = img.naturalHeight || img.height;
+      if (!iw || !ih) return;
+
+      const imgRatio = iw / ih;
+      const boxRatio = w / h;
+      let sx = 0, sy = 0, sw = iw, sh = ih;
+
+      if (imgRatio > boxRatio) {
+        sw = ih * boxRatio;
+        sx = (iw - sw) / 2;
+      } else {
+        sh = iw / boxRatio;
+        sy = (ih - sh) / 2;
+      }
+      ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+    }
+
+    function drawPolaroidCard(card, rot) {
+      ctx.save();
+      ctx.translate(card.x, card.y);
+      ctx.rotate(rot);
+      ctx.globalAlpha = card.isFront ? 0.98 : 0.62;
+
+      const hw = card.w / 2;
+      const hh = card.h / 2;
+      const pad = card.w * 0.065;
+      const bottomPad = card.h * 0.20;
+
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.52)';
+      ctx.shadowBlur = 20 * card.depth;
+      ctx.shadowOffsetY = 9 * card.depth;
+
+      ctx.fillStyle = '#fffdf8';
+      ctx.beginPath();
+      ctx.roundRect(-hw, -hh, card.w, card.h, 6);
+      ctx.fill();
+
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetY = 0;
+
+      const imgX = -hw + pad;
+      const imgY = -hh + pad;
+      const imgW = card.w - pad * 2;
+      const imgH = card.h - pad - bottomPad;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(imgX, imgY, imgW, imgH);
+      ctx.clip();
+      drawCoverImage(card.photo.img, imgX, imgY, imgW, imgH);
+      ctx.restore();
+
+      ctx.strokeStyle = 'rgba(0,0,0,0.06)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(imgX, imgY, imgW, imgH);
+
+      ctx.fillStyle = '#4a3a44';
+      ctx.font = `${Math.max(9, Math.round(card.w * 0.088))}px Prompt, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(card.photo.caption, 0, hh - bottomPad * 0.52);
+
+      ctx.restore();
+    }
+
+    function drawTargetCore(time) {
+      const pulse = Math.sin(time * 3.5);
+      ctx.save();
+      ctx.translate(targetPos.x, targetPos.y);
+      ctx.globalCompositeOperation = 'lighter';
+
+      const halo = ctx.createRadialGradient(0, 0, 4, 0, 0, 96 + pulse * 12);
+      halo.addColorStop(0, '#ffffff');
+      halo.addColorStop(0.24, 'rgba(255, 110, 175, 0.78)');
+      halo.addColorStop(0.55, 'rgba(255, 180, 90, 0.24)');
+      halo.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = halo;
+      ctx.beginPath();
+      ctx.arc(0, 0, 108, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.save();
+      ctx.rotate(time * 0.9);
+      ctx.strokeStyle = 'rgba(255, 222, 138, 0.68)';
+      ctx.lineWidth = 1.6;
+      ctx.setLineDash([12, 8, 4, 8]);
+      ctx.beginPath();
+      ctx.arc(0, 0, 56 + pulse * 3, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.save();
+      ctx.rotate(-time * 1.4);
+      ctx.strokeStyle = 'rgba(255, 115, 180, 0.78)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([6, 10]);
+      ctx.beginPath();
+      ctx.arc(0, 0, 38 - pulse * 2, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.setLineDash([]);
+      const s = 1.15 + pulse * 0.08;
+      ctx.scale(s, s);
+      ctx.beginPath();
+      ctx.moveTo(0, 6);
+      ctx.bezierCurveTo(0, -4, -18, -14, -18, -2);
+      ctx.bezierCurveTo(-18, 10, 0, 18, 0, 24);
+      ctx.bezierCurveTo(0, 18, 18, 10, 18, -2);
+      ctx.bezierCurveTo(18, -14, 0, -4, 0, 6);
+      ctx.closePath();
+      ctx.fillStyle = '#ffffff';
+      ctx.shadowColor = '#ff66a8';
+      ctx.shadowBlur = 24;
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    function drawArrowMesh(x, y, length, charge = 0) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.globalCompositeOperation = 'lighter';
+
+      const grad = ctx.createLinearGradient(0, 0, length, 0);
+      grad.addColorStop(0, 'rgba(255, 215, 120, 0.5)');
+      grad.addColorStop(0.55, '#ffffff');
+      grad.addColorStop(1, '#ff77b7');
+
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 3.2;
+      ctx.shadowColor = '#ffd275';
+      ctx.shadowBlur = 14 + charge * 12;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(length - 8, 0);
+      ctx.stroke();
+
+      ctx.strokeStyle = '#fff2f8';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(16, 0); ctx.lineTo(2, -10);
+      ctx.moveTo(16, 0); ctx.lineTo(2, 10);
+      ctx.moveTo(26, 0); ctx.lineTo(12, -9);
+      ctx.moveTo(26, 0); ctx.lineTo(12, 9);
+      ctx.stroke();
+
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.moveTo(length + 8, 0);
+      ctx.lineTo(length - 14, -9);
+      ctx.lineTo(length - 8, 0);
+      ctx.lineTo(length - 14, 9);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    function drawBow(time) {
+      if (bowFade <= 0.01) return;
+      const scale = Math.min(1.06, Math.max(0.75, Math.min(width, height) / 760));
+
+      ctx.save();
+      ctx.globalAlpha = bowFade;
+      ctx.translate(bowPos.x, bowPos.y);
+      ctx.rotate(aimAngle);
+      ctx.scale(scale, scale);
+
+      if (state === 'ready' || state === 'autoDraw') {
+        const dist = Math.hypot(targetPos.x - bowPos.x, targetPos.y - bowPos.y) / scale;
+        const lineGrad = ctx.createLinearGradient(40, 0, dist - 55, 0);
+        lineGrad.addColorStop(0, `rgba(255, 220, 140, ${0.15 + pull * 0.48})`);
+        lineGrad.addColorStop(1, `rgba(255, 110, 175, ${0.06 + pull * 0.25})`);
+        ctx.strokeStyle = lineGrad;
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([7, 11]);
+        ctx.beginPath();
+        ctx.moveTo(50, 0);
+        ctx.lineTo(dist - 60, 0);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      const tipX = -14 - pull * 28;
+      const tipY = 98 - pull * 10;
+      const nockX = (state === 'ready' || state === 'autoDraw') ? -14 - pull * 82 : -14 + stringWave;
+
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.strokeStyle = '#fff6df';
+      ctx.shadowColor = '#ffd066';
+      ctx.shadowBlur = 12;
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.moveTo(tipX, -tipY);
+      ctx.lineTo(nockX, 0);
+      ctx.lineTo(tipX, tipY);
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.save();
+      ctx.shadowColor = '#ffd066';
+      ctx.shadowBlur = 18;
+      const bowGrad = ctx.createLinearGradient(0, -tipY, 0, tipY);
+      bowGrad.addColorStop(0, '#fff5cc');
+      bowGrad.addColorStop(0.25, '#ffd066');
+      bowGrad.addColorStop(0.5, '#ff9f43');
+      bowGrad.addColorStop(0.75, '#ffd066');
+      bowGrad.addColorStop(1, '#fff5cc');
+
+      ctx.strokeStyle = bowGrad;
+      ctx.lineWidth = 6.5;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(16, 0);
+      ctx.bezierCurveTo(34, -36, 18, -76, tipX, -tipY);
+      ctx.moveTo(16, 0);
+      ctx.bezierCurveTo(34, 36, 18, 76, tipX, tipY);
+      ctx.stroke();
+
+      ctx.fillStyle = '#fff3d1';
+      ctx.beginPath();
+      ctx.arc(16, 0, 7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+
+      if (state === 'ready' || state === 'autoDraw') {
+        drawArrowMesh(nockX, 0, 128, pull);
+        if (pull > 0.06) {
+          ctx.save();
+          ctx.globalCompositeOperation = 'lighter';
+          const r = 16 + pull * 34 + Math.sin(time * 24) * 4;
+          const sp = getGlowSprite('#ffd57a');
+          ctx.globalAlpha = Math.min(1, pull * 1.15);
+          ctx.drawImage(sp, nockX + 128 - r, -r, r * 2, r * 2);
+          ctx.restore();
+        }
+      }
+
+      ctx.restore();
+    }
+
+    function drawCinemaCropOverlay(amount) {
+      if (amount <= 0.005) return;
+
+      const barH = height * 0.30 * amount;
+      const sideW = width * 0.14 * amount;
+
+      ctx.save();
+      ctx.fillStyle = `rgba(3, 1, 8, ${Math.min(0.96, amount * 1.15)})`;
+      ctx.fillRect(0, 0, width, barH);
+      ctx.fillRect(0, height - barH, width, barH);
+      ctx.fillRect(0, barH, sideW, height - barH * 2);
+      ctx.fillRect(width - sideW, barH, sideW, height - barH * 2);
+
+      const left = sideW + 18;
+      const right = width - sideW - 18;
+      const top = barH + 18;
+      const bottom = height - barH - 18;
+      const corner = 28;
+
+      ctx.strokeStyle = `rgba(255, 224, 150, ${amount * 0.9})`;
+      ctx.lineWidth = 2.2;
+      ctx.shadowColor = '#ffd166';
+      ctx.shadowBlur = 12;
+
+      ctx.beginPath();
+      ctx.moveTo(left, top + corner); ctx.lineTo(left, top); ctx.lineTo(left + corner, top);
+      ctx.moveTo(right - corner, top); ctx.lineTo(right, top); ctx.lineTo(right, top + corner);
+      ctx.moveTo(left, bottom - corner); ctx.lineTo(left, bottom); ctx.lineTo(left + corner, bottom);
+      ctx.moveTo(right - corner, bottom); ctx.lineTo(right, bottom); ctx.lineTo(right, bottom - corner);
+      ctx.stroke();
+
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = `rgba(255, 225, 165, ${amount * 0.35})`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(0, barH); ctx.lineTo(width, barH);
+      ctx.moveTo(0, height - barH); ctx.lineTo(width, height - barH);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    let lastTs = 0;
+    let totalTime = 0;
+    let nextFireworkTimer = 0;
+
+    function animate(ts) {
+      if (!lastTs) lastTs = ts;
+      const dt = Math.min((ts - lastTs) / 1000, 0.05);
+      lastTs = ts;
+      totalTime += dt;
+
+      ctx.clearRect(0, 0, width, height);
+
+      let camZoom = 1;
+      let camFocusX = width / 2;
+      let camFocusY = height / 2;
+      let cropAmount = 0;
+
+      if (state === 'cropping') {
+        cropTime += dt;
+        const p = Math.min(cropTime / CROP_DURATION, 1);
+
+        if (p < 0.56) {
+          const k = easeInOutCubic(p / 0.56);
+          cropAmount = k;
+          camZoom = 1 + k * 0.42;
+          camFocusX = width / 2 + (targetPos.x - width / 2) * k;
+          camFocusY = height / 2 + (targetPos.y - height / 2) * k;
+          if (p > 0.25) cropFlashText.classList.add('show');
+        } else {
+          const k = easeOutCubic((p - 0.56) / 0.44);
+          cropAmount = 1 - k;
+          camZoom = 1.42 - k * 0.42;
+          camFocusX = targetPos.x + (width / 2 - targetPos.x) * k;
+          camFocusY = targetPos.y + (height / 2 - targetPos.y) * k;
+          if (p > 0.72) cropFlashText.classList.remove('show');
+        }
+
+        if (p >= 1) enterCelebrateStage();
+      }
+
+      ctx.save();
+      if (screenShake > 0.2) {
+        ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
+        screenShake *= 0.88;
+      } else {
+        screenShake = 0;
+      }
+
+      if (camZoom !== 1) {
+        ctx.translate(width / 2, height / 2);
+        ctx.scale(camZoom, camZoom);
+        ctx.translate(-camFocusX, -camFocusY);
+      }
+
+      // 1. ดาวพื้นหลัง
+      for (const st of bgStars) {
+        const a = 0.14 + 0.42 * (0.5 + 0.5 * Math.sin(totalTime * st.speed + st.phase));
+        ctx.fillStyle = `rgba(255, 255, 255, ${a})`;
+        ctx.beginPath();
+        ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 2. ธนูและเป้าหมาย
+      if (state === 'autoDraw') {
+        autoDrawTimer += dt;
+        const p = Math.min(autoDrawTimer / 0.85, 1);
+        pull = easeOutCubic(p);
+        aimAngle = baseAngle;
+        if (p >= 1) fireArrow();
+      }
+
+      if (state === 'flying' || state === 'cropping') {
+        stringWaveVel += (-320 * stringWave) * dt;
+        stringWaveVel *= 0.86;
+        stringWave += stringWaveVel * dt;
+        bowFade = Math.max(0, bowFade - dt * (state === 'cropping' ? 3.0 : 0.7));
+      }
+
+      if ((state === 'ready' || state === 'autoDraw') && pull > 0.1) {
+        const tipDist = 114 - pull * 82;
+        const tipX = bowPos.x + Math.cos(aimAngle) * tipDist;
+        const tipY = bowPos.y + Math.sin(aimAngle) * tipDist;
+        for (let k = 0; k < 2; k++) {
+          const ang = Math.random() * Math.PI * 2;
+          const dist = 24 + Math.random() * 44;
+          chargeSparks.push({
+            x: tipX + Math.cos(ang) * dist,
+            y: tipY + Math.sin(ang) * dist,
+            tx: tipX, ty: tipY,
+            life: 1,
+            size: 3 + Math.random() * 4,
+            color: Math.random() > 0.4 ? '#ffd478' : '#ffffff'
+          });
+        }
+      }
+
+      if (state === 'ready' || state === 'autoDraw' || state === 'flying') {
+        drawTargetCore(totalTime);
+      }
+
+      if (state !== 'celebrate' && state !== 'wishes') {
+        drawBow(totalTime);
+      }
+
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      for (let i = chargeSparks.length - 1; i >= 0; i--) {
+        const sp = chargeSparks[i];
+        sp.x += (sp.tx - sp.x) * 0.16;
+        sp.y += (sp.ty - sp.y) * 0.16;
+        sp.life -= dt * 2.8;
+        if (sp.life <= 0) { chargeSparks.splice(i, 1); continue; }
+        const r = sp.size * sp.life;
+        ctx.globalAlpha = sp.life;
+        ctx.drawImage(getGlowSprite(sp.color), sp.x - r, sp.y - r, r * 2, r * 2);
+      }
+      ctx.restore();
+
+      // 3. ลูกธนูพุ่ง
+      if (state === 'flying' && arrow.active) {
+        const dx = targetPos.x - arrow.x;
+        const dy = targetPos.y - arrow.y;
+        const dist = Math.hypot(dx, dy);
+
+        const dvx = (dx / Math.max(dist, 1)) * arrow.speed;
+        const dvy = (dy / Math.max(dist, 1)) * arrow.speed;
+        arrow.vx += (dvx - arrow.vx) * Math.min(1, dt * 11);
+        arrow.vy += (dvy - arrow.vy) * Math.min(1, dt * 11);
+
+        const prevX = arrow.x, prevY = arrow.y;
+        arrow.x += arrow.vx * dt;
+        arrow.y += arrow.vy * dt;
+        arrow.angle = Math.atan2(arrow.vy, arrow.vx);
+
+        for (let s = 0; s < 6; s++) {
+          const f = s / 6;
+          arrowTrail.push({
+            x: prevX + (arrow.x - prevX) * f + (Math.random() - 0.5) * 8,
+            y: prevY + (arrow.y - prevY) * f + (Math.random() - 0.5) * 8,
+            vx: (Math.random() - 0.5) * 55,
+            vy: (Math.random() - 0.5) * 55,
+            life: 1,
+            decay: 1.6 + Math.random() * 1.4,
+            size: 5 + Math.random() * 9,
+            color: Math.random() > 0.35 ? '#ffd478' : '#ff6fa5'
+          });
+        }
+
+        ctx.save();
+        ctx.translate(arrow.x, arrow.y);
+        ctx.rotate(arrow.angle);
+        drawArrowMesh(-95, 0, 115, 1);
+        ctx.restore();
+
+        if (dist < Math.max(36, arrow.speed * dt * 1.15)) {
+          triggerImpactAndCrop();
+        }
+      }
+
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      for (let i = arrowTrail.length - 1; i >= 0; i--) {
+        const t = arrowTrail[i];
+        t.x += t.vx * dt;
+        t.y += t.vy * dt;
+        t.life -= t.decay * dt;
+        if (t.life <= 0) { arrowTrail.splice(i, 1); continue; }
+        const r = t.size * t.life;
+        ctx.globalAlpha = t.life;
+        ctx.drawImage(getGlowSprite(t.color), t.x - r, t.y - r, r * 2, r * 2);
+      }
+      ctx.restore();
+
+      // 4. พลุและคอนเฟตติ (ทำงานทั้งหน้าเค้กและหน้าคำอวยพร)
+      if (state === 'celebrate' || state === 'wishes') {
+        nextFireworkTimer -= dt;
+        if (nextFireworkTimer <= 0) {
+          spawnFirework(width * (0.12 + Math.random() * 0.76), height * (0.12 + Math.random() * 0.36));
+          nextFireworkTimer = (state === 'wishes' ? 2.2 : 1.4) + Math.random() * 1.8;
+        }
+
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        for (let i = fireworks.length - 1; i >= 0; i--) {
+          const fw = fireworks[i];
+          fw.x += fw.vx * dt;
+          fw.y += fw.vy * dt;
+          fw.vy += 120 * dt;
+          fw.vx *= 0.97;
+          fw.vy *= 0.97;
+          fw.life -= fw.decay * dt;
+          if (fw.life <= 0) { fireworks.splice(i, 1); continue; }
+          const r = fw.size * fw.life;
+          ctx.globalAlpha = fw.life * (state === 'wishes' ? 0.65 : 1);
+          ctx.drawImage(getGlowSprite(fw.color), fw.x - r, fw.y - r, r * 2, r * 2);
+        }
+        ctx.restore();
+
+        for (const c of confetti) {
+          c.y += c.vy * dt;
+          c.x += c.vx * dt + Math.sin(totalTime * 2 + c.y * 0.02) * 0.6;
+          c.rot += c.vRot * dt;
+          if (c.y > height + 20) {
+            c.y = -20;
+            c.x = Math.random() * width;
+          }
+          ctx.save();
+          ctx.translate(c.x, c.y);
+          ctx.rotate(c.rot);
+          ctx.globalAlpha = c.alpha * (state === 'wishes' ? 0.45 : 1);
+          ctx.fillStyle = c.color;
+          ctx.fillRect(-c.w / 2, -c.h / 2, c.w, c.h);
+          ctx.restore();
+        }
+      }
+
+      // 5. ฉากเค้ก ASCII 3 มิติ + รูปลอยลงมา (และนับเวลาเพลงจบเพื่อไปหน้าคำอวยพร!)
+      if (state === 'celebrate') {
+        celebrateTime += dt;
+
+        if (autoGoWishes) {
+          const pct = Math.min(100, (celebrateTime / CELEBRATE_DURATION) * 100);
+          songProgress.style.width = pct + '%';
+          if (celebrateTime >= CELEBRATE_DURATION) {
+            openWishesPage();
+          }
+        }
+
+        if (!isDraggingCake) {
+          cakeRotY += dt * 0.85 + cakeSpinVel;
+          cakeSpinVel *= 0.94;
+        }
+
+        for (const card of fallingPhotos) {
+          card.y += card.vy * dt;
+          card.x = card.baseX + Math.sin(totalTime * card.swaySpeed + card.phase) * card.swayAmp;
+          card.curRot = card.rotBase + Math.sin(totalTime * card.swaySpeed * 0.8 + card.phase) * card.rotAmp;
+
+          if (card.y > height + card.h) {
+            card.y = -card.h - 30 - Math.random() * 140;
+            card.baseX = pickBalancedLaneX(card.w, card.isFront);
+            card.photo = getNextPhotoFromDeck();
+          }
+        }
+
+        // ชั้นหลัง
+        for (const card of fallingPhotos) {
+          if (!card.isFront) drawPolaroidCard(card, card.curRot);
+        }
+
+        // เค้ก ASCII 3 มิติตรงกลาง (เว้นระยะห่างด้านล่างสวยๆ ไม่ชนแถบปุ่ม)
+        const cakePop = easeOutCubic(Math.min(celebrateTime / 0.9, 1));
+        const cakeCenterY = isPortrait ? height * 0.54 : height * 0.54;
+        drawSpinningAsciiCake(width * 0.5, cakeCenterY, totalTime, cakePop);
+
+        // ชั้นหน้า
+        for (const card of fallingPhotos) {
+          if (card.isFront) drawPolaroidCard(card, card.curRot);
+        }
+      }
+
+      // 6. คลื่นกระแทก + สะเก็ดระเบิด
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      for (let i = shockwaves.length - 1; i >= 0; i--) {
+        const sw = shockwaves[i];
+        sw.r += (sw.maxR - sw.r) * Math.min(1, dt * 6.5);
+        sw.alpha -= dt * 1.65;
+        if (sw.alpha <= 0) { shockwaves.splice(i, 1); continue; }
+        ctx.strokeStyle = hexToRgba(sw.color, sw.alpha);
+        ctx.lineWidth = sw.lineWidth * sw.alpha;
+        ctx.beginPath();
+        ctx.arc(sw.x, sw.y, sw.r, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      for (let i = explosionSparks.length - 1; i >= 0; i--) {
+        const ep = explosionSparks[i];
+        ep.x += ep.vx * dt;
+        ep.y += ep.vy * dt;
+        ep.vx *= 0.95;
+        ep.vy *= 0.95;
+        ep.life -= ep.decay * dt;
+        if (ep.life <= 0) { explosionSparks.splice(i, 1); continue; }
+        const r = ep.size * ep.life;
+        ctx.globalAlpha = ep.life;
+        ctx.drawImage(getGlowSprite(ep.color), ep.x - r, ep.y - r, r * 2, r * 2);
+      }
+      ctx.restore();
+
+      ctx.restore();
+
+      // 7. ชั้น Cinema Crop Overlay
+      if (cropAmount > 0.005) {
+        drawCinemaCropOverlay(cropAmount);
+      }
+
+      if (flashAlpha > 0.01) {
+        ctx.fillStyle = `rgba(255, 248, 240, ${flashAlpha})`;
+        ctx.fillRect(0, 0, width, height);
+        flashAlpha *= 0.85;
+      } else {
+        flashAlpha = 0;
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    // --- ฟังก์ชันควบคุม ---
+    function resetToBow() {
+      stopBirthdayMelody();
+      clearInterval(typewriterTimer);
+      state = 'ready';
+      pull = 0;
+      bowFade = 1;
+      stringWave = 0;
+      stringWaveVel = 0;
+      arrow.active = false;
+      arrowTrail = [];
+      chargeSparks = [];
+      explosionSparks = [];
+      shockwaves = [];
+      fireworks = [];
+      fallingPhotos = [];
+      confetti = [];
+      cropTime = 0;
+      celebrateTime = 0;
+      autoGoWishes = true;
+      cakeSpinVel = 0;
+      aimAngle = baseAngle;
+
+      titleWrap.classList.remove('show');
+      cropFlashText.classList.remove('show');
+      wishesOverlay.classList.remove('show');
+      songProgress.classList.remove('active');
+      songProgress.style.width = '0%';
+      guide.classList.remove('hide');
+      canvas.style.cursor = 'crosshair';
+    }
+
+    function triggerAutoShoot() {
+      getAudioCtx();
+      if (state !== 'ready') resetToBow();
+      state = 'autoDraw';
+      autoDrawTimer = 0;
+      guide.classList.add('hide');
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      soundBtn.textContent = soundEnabled ? '🔊 เสียง' : '🔇 ปิดเสียง';
+      if (!soundEnabled) stopBirthdayMelody();
+      else getAudioCtx();
+    }
+
+    function toggleFullscreen() {
+      try {
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+          const el = document.documentElement;
+          if (el.requestFullscreen) el.requestFullscreen();
+          else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+        } else {
+          if (document.exitFullscreen) document.exitFullscreen();
+          else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+        }
+      } catch (e) {
+        console.warn(e);
+      }
+    }
+
+    function updateFullscreenBtn() {
+      const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+      fsBtn.textContent = isFs ? '✕ ออกเต็มจอ' : '⛶ เต็มจอ';
+    }
+
+    function openEditModal() {
+      document.getElementById('inputTitle').value = wishData.title;
+      document.getElementById('inputSub').value = wishData.sub;
+      document.getElementById('inputWishBody').value = wishData.body;
+      document.getElementById('inputWishSign').value = wishData.sign;
+      document.getElementById('editModal').classList.add('open');
+    }
+
+    function closeEditModal() {
+      document.getElementById('editModal').classList.remove('open');
+    }
+
+    function saveText() {
+      const t = document.getElementById('inputTitle').value.trim();
+      const s = document.getElementById('inputSub').value.trim();
+      const b = document.getElementById('inputWishBody').value.trim();
+      const sign = document.getElementById('inputWishSign').value.trim();
+
+      if (t) wishData.title = t;
+      wishData.sub = s;
+      if (b) wishData.body = b;
+      wishData.sign = sign;
+
+      titleText.textContent = wishData.title;
+      subText.textContent = wishData.sub;
+
+      if (state === 'wishes') {
+        startWishTypewriter();
+      }
+      closeEditModal();
+    }
+
+    function openGalleryModal() {
+      updateGalleryUI();
+      document.getElementById('galleryModal').classList.add('open');
+    }
+
+    function closeGalleryModal() {
+      document.getElementById('galleryModal').classList.remove('open');
+    }
+
+    function openPhotoModal(photo) {
+      document.getElementById('previewImg').src = photo.src;
+      document.getElementById('previewCaption').textContent = photo.caption;
+      document.getElementById('photoModal').classList.add('open');
+    }
+
+    function closePhotoModal() {
+      document.getElementById('photoModal').classList.remove('open');
+    }
+
+    function wakeUI() {
+      controls.classList.add('visible');
+      clearTimeout(uiTimer);
+      uiTimer = setTimeout(() => {
+        controls.classList.remove('visible');
+      }, 3600);
+    }
+
+    // --- ควบคุมเมาส์และหน้าจอสัมผัส ---
+    canvas.addEventListener('pointerdown', (e) => {
+      getAudioCtx();
+      wakeUI();
+
+      if (state === 'ready') {
+        isDrawingBow = true;
+        dragStart = { x: e.clientX, y: e.clientY };
+        pull = 0.08;
+      } else if (state === 'celebrate') {
+        isDraggingCake = true;
+        lastCakeDragX = e.clientX;
+        cakeDragDist = 0;
+        canvas.style.cursor = 'grabbing';
+      } else if (state === 'wishes') {
+        spawnFirework(e.clientX, e.clientY);
+      }
+    });
+
+    window.addEventListener('pointermove', (e) => {
+      wakeUI();
+      if (isDrawingBow && state === 'ready') {
+        const dx = dragStart.x - e.clientX;
+        const dy = dragStart.y - e.clientY;
+        const dist = Math.hypot(dx, dy);
+        pull = Math.min(1, Math.max(0.08, dist / 155));
+
+        if (dist > 14) {
+          const dragAngle = Math.atan2(dy, dx);
+          let diff = dragAngle - baseAngle;
+          while (diff > Math.PI) diff -= Math.PI * 2;
+          while (diff < -Math.PI) diff += Math.PI * 2;
+          aimAngle = baseAngle + Math.max(-0.42, Math.min(0.42, diff));
+        }
+      } else if (isDraggingCake && state === 'celebrate') {
+        const dx = e.clientX - lastCakeDragX;
+        lastCakeDragX = e.clientX;
+        cakeDragDist += Math.abs(dx);
+        cakeSpinVel = dx * 0.008;
+        cakeRotY += cakeSpinVel;
+      }
+    });
+
+    window.addEventListener('pointerup', (e) => {
+      if (isDrawingBow && state === 'ready') {
+        isDrawingBow = false;
+        if (pull >= 0.22) fireArrow();
+        else triggerAutoShoot();
+      }
+
+      if (isDraggingCake) {
+        isDraggingCake = false;
+        canvas.style.cursor = 'grab';
+
+        if (cakeDragDist < 8 && state === 'celebrate' && e.target === canvas) {
+          for (let i = fallingPhotos.length - 1; i >= 0; i--) {
+            const c = fallingPhotos[i];
+            if (Math.abs(e.clientX - c.x) <= c.w * 0.52 && Math.abs(e.clientY - c.y) <= c.h * 0.52) {
+              openPhotoModal(c.photo);
+              return;
+            }
+          }
+          spawnFirework(e.clientX, e.clientY);
+        }
+      }
+    });
+
+    function resize() {
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      computeLayout();
+      initBackground();
+    }
+
+    document.addEventListener('fullscreenchange', updateFullscreenBtn);
+    document.addEventListener('webkitfullscreenchange', updateFullscreenBtn);
+    window.addEventListener('resize', resize);
+
+    buildAsciiCakeModel();
+    createDefaultPhotos();
+    resize();
+    wakeUI();
+    requestAnimationFrame(animate);
+
+    // MANITA Recipient / Creator Mode Integrator
+    (function initManitaArrow() {
+      const params = new URLSearchParams(window.location.search);
+      const isRecipient = params.get('view') === 'recipient' || window.location.hash.includes('recipient');
+      
+      if (isRecipient) {
+        document.body.classList.add('recipient-mode');
+        if (typeof controls !== 'undefined' && controls) {
+          controls.style.display = 'none';
+          controls.classList.remove('visible');
+        }
+      }
+
+      // Sync custom wish & photos from parent window / storage
+      function applyCustomData(data) {
+        if (!data) return;
+        if (data.wishMessage && typeof wishData !== 'undefined') {
+          wishData.body = data.wishMessage;
+          if (typeof wishMessageEl !== 'undefined' && wishMessageEl) {
+            wishMessageEl.textContent = data.wishMessage;
+          }
+        }
+        if (data.wishTitle && typeof wishData !== 'undefined') {
+          wishData.title = data.wishTitle;
+          if (typeof wishHeading !== 'undefined' && wishHeading) {
+            wishHeading.textContent = data.wishTitle;
+          }
+        }
+        if (data.wishSign && typeof wishData !== 'undefined') {
+          wishData.sign = data.wishSign;
+          if (typeof wishSignEl !== 'undefined' && wishSignEl) {
+            wishSignEl.textContent = data.wishSign;
+          }
+        }
+        if (data.photos && Array.isArray(data.photos) && data.photos.length > 0) {
+          uploadedPhotos = data.photos.filter(p => p.url).map((p, i) => ({
+            url: p.url,
+            name: p.caption || `photo_${i}`
+          }));
+        }
+      }
+
+      // Read from localStorage draft if available
+      try {
+        const raw = localStorage.getItem('manita_studio_draft_v1');
+        if (raw) {
+          const cfg = JSON.parse(raw);
+          applyCustomData({
+            wishMessage: cfg.arrowWish,
+            wishTitle: cfg.arrowTitle,
+            wishSign: cfg.arrowSign,
+            photos: cfg.photos
+          });
+        }
+      } catch(e) {}
+
+      window.addEventListener('message', (e) => {
+        if (e.data && e.data.type === 'MANITA_ARROW_SYNC') {
+          applyCustomData(e.data);
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

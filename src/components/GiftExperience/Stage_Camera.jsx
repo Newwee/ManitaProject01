@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Camera, Sparkles, ChevronRight, RotateCcw } from 'lucide-react';
+import { Camera, Sparkles, ChevronRight, RotateCcw, ImageOff } from 'lucide-react';
 import { playKeyClick, playSuccessFanfare, playTone } from '../../lib/soundEngine';
 import confetti from 'canvas-confetti';
 
@@ -21,13 +21,12 @@ export default function Stage_Camera({
   const [isFlashing, setIsFlashing] = useState(false);
   const [photoIndex, setPhotoIndex] = useState(0);
 
-  const activePhoto = photos && photos.length > 0 && photos[photoIndex]?.url
-    ? photos[photoIndex].url
-    : '/assets/placeholder_photo.svg';
+  const hasUserPhoto = photos && photos.length > 0 && photos[photoIndex]?.url;
+  const activePhoto = hasUserPhoto ? photos[photoIndex].url : null;
 
-  const caption = photos && photos.length > 0 && photos[photoIndex]?.caption
+  const caption = hasUserPhoto && photos[photoIndex]?.caption
     ? photos[photoIndex].caption
-    : 'บันทึกภาพความทรงจำของเรา 📸';
+    : 'ยังไม่มีรูปภาพ (อัปโหลดได้ใน Studio)';
 
   const handleSnap = () => {
     if (isPrinted) return;
@@ -57,27 +56,42 @@ export default function Stage_Camera({
   };
 
   // Render photo with selected frame style
+  const renderPhotoContent = (extraClass = '', extraStyle = {}) => {
+    if (!activePhoto) {
+      return (
+        <div
+          style={extraStyle}
+          className={`w-full h-full bg-stone-100/95 flex flex-col items-center justify-center text-stone-400 p-2 border-2 border-dashed border-stone-300 ${extraClass}`}
+        >
+          <ImageOff className="w-8 h-8 text-stone-300 mb-1" />
+          <span className="text-[10px] font-mono text-stone-400 font-bold">Image Not Loaded</span>
+          <span className="text-[9px] text-stone-400">(ยังไม่มีรูปภาพ)</span>
+        </div>
+      );
+    }
+    return (
+      <img
+        src={activePhoto}
+        alt="Memory"
+        style={extraStyle}
+        className={`w-full h-full object-cover polaroid-developing ${extraClass}`}
+      />
+    );
+  };
+
   const renderFramedPhoto = () => {
     switch (cameraFrameStyle) {
       case 'circle':
         return (
           <div className="w-52 h-52 mx-auto rounded-full p-2 bg-white shadow-2xl border-4 border-stone-800 overflow-hidden relative">
-            <img
-              src={activePhoto}
-              alt="Memory"
-              className="w-full h-full object-cover rounded-full polaroid-developing"
-            />
+            {renderPhotoContent('rounded-full')}
           </div>
         );
 
       case 'oval':
         return (
           <div className="w-48 h-60 mx-auto rounded-[60px] p-2 bg-white shadow-2xl border-4 border-amber-300 overflow-hidden relative">
-            <img
-              src={activePhoto}
-              alt="Memory"
-              className="w-full h-full object-cover rounded-[52px] polaroid-developing"
-            />
+            {renderPhotoContent('rounded-[52px]')}
           </div>
         );
 
@@ -85,34 +99,21 @@ export default function Stage_Camera({
         return (
           <div className="w-56 h-56 mx-auto p-3 bg-white shadow-2xl relative rounded-[32px] border-4 border-emerald-400 overflow-hidden"
                style={{ borderRadius: '42% 58% 62% 38% / 45% 45% 55% 55%' }}>
-            <img
-              src={activePhoto}
-              alt="Memory"
-              className="w-full h-full object-cover polaroid-developing"
-              style={{ borderRadius: '42% 58% 62% 38% / 45% 45% 55% 55%' }}
-            />
+            {renderPhotoContent('', { borderRadius: '42% 58% 62% 38% / 45% 45% 55% 55%' })}
           </div>
         );
 
       case 'dashed':
         return (
           <div className="w-52 h-56 mx-auto p-3 bg-white shadow-2xl rounded-3xl border-4 border-dashed border-rose-400 overflow-hidden relative">
-            <img
-              src={activePhoto}
-              alt="Memory"
-              className="w-full h-full object-cover rounded-2xl polaroid-developing"
-            />
+            {renderPhotoContent('rounded-2xl')}
           </div>
         );
 
       case 'arch':
         return (
           <div className="w-48 h-60 mx-auto p-2 bg-white shadow-2xl rounded-t-full rounded-b-2xl border-4 border-indigo-400 overflow-hidden relative">
-            <img
-              src={activePhoto}
-              alt="Memory"
-              className="w-full h-full object-cover rounded-t-full rounded-b-xl polaroid-developing"
-            />
+            {renderPhotoContent('rounded-t-full rounded-b-xl')}
           </div>
         );
 
@@ -121,11 +122,7 @@ export default function Stage_Camera({
         return (
           <div className="w-56 bg-white p-3 pb-6 rounded-md shadow-2xl border border-stone-200 mx-auto transform -rotate-1">
             <div className="w-full aspect-square bg-stone-900 rounded-sm overflow-hidden mb-2">
-              <img
-                src={activePhoto}
-                alt="Memory"
-                className="w-full h-full object-cover polaroid-developing"
-              />
+              {renderPhotoContent()}
             </div>
             <p className="font-theme-display text-xs font-bold text-center text-stone-800 truncate px-1">
               {caption}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lock, Delete, KeyRound, Sparkles } from 'lucide-react';
+import { Delete, KeyRound } from 'lucide-react';
 import { playKeyClick, playUnlockSuccess, playErrorBeep } from '../../lib/soundEngine';
 import confetti from 'canvas-confetti';
 
@@ -65,21 +65,21 @@ export default function Stage1_Passcode({
 
   return (
     <div className="flex-1 flex flex-col justify-between px-3 py-3 select-none">
-      {/* Top Header & Hint */}
-      <div className="text-center pt-2">
-        <div className="w-12 h-12 mx-auto rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mb-2 shadow-sm">
+      {/* Top Header & Hint Card */}
+      <div className="text-center pt-2 bg-white/70 backdrop-blur-md rounded-3xl p-4 border border-white/60 shadow-md">
+        <div className="w-12 h-12 mx-auto rounded-2xl bg-rose-100/90 text-rose-600 flex items-center justify-center mb-1.5 shadow-xs">
           <KeyRound className="w-6 h-6" />
         </div>
-        <h3 className="font-theme-display text-xl font-bold">
+        <h3 className="font-theme-display text-xl font-bold text-stone-900">
           กรอกรหัสผ่าน 6 หลัก
         </h3>
-        <p className="text-xs opacity-75 mt-1 max-w-xs mx-auto">
+        <p className="text-xs text-stone-600 font-semibold mt-1 max-w-xs mx-auto">
           {passcodeHint}
         </p>
 
         {/* 6 Passcode Indicator Boxes */}
         <div
-          className={`grid grid-cols-6 gap-2 my-4 max-w-[280px] mx-auto ${
+          className={`grid grid-cols-6 gap-2 my-3 max-w-[280px] mx-auto ${
             isError ? 'animate-shake' : ''
           }`}
         >
@@ -95,7 +95,7 @@ export default function Stage1_Passcode({
                     ? 'border-rose-500 bg-rose-50 text-rose-600'
                     : hasDigit
                     ? 'border-stone-800 bg-stone-900 text-white shadow-md'
-                    : 'border-stone-300 bg-white/60 text-stone-300'
+                    : 'border-stone-300 bg-white/80 text-stone-300'
                 }`}
               >
                 {hasDigit ? '●' : ''}
@@ -105,9 +105,9 @@ export default function Stage1_Passcode({
         </div>
 
         {/* Status / Feedback message */}
-        <div className="h-5 text-xs font-bold text-center">
+        <div className="h-4 text-xs font-bold text-center">
           {feedbackMsg && (
-            <span className={isSuccess ? 'text-emerald-600' : 'text-rose-600'}>
+            <span className={isSuccess ? 'text-emerald-700' : 'text-rose-600'}>
               {feedbackMsg}
             </span>
           )}
@@ -115,31 +115,31 @@ export default function Stage1_Passcode({
       </div>
 
       {/* Keypad */}
-      <div className="grid grid-cols-3 gap-2 max-w-[280px] mx-auto w-full pb-2">
+      <div className="grid grid-cols-3 gap-2 max-w-[280px] mx-auto w-full pb-2 mt-3">
         {['1', '2', '3', '4', '5', '6', '7', '8', '9'].map((digit) => (
           <button
             key={digit}
             onClick={() => handleDigit(digit)}
-            className="h-12 rounded-2xl bg-white/80 hover:bg-white text-stone-800 font-bold text-lg shadow-sm border border-stone-200 active:scale-95 transition"
+            className="h-12 rounded-2xl bg-white/90 hover:bg-white text-stone-900 font-bold text-lg shadow-md border border-stone-200/60 active:scale-95 transition"
           >
             {digit}
           </button>
         ))}
         <button
           onClick={handleClear}
-          className="h-12 rounded-2xl bg-stone-100 hover:bg-stone-200 text-stone-500 font-semibold text-xs active:scale-95 transition"
+          className="h-12 rounded-2xl bg-white/60 hover:bg-white/80 text-stone-600 font-semibold text-xs active:scale-95 transition"
         >
           ล้าง
         </button>
         <button
           onClick={() => handleDigit('0')}
-          className="h-12 rounded-2xl bg-white/80 hover:bg-white text-stone-800 font-bold text-lg shadow-sm border border-stone-200 active:scale-95 transition"
+          className="h-12 rounded-2xl bg-white/90 hover:bg-white text-stone-900 font-bold text-lg shadow-md border border-stone-200/60 active:scale-95 transition"
         >
           0
         </button>
         <button
           onClick={handleBackspace}
-          className="h-12 rounded-2xl bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold flex items-center justify-center active:scale-95 transition"
+          className="h-12 rounded-2xl bg-white/60 hover:bg-white/80 text-stone-800 font-bold flex items-center justify-center active:scale-95 transition"
         >
           <Delete className="w-5 h-5" />
         </button>

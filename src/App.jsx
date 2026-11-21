@@ -24,6 +24,7 @@ export default function App() {
     presetCategory: 'chat_scratch', // 'chat_scratch' | 'chat_camera' | 'christmas_tree' | 'arrow_birthday'
     revealType: 'scratch', // 'scratch' | 'camera'
     cameraFrameStyle: 'square', // 'square' | 'circle' | 'oval' | 'cloud' | 'dashed' | 'arch'
+    phoneBackground: '/assets/Background.jpg',
     theme: 'scrapbook',
     introTitle: initialPreset.introTitle,
     introSub: initialPreset.introSub,
@@ -182,6 +183,7 @@ export default function App() {
                 subtitle={config.treeSubtitle || 'A SPECIAL WISH FOR YOU'}
                 wishMessage={config.treeWish}
                 photos={config.photos}
+                isRecipient={isRecipientOnly}
               />
             </div>
           ) : category === 'arrow_birthday' ? (
@@ -193,12 +195,14 @@ export default function App() {
                 wishMessage={config.arrowWish}
                 wishSign={config.arrowSign}
                 photos={config.photos}
+                isRecipient={isRecipientOnly}
               />
             </div>
           ) : (
             /* Preset Category 1 & 2: Chat + Scratch OR Chat + Camera */
             <PhoneFrame
               theme={config.theme}
+              phoneBackground={config.phoneBackground}
               currentStage={currentStage}
               totalStages={6}
               onResetExperience={handleResetExperience}
