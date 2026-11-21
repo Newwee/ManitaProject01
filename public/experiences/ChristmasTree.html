@@ -889,53 +889,189 @@
     @keyframes titleFloat{0%,100%{transform:translateY(0);filter:brightness(1)}50%{transform:translateY(-4px);filter:brightness(1.22)}}
     .wish-banner.show{animation:bannerGlow 4s ease-in-out infinite;}
     @keyframes bannerGlow{0%,100%{box-shadow:0 8px 30px rgba(0,0,0,.35),0 0 20px rgba(255,215,120,.14)}50%{box-shadow:0 8px 30px rgba(0,0,0,.35),0 0 34px rgba(255,215,120,.38)}}
-    /* Recipient & Preview Mode - Hide all creator control bars */
+  
+    /* ===== Countdown ===== */
+    .countdown{position:fixed;top:18px;right:18px;z-index:6;padding:10px 14px 9px;border-radius:18px;background:rgba(12,18,30,.46);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,232,170,.26);box-shadow:0 8px 28px rgba(0,0,0,.4),0 0 22px rgba(255,215,120,.12);text-align:center;opacity:0;transform:translateY(-10px);transition:opacity 1.2s ease,transform 1.2s ease;pointer-events:none}
+    .countdown.show{opacity:1;transform:none}
+    .cd-title{font-size:.72rem;letter-spacing:.5px;color:#ffe9ae;margin-bottom:6px}
+    .cd-row{display:flex;gap:6px;justify-content:center}
+    .cd-cell{min-width:46px;padding:5px 4px 4px;border-radius:11px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12)}
+    .cd-cell b{display:block;font-size:1.25rem;font-weight:500;color:#fff8e2;font-variant-numeric:tabular-nums;line-height:1.15;text-shadow:0 0 10px rgba(255,215,120,.55)}
+    .cd-cell span{font-size:.62rem;color:rgba(255,255,255,.6)}
+    .cd-sub{margin-top:6px;font-size:.68rem;color:rgba(255,255,255,.62)}
+    .countdown.done .cd-row{display:none}
+    .countdown.done .cd-title{font-size:.95rem;margin:2px 0}
+    @media (max-width:1100px){
+      .countdown{top:auto;bottom:122px;right:auto;left:50%;transform:translate(-50%,10px);padding:6px 10px}
+      .countdown.show{transform:translate(-50%,0)}
+      .cd-title,.cd-sub{display:none}
+      .cd-cell{min-width:40px}
+      .cd-cell b{font-size:1.05rem}
+      .countdown.done .cd-title{display:block}
+    }
+    /* ===== Lock toast ===== */
+    .lock-toast{position:fixed;left:50%;bottom:112px;transform:translate(-50%,16px) scale(.96);z-index:20;max-width:min(440px,92vw);padding:14px 18px;border-radius:20px;text-align:center;background:linear-gradient(160deg,rgba(24,30,46,.94),rgba(10,14,24,.96));border:1px solid rgba(255,224,150,.4);box-shadow:0 18px 50px rgba(0,0,0,.6),0 0 30px rgba(255,200,95,.16);opacity:0;pointer-events:none;transition:opacity .4s ease,transform .5s cubic-bezier(.22,1,.36,1)}
+    .lock-toast.show{opacity:1;transform:translate(-50%,0) scale(1);pointer-events:auto}
+    .lt-main{font-size:.9rem;color:#fff3cf;line-height:1.5}
+    .lt-time{margin-top:4px;font-size:1.05rem;color:#ffe28a;font-variant-numeric:tabular-nums}
+    .lt-actions{margin-top:10px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+    .lock-opt{display:flex;align-items:flex-start;gap:9px;margin:-4px 0 16px;font-size:.8rem;color:rgba(255,255,255,.78);cursor:pointer;line-height:1.45}
+    .lock-opt input{margin-top:3px;accent-color:#f7b733;width:16px;height:16px;flex:none}
+  
+    /* ================= MANITA RECIPIENT & PREVIEW MODE ================= */
     body.recipient-mode .controls,
     body.recipient-mode #controls,
     .recipient-mode .controls,
     .recipient-mode #setupModal,
     .recipient-mode .hint,
+    .recipient-mode #previewUnlockBtn,
+    .recipient-mode .creator-only-btn,
     .manita-clean .controls,
     .manita-clean #controls,
     .manita-clean #setupModal,
-    .manita-clean .hint {
+    .manita-clean .hint,
+    .manita-clean #previewUnlockBtn,
+    .manita-clean .creator-only-btn {
       display: none !important;
       visibility: hidden !important;
       pointer-events: none !important;
       opacity: 0 !important;
     }
+
     .sound-floating-btn {
       position: fixed;
       top: 14px;
       right: 14px;
       z-index: 100;
-      width: 38px;
-      height: 38px;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
-      background: rgba(15, 25, 20, 0.7);
+      background: rgba(15, 25, 20, 0.75);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
-      border: 1px solid rgba(255, 215, 120, 0.35);
+      border: 1px solid rgba(255, 215, 120, 0.4);
       color: #fff;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      font-size: 15px;
+      font-size: 16px;
       transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
       box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
     }
     .sound-floating-btn:hover {
       transform: scale(1.1);
-      background: rgba(25, 45, 30, 0.9);
+      background: rgba(25, 45, 30, 0.95);
       border-color: rgba(255, 215, 120, 0.8);
-      box-shadow: 0 0 20px rgba(255, 215, 120, 0.4);
+      box-shadow: 0 0 20px rgba(255, 215, 120, 0.5);
     }
+
+    /* Creator Setup: Lock System & 3D Decorations Panel */
+    .creator-settings-panel {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 215, 120, 0.28);
+      border-radius: 16px;
+      padding: 14px;
+      margin: 12px 0 16px;
+      text-align: left;
+    }
+    .creator-panel-title {
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #ffe899;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .mode-select-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 7px;
+      margin-bottom: 10px;
+    }
+    .mode-option-btn {
+      background: rgba(20, 25, 35, 0.7);
+      border: 1.5px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      padding: 7px 9px;
+      cursor: pointer;
+      font-size: 11px;
+      color: #ddd;
+      text-align: left;
+      transition: all 0.2s;
+    }
+    .mode-option-btn.active {
+      border-color: #ffd76b;
+      background: rgba(255, 215, 107, 0.18);
+      color: #fff;
+      font-weight: 600;
+      box-shadow: 0 0 12px rgba(255, 215, 107, 0.25);
+    }
+    .creator-field {
+      margin-bottom: 9px;
+    }
+    .creator-field label {
+      display: block;
+      font-size: 10.5px;
+      color: #bbb;
+      margin-bottom: 3px;
+    }
+    .creator-field input, .creator-field select {
+      width: 100%;
+      background: rgba(12, 18, 28, 0.85);
+      border: 1px solid rgba(255, 215, 120, 0.25);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 11.5px;
+      color: #fff;
+      font-family: inherit;
+      outline: none;
+    }
+    .creator-field input:focus, .creator-field select:focus {
+      border-color: #ffd76b;
+    }
+    .decor-checkbox-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+      margin-top: 6px;
+    }
+    .decor-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: #ddd;
+      cursor: pointer;
+    }
+    .per-box-dates-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 6px;
+      margin-top: 6px;
+      max-height: 140px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+    .per-box-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 10.5px;
+    }
+    .per-box-item span {
+      width: 60px;
+      flex-shrink: 0;
+      color: #ffd76b;
+    }
+
   </style>
 </head>
 <body>
+  
   <div id="bgLayer"></div>
-  <button id="christmasSoundToggle" class="sound-floating-btn" onclick="toggleChristmasSound()" title="เปิด/ปิดเสียงดนตรี & SFX">
+  <button id="christmasSoundToggle" class="sound-floating-btn" onclick="toggleChristmasSound()" title="เปิด/ปิดเสียงเพลง & SFX">
     <span id="soundIcon">🔊</span>
   </button>
 
@@ -945,13 +1081,35 @@
     <div class="subtitle">Make a Wish</div>
     <div class="wish-banner" id="wishBanner">
       <div class="wish-text" id="wishBannerText">ขอให้คริสต์มาสนี้เต็มไปด้วยความสุข รอยยิ้ม และความทรงจำดีๆ ตลอดไปนะ ✨</div>
-      <div class="wish-cta">🎁 คลิกที่กล่องของขวัญใต้ต้นไม้เพื่อเปิดดูรูปด้านใน</div>
+      <div class="wish-cta" id="wishCta">🎁 คลิกที่กล่องของขวัญใต้ต้นไม้เพื่อเปิดดูรูปด้านใน</div>
     </div>
   </div>
 
   <canvas id="canvas"></canvas>
 
-  <div class="hint hide" id="hint">ลากเมาส์เพื่อหมุน • คลิกกล่องของขวัญเพื่อเปิด • ดับเบิลคลิกเพื่อเต็มจอ</div>
+  <!-- นับถอยหลังคริสต์มาส -->
+  <div class="countdown" id="countdown">
+    <div class="cd-title" id="cdTitle">🎄 อีกเท่าไหร่ถึงคริสต์มาส</div>
+    <div class="cd-row">
+      <div class="cd-cell"><b id="cdD">--</b><span>วัน</span></div>
+      <div class="cd-cell"><b id="cdH">--</b><span>ชม.</span></div>
+      <div class="cd-cell"><b id="cdM">--</b><span>นาที</span></div>
+      <div class="cd-cell"><b id="cdS">--</b><span>วินาที</span></div>
+    </div>
+    <div class="cd-sub" id="cdSub"></div>
+  </div>
+
+  <!-- แจ้งเตือนกล่องยังล็อก -->
+  <div class="lock-toast" id="lockToast">
+    <div class="lt-main" id="lockToastMain">🔒 กล่องของขวัญยังเปิดไม่ได้นะ<br>รอถึงเวลาปลดล็อกก่อน!</div>
+    <div class="lt-time" id="lockToastTime"></div>
+    <div class="lt-actions">
+      <button type="button" class="icon-btn creator-only-btn" id="previewUnlockBtn" onclick="previewUnlock()">🔑 ดูตัวอย่าง (ผู้สร้าง)</button>
+      <button type="button" class="icon-btn" onclick="hideLockToast()">ปิด</button>
+    </div>
+  </div>
+
+  <div class="hint hide" id="hint">ลากเมาส์เพื่อหมุน • คลิกกล่องของขวัญเพื่อเปิด • คลิกลูกบอลเพื่อฟังเสียง • เอาเมาส์ไปใกล้มนุษย์หิมะ • ดับเบิลคลิกเพื่อเต็มจอ</div>
 
   <!-- แถบปุ่มควบคุม -->
   <div class="controls hidden-ui" id="controls">
@@ -963,6 +1121,8 @@
     <button class="btn btn-gift-highlight" onclick="openGiftModal(0)">🎁 เปิดของขวัญ</button>
     <button class="btn" onclick="openSetupModal()">🖼️ เลือกรูป</button>
     <button class="btn" onclick="replayIntro()">🔄 เล่นใหม่</button>
+    <button class="btn" onclick="callSanta()">🎅 ซานต้า</button>
+    <button class="btn" id="soundBtn" onclick="toggleSound()">🔊 เสียง</button>
     <button class="btn" id="fsBtn" onclick="toggleFullscreen()">⛶ เต็มจอ</button>
   </div>
 
@@ -978,6 +1138,99 @@
         <span>✨ คำอวยพรที่จะแสดงเมื่อกล่องของขวัญปรากฏ</span>
       </label>
       <textarea id="wishInput" class="wish-input" rows="2" placeholder="พิมพ์คำอวยพรคริสต์มาสของคุณ...">ขอให้คริสต์มาสนี้เต็มไปด้วยความสุข รอยยิ้ม และความทรงจำที่แสนอบอุ่นตลอดไปนะ ✨🎄</textarea>
+
+      
+      <!-- ระบบตั้งค่าผู้แต่ง (Creator Lock & 3D Decorations) -->
+      <div class="creator-settings-panel">
+        <div class="creator-panel-title">
+          <span>⚙️ ระบบล็อกกล่องของขวัญ & ลูกเล่น 3D (สำหรับผู้แต่ง)</span>
+          <span style="font-size: 10px; opacity: 0.7;">เวลาไทย (Asia/Bangkok)</span>
+        </div>
+
+        <!-- 4 Lock Modes -->
+        <label class="field-label" style="margin-bottom: 5px;">โหมดการเปิดกล่องของขวัญ (เลือก 1 ใน 4 แบบ):</label>
+        <div class="mode-select-grid">
+          <div class="mode-option-btn active" id="modeBtn_immediate" onclick="selectLockMode('immediate')">
+            🔓 1. เปิดได้ทันที (ไม่ล็อก)
+          </div>
+          <div class="mode-option-btn" id="modeBtn_custom" onclick="selectLockMode('custom_date')">
+            📅 2. กำหนดวัน-เวลาเอง
+          </div>
+          <div class="mode-option-btn" id="modeBtn_christmas" onclick="selectLockMode('christmas')">
+            🎄 3. วันคริสต์มาส (25 ธ.ค.)
+          </div>
+          <div class="mode-option-btn" id="modeBtn_per_box" onclick="selectLockMode('per_box')">
+            📦 4. ล็อกแยกทีละกล่อง (5 กล่อง)
+          </div>
+        </div>
+
+        <!-- Mode 2: Custom Date -->
+        <div id="customDateWrap" class="creator-field" style="display:none;">
+          <label>⏰ กำหนดวันและเวลาปลดล็อก (Asia/Bangkok):</label>
+          <input type="datetime-local" id="customUnlockInput" class="creator-input" value="2026-12-25T00:00" onchange="updateCreatorLockSettings()" />
+        </div>
+
+        <!-- Mode 4: Per Box Dates -->
+        <div id="perBoxWrap" class="creator-field" style="display:none;">
+          <label>📦 กำหนดเวลาปลดล็อกแยกทีละกล่อง (กล่อง 1 - 5):</label>
+          <div class="per-box-dates-grid">
+            <div class="per-box-item">
+              <span>กล่องที่ 1:</span>
+              <input type="datetime-local" id="boxUnlock_0" class="creator-input" value="2026-12-25T00:00" onchange="updateCreatorLockSettings()" />
+            </div>
+            <div class="per-box-item">
+              <span>กล่องที่ 2:</span>
+              <input type="datetime-local" id="boxUnlock_1" class="creator-input" value="2026-12-25T00:00" onchange="updateCreatorLockSettings()" />
+            </div>
+            <div class="per-box-item">
+              <span>กล่องที่ 3:</span>
+              <input type="datetime-local" id="boxUnlock_2" class="creator-input" value="2026-12-25T00:00" onchange="updateCreatorLockSettings()" />
+            </div>
+            <div class="per-box-item">
+              <span>กล่องที่ 4:</span>
+              <input type="datetime-local" id="boxUnlock_3" class="creator-input" value="2026-12-25T00:00" onchange="updateCreatorLockSettings()" />
+            </div>
+            <div class="per-box-item">
+              <span>กล่องที่ 5:</span>
+              <input type="datetime-local" id="boxUnlock_4" class="creator-input" value="2026-12-25T00:00" onchange="updateCreatorLockSettings()" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Custom Lock Toast Message -->
+        <div class="creator-field">
+          <label>💬 ข้อความแจ้งเตือนเมื่อผู้รับคลิกกล่องที่ยังล็อก:</label>
+          <input type="text" id="lockMsgInput" class="creator-input" value="🔒 กล่องของขวัญยังเปิดไม่ได้นะ รอถึงเวลาปลดล็อกก่อน!" onchange="updateCreatorLockSettings()" />
+        </div>
+
+        <!-- Countdown Card Options -->
+        <div class="creator-field">
+          <label class="decor-label">
+            <input type="checkbox" id="toggleShowCountdown" checked onchange="updateCreatorLockSettings()" />
+            <span>แสดงการ์ดนับถอยหลัง (Countdown Card)</span>
+          </label>
+          <div id="countdownTitleRow" style="margin-top: 4px;">
+            <input type="text" id="cdTitleInput" class="creator-input" value="🎄 อีกเท่าไหร่ถึงคริสต์มาส" placeholder="หัวข้อการ์ดนับถอยหลัง" onchange="updateCreatorLockSettings()" />
+          </div>
+        </div>
+
+        <!-- Decoration switches -->
+        <div class="creator-field">
+          <label>✨ สวิตช์เปิด/ปิดฟีเจอร์ตกแต่ง 3D:</label>
+          <div class="decor-checkbox-grid">
+            <label class="decor-label"><input type="checkbox" id="decorSanta" checked onchange="updateCreatorLockSettings()" /> 🎅 ซานต้าบินผ่าน</label>
+            <label class="decor-label"><input type="checkbox" id="decorProps" checked onchange="updateCreatorLockSettings()" /> ⛄ มนุษย์หิมะ & ตุ๊กตาหมี</label>
+            <label class="decor-label"><input type="checkbox" id="decorBalls" checked onchange="updateCreatorLockSettings()" /> 🔮 ลูกบอลแก้ว 3D</label>
+            <label class="decor-label"><input type="checkbox" id="decorLandscape" checked onchange="updateCreatorLockSettings()" /> 🏔️ ดวงจันทร์ & ภูเขา</label>
+          </div>
+        </div>
+
+        <!-- Creator Test Unlock Button -->
+        <div style="margin-top: 8px; text-align: right;">
+          <button type="button" class="btn-secondary creator-only-btn" style="font-size: 11px; padding: 4px 10px;" onclick="previewUnlock()">🔑 ผู้สร้าง: ทดสอบเปิดกล่องทันที (ดูตัวอย่าง)</button>
+        </div>
+      </div>
+
 
       <div class="field-label">
         <span>📸 รูปภาพในกล่องของขวัญ (<span id="photoCountText">0</span> รูป)</span>
@@ -1077,6 +1330,13 @@
     const nextPhotoBtn = document.getElementById('nextPhotoBtn');
     const thumbStrip = document.getElementById('thumbStrip');
     const modalWishMsg = document.getElementById('modalWishMsg');
+    const countdownEl = document.getElementById('countdown');
+    const cdD = document.getElementById('cdD'), cdH = document.getElementById('cdH'), cdM = document.getElementById('cdM'), cdS = document.getElementById('cdS');
+    const cdTitle = document.getElementById('cdTitle'), cdSub = document.getElementById('cdSub');
+    const wishCta = document.getElementById('wishCta');
+    const lockToast = document.getElementById('lockToast'), lockToastTime = document.getElementById('lockToastTime');
+    const lockToggle = document.getElementById('lockToggle');
+    const soundBtn = document.getElementById('soundBtn');
 
     let width = 0, height = 0, dpr = 1;
     let treeHeight = 520, maxRadius = 210;
@@ -1090,6 +1350,16 @@
     let burstParticles = [];
     let fireflies = [], shootingStars = [], cursorSparks = [], lastStarPulse = 0, lastTwinkle = 0, nextShoot = 2;
     let giftBoxes = [];
+    let balls = [], props = [], santaTrail = [];
+    let santa = { active: false, t: 0, dur: 16, dir: 1 };
+    let nextSanta = 9;
+    let landscape = null, groundTwinkles = [];
+    let moonPos = { x: 0, y: 0, r: 40 };
+    let snowAccum = 0.18;
+    let mouseX = -9999, mouseY = -9999, wind = 0, windGust = 0, hoveredBallIndex = -1;
+    let currentThemeName = 'classic';
+    let giftLocked = false, previewUnlocked = false, lockEnabled = true, pendingBoxIndex = 0, lockToastTimer = null;
+    let audioCtx = null, soundOn = true;
 
     // แคช Sprite แสงฟุ้ง
     const spriteCache = new Map();
@@ -1188,6 +1458,385 @@
     };
 
     let currentTheme = themes.classic;
+
+    // ================= ฉากหลัง / เสียง / ตัวช่วย =================
+    const sceneTints = {
+      classic: { far: '#1d4540', mid: '#0f2b27', near: '#06130f', pineBack: '#0b231d', snowLo: 'rgba(175,225,205,', moon: '#f3f7e6' },
+      gold:    { far: '#4a3a1f', mid: '#2c2112', near: '#120c05', pineBack: '#241a0d', snowLo: 'rgba(255,225,160,', moon: '#fff0c4' },
+      pink:    { far: '#4a2342', mid: '#2d1429', near: '#12060f', pineBack: '#241022', snowLo: 'rgba(255,190,225,', moon: '#ffe6f3' },
+      blue:    { far: '#1e3f66', mid: '#10253f', near: '#050d1a', pineBack: '#0b1e36', snowLo: 'rgba(175,220,255,', moon: '#eaf8ff' }
+    };
+    const ballPalettes = {
+      classic: ['#e63946', '#ffd166', '#f4f1de', '#3a86ff', '#c1121f', '#2ec4b6', '#ffb703'],
+      gold: ['#ffd166', '#fff0b3', '#e09f24', '#ffffff', '#c97b1e', '#f4a261'],
+      pink: ['#ff5c9e', '#fff0f7', '#c94c8a', '#ffd6ea', '#9d4edd', '#ff8fab'],
+      blue: ['#4cc9f0', '#e8f7fc', '#3a86ff', '#7209b7', '#ffffff', '#90e0ef']
+    };
+    const SNOW_LAYERS = [
+      { n: 110, rMin: 0.7, rMax: 1.4, vMin: 0.35, vMax: 0.7, a: 0.4, wind: 0.35, sway: 0.18 },
+      { n: 80, rMin: 1.4, rMax: 2.6, vMin: 0.8, vMax: 1.4, a: 0.65, wind: 0.8, sway: 0.35 },
+      { n: 30, rMin: 4, rMax: 8.5, vMin: 1.8, vMax: 2.9, a: 0.38, wind: 1.7, sway: 0.6 }
+    ];
+    const MOON_CRATERS = [[-0.35, -0.15, 0.22], [0.28, 0.3, 0.17], [0.32, -0.38, 0.13], [-0.08, 0.5, 0.11], [-0.55, 0.32, 0.09], [0.05, -0.02, 0.1]];
+    const CHIME_SCALE = [784, 880, 988, 1175, 1319, 1568, 1760];
+
+    const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+    function shade(hex, amt) {
+      const n = parseInt(hex.replace('#', ''), 16);
+      let r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+      const t = amt < 0 ? 0 : 255, p = Math.abs(amt);
+      r = Math.round(r + (t - r) * p);
+      g = Math.round(g + (t - g) * p);
+      b = Math.round(b + (t - b) * p);
+      return `rgb(${r},${g},${b})`;
+    }
+
+    function mulberry32(a) {
+      return function () {
+        a |= 0; a = a + 0x6D2B79F5 | 0;
+        let t = Math.imul(a ^ a >>> 15, 1 | a);
+        t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+      };
+    }
+
+    function roundRectPath(x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+    }
+
+    // ---------- เสียง ----------
+    function ensureAudio() {
+      if (!soundOn) return null;
+      try {
+        if (!audioCtx) {
+          const AC = window.AudioContext || window.webkitAudioContext;
+          if (!AC) return null;
+          audioCtx = new AC();
+        }
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        return audioCtx;
+      } catch (e) { return null; }
+    }
+
+    function playChime(freq = 880, vol = 0.12, delay = 0) {
+      const ac = ensureAudio();
+      if (!ac) return;
+      const t0 = ac.currentTime + delay;
+      const g = ac.createGain();
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(vol, t0 + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 1.6);
+      g.connect(ac.destination);
+      [[1, 1], [2.01, 0.35], [3.97, 0.12]].forEach(([m, a]) => {
+        const o = ac.createOscillator();
+        o.type = 'sine';
+        o.frequency.value = freq * m;
+        const og = ac.createGain();
+        og.gain.value = a;
+        o.connect(og); og.connect(g);
+        o.start(t0); o.stop(t0 + 1.7);
+      });
+    }
+
+    function playThud() {
+      const ac = ensureAudio();
+      if (!ac) return;
+      const t0 = ac.currentTime;
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(150, t0);
+      o.frequency.exponentialRampToValueAtTime(55, t0 + 0.18);
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.exponentialRampToValueAtTime(0.22, t0 + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.28);
+      o.connect(g); g.connect(ac.destination);
+      o.start(t0); o.stop(t0 + 0.3);
+    }
+
+    function toggleSound() {
+      soundOn = !soundOn;
+      soundBtn.textContent = soundOn ? '🔊 เสียง' : '🔇 ปิดเสียง';
+      if (soundOn) playChime(1046, 0.08);
+    }
+
+    // ---------- ภูเขา / ป่าสน / กระท่อม / ทุ่งหิมะ (เรนเดอร์ครั้งเดียวลง offscreen) ----------
+    function buildLandscape() {
+      const tint = sceneTints[currentThemeName] || sceneTints.classic;
+      const S = Math.max(0.5, height / 1080);
+      const pad = Math.round(width * 0.07);
+      const lw = width + pad * 2;
+      const horizon = height * 0.66;
+      const portrait = width < height;
+      moonPos = { x: width * (portrait ? 0.2 : 0.15), y: height * (portrait ? 0.3 : 0.27), r: Math.max(28, Math.min(width, height) * 0.055) };
+
+      const mk = () => {
+        const c = document.createElement('canvas');
+        c.width = Math.ceil(lw);
+        c.height = Math.ceil(height);
+        return { c, g: c.getContext('2d') };
+      };
+      const far = mk();
+      const near = mk();
+
+      const ridgeFn = (base, amp, freq, seed) => {
+        const r = mulberry32(seed);
+        const ph = [r() * 6.28, r() * 6.28, r() * 6.28, r() * 6.28];
+        return (x) => {
+          const u = x / lw;
+          const v = 0.55 * (1 - Math.abs(Math.sin(u * freq * Math.PI + ph[0])))
+                  + 0.28 * (1 - Math.abs(Math.sin(u * freq * 2.3 * Math.PI + ph[1])))
+                  + 0.12 * (1 - Math.abs(Math.sin(u * freq * 5.1 * Math.PI + ph[2])))
+                  + 0.05 * Math.sin(u * freq * 11 * Math.PI + ph[3]);
+          return base - amp * v;
+        };
+      };
+
+      const drawRange = (g, ridge, cTop, cMid, cBot, topY, botY) => {
+        g.beginPath();
+        g.moveTo(0, botY);
+        for (let x = 0; x <= lw + 6; x += 6) g.lineTo(x, ridge(x));
+        g.lineTo(lw, botY);
+        g.closePath();
+        const gr = g.createLinearGradient(0, topY, 0, botY);
+        gr.addColorStop(0, cTop);
+        gr.addColorStop(0.35, cMid);
+        gr.addColorStop(1, cBot);
+        g.fillStyle = gr;
+        g.fill();
+        g.beginPath();
+        for (let x = 0; x <= lw + 6; x += 6) {
+          if (x === 0) g.moveTo(x, ridge(x)); else g.lineTo(x, ridge(x));
+        }
+        g.strokeStyle = 'rgba(255,255,255,0.13)';
+        g.lineWidth = 1.3;
+        g.stroke();
+      };
+
+      // --- ชั้นไกล: ภูเขา 2 ชั้น + หมอก ---
+      drawRange(far.g, ridgeFn(horizon - 6 * S, height * 0.2, 2.6, 11), shade(tint.far, 0.55), tint.far, tint.mid, horizon - height * 0.22, height);
+      {
+        const fg = far.g.createLinearGradient(0, horizon - 90 * S, 0, horizon + 4 * S);
+        fg.addColorStop(0, 'rgba(200,225,235,0)');
+        fg.addColorStop(1, 'rgba(200,225,235,0.14)');
+        far.g.fillStyle = fg;
+        far.g.fillRect(0, horizon - 90 * S, lw, 100 * S);
+      }
+      drawRange(far.g, ridgeFn(horizon + 2 * S, height * 0.11, 4.1, 29), shade(tint.mid, 0.18), tint.mid, tint.near, horizon - height * 0.1, height);
+
+      // --- ชั้นใกล้: ป่าสนหลัง, ทุ่งหิมะ, กระท่อม, ป่าสนหน้า ---
+      const rnd = mulberry32(4242);
+      const pine = (g, x, y, w, h, col) => {
+        g.fillStyle = col;
+        for (let i = 0; i < 4; i++) {
+          const ty = y - h + h * (i / 4) * 0.9;
+          const tw = w * (0.35 + 0.65 * (i + 1) / 4);
+          const th = h * 0.42;
+          g.beginPath();
+          g.moveTo(x, ty);
+          g.lineTo(x + tw / 2, ty + th);
+          g.lineTo(x - tw / 2, ty + th);
+          g.closePath();
+          g.fill();
+        }
+        g.fillRect(x - w * 0.04, y - h * 0.06, w * 0.08, h * 0.06);
+      };
+
+      for (let x = -10; x < lw + 10; x += (9 + rnd() * 9) * S) {
+        const h = (30 + rnd() * 48) * S;
+        pine(near.g, x, horizon + rnd() * 6 * S, h * 0.46, h, tint.pineBack);
+      }
+
+      const fy = horizon + 8 * S;
+      near.g.beginPath();
+      near.g.moveTo(0, height);
+      near.g.lineTo(0, fy);
+      for (let x = 0; x <= lw + 20; x += 20) near.g.lineTo(x, fy + Math.sin(x * 0.008) * 3 * S + Math.sin(x * 0.021) * 2 * S);
+      near.g.lineTo(lw, height);
+      near.g.closePath();
+      near.g.fillStyle = tint.near;
+      near.g.fill();
+      {
+        const sg = near.g.createLinearGradient(0, fy, 0, height);
+        sg.addColorStop(0, tint.snowLo + '0.34)');
+        sg.addColorStop(1, tint.snowLo + '0.16)');
+        near.g.fillStyle = sg;
+        near.g.fill();
+        const hg = near.g.createLinearGradient(0, fy - 10 * S, 0, fy + 30 * S);
+        hg.addColorStop(0, 'rgba(230,245,255,0.16)');
+        hg.addColorStop(1, 'rgba(230,245,255,0)');
+        near.g.fillStyle = hg;
+        near.g.fillRect(0, fy - 10 * S, lw, 40 * S);
+        // แสงจันทร์สะท้อนบนหิมะ
+        near.g.save();
+        near.g.translate(pad + moonPos.x, fy + 70 * S);
+        near.g.scale(1, 0.3);
+        const rg = near.g.createRadialGradient(0, 0, 0, 0, 0, 260 * S);
+        rg.addColorStop(0, hexToRgba(tint.moon, 0.16));
+        rg.addColorStop(1, hexToRgba(tint.moon, 0));
+        near.g.fillStyle = rg;
+        near.g.fillRect(-260 * S, -260 * S, 520 * S, 520 * S);
+        near.g.restore();
+      }
+
+      const cabin = (g, x, yb, s) => {
+        g.fillStyle = tint.near;
+        g.fillRect(x - s * 0.5, yb - s * 0.55, s, s * 0.55);
+        g.beginPath();
+        g.moveTo(x - s * 0.68, yb - s * 0.5);
+        g.lineTo(x, yb - s * 1.05);
+        g.lineTo(x + s * 0.68, yb - s * 0.5);
+        g.closePath();
+        g.fill();
+        g.fillRect(x + s * 0.22, yb - s * 1.0, s * 0.12, s * 0.3);
+        g.strokeStyle = 'rgba(235,245,255,0.85)';
+        g.lineWidth = Math.max(1.2, 1.6 * S);
+        g.beginPath();
+        g.moveTo(x - s * 0.68, yb - s * 0.5); g.lineTo(x, yb - s * 1.05); g.lineTo(x + s * 0.68, yb - s * 0.5);
+        g.stroke();
+        g.save();
+        g.globalCompositeOperation = 'lighter';
+        const wg = g.createRadialGradient(x - s * 0.1, yb - s * 0.32, 0, x - s * 0.1, yb - s * 0.32, s * 1.3);
+        wg.addColorStop(0, 'rgba(255,190,100,0.55)');
+        wg.addColorStop(1, 'rgba(255,190,100,0)');
+        g.fillStyle = wg;
+        g.fillRect(x - s * 1.5, yb - s * 1.6, s * 3, s * 2.4);
+        g.restore();
+        g.fillStyle = '#ffd98a';
+        g.fillRect(x - s * 0.22, yb - s * 0.42, s * 0.24, s * 0.2);
+      };
+      cabin(near.g, pad + width * 0.19, horizon + 20 * S, 34 * S);
+      cabin(near.g, pad + width * 0.83, horizon + 17 * S, 28 * S);
+
+      for (let x = -10; x < lw + 10; x += (14 + rnd() * 16) * S) {
+        if (Math.abs(x - lw / 2) < width * 0.14 && rnd() < 0.7) continue;
+        const h = (55 + rnd() * 70) * S;
+        pine(near.g, x, fy + 20 * S + rnd() * 14 * S, h * 0.44, h, tint.near);
+      }
+
+      landscape = { far: far.c, near: near.c, pad, lw, horizon };
+
+      groundTwinkles = [];
+      for (let i = 0; i < 70; i++) {
+        groundTwinkles.push({ x: Math.random() * width, y: fy + Math.random() * (height * 0.97 - fy), ph: Math.random() * 6.28, sp: 0.6 + Math.random() * 1.6, r: 3 + Math.random() * 4 });
+      }
+    }
+
+    function drawBackdrop(fade) {
+      if (!decorSettings.landscape) return;
+      if (!landscape) return;
+      const tint = sceneTints[currentThemeName] || sceneTints.classic;
+      const m = moonPos;
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const pulse = 0.94 + 0.06 * Math.sin(totalTime * 0.7);
+      const hr = m.r * 8 * pulse;
+      const halo = ctx.createRadialGradient(m.x, m.y, m.r * 0.7, m.x, m.y, hr);
+      halo.addColorStop(0, hexToRgba(tint.moon, 0.3 * fade));
+      halo.addColorStop(0.3, hexToRgba(tint.moon, 0.09 * fade));
+      halo.addColorStop(1, hexToRgba(tint.moon, 0));
+      ctx.fillStyle = halo;
+      ctx.fillRect(m.x - hr, m.y - hr, hr * 2, hr * 2);
+      ctx.restore();
+
+      ctx.save();
+      ctx.globalAlpha = fade;
+      const disc = ctx.createRadialGradient(m.x - m.r * 0.3, m.y - m.r * 0.3, m.r * 0.1, m.x, m.y, m.r);
+      disc.addColorStop(0, '#ffffff');
+      disc.addColorStop(0.6, tint.moon);
+      disc.addColorStop(1, shade(tint.moon, -0.18));
+      ctx.beginPath();
+      ctx.arc(m.x, m.y, m.r, 0, Math.PI * 2);
+      ctx.fillStyle = disc;
+      ctx.fill();
+      ctx.clip();
+      ctx.fillStyle = 'rgba(95,110,130,0.17)';
+      for (const [cx, cy, cr] of MOON_CRATERS) {
+        ctx.beginPath();
+        ctx.arc(m.x + cx * m.r, m.y + cy * m.r, cr * m.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+
+      ctx.drawImage(landscape.far, -landscape.pad + Math.sin(rotationY) * landscape.pad * 0.35, 0, landscape.lw, height);
+    }
+
+    function drawGround(fade) {
+      if (!landscape) return;
+      const tint = sceneTints[currentThemeName] || sceneTints.classic;
+      ctx.drawImage(landscape.near, -landscape.pad + Math.sin(rotationY) * landscape.pad * 0.9, 0, landscape.lw, height);
+
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const sp = getGlowSprite('#ffffff');
+      for (const t of groundTwinkles) {
+        const a = Math.pow(Math.max(0, Math.sin(totalTime * t.sp + t.ph)), 6);
+        if (a < 0.02) continue;
+        const r = t.r * (0.6 + 0.8 * a);
+        ctx.globalAlpha = a * 0.85 * fade;
+        ctx.drawImage(sp, t.x - r, t.y - r, r * 2, r * 2);
+      }
+      ctx.restore();
+
+      // กองหิมะสะสมที่ขอบจอด้านล่าง (สูงขึ้นเรื่อยๆ ตามหิมะที่ตกลงมา)
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(0, height + 2);
+      for (let x = 0; x <= width + 16; x += 16) {
+        const u = x / width;
+        const w = Math.sin(u * 9 + 1.3) * 0.5 + Math.sin(u * 23 + 0.4) * 0.3 + Math.sin(u * 4.2) * 0.4;
+        ctx.lineTo(x, height * (0.972 - 0.045 * snowAccum * (0.75 + 0.25 * w)) - Math.sin(u * 3.1) * 2);
+      }
+      ctx.lineTo(width + 16, height + 2);
+      ctx.closePath();
+      const dg = ctx.createLinearGradient(0, height * 0.9, 0, height);
+      dg.addColorStop(0, tint.snowLo + '0.9)');
+      dg.addColorStop(1, tint.snowLo + '0.55)');
+      ctx.fillStyle = dg;
+      ctx.globalAlpha = 0.85 * fade;
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function updateWind(dt) {
+      windGust *= Math.pow(0.15, dt);
+      const base = mouseX > -999 ? ((mouseX / Math.max(1, width)) - 0.5) * 2 : 0;
+      wind += (base * 1.3 + windGust - wind) * Math.min(1, dt * 2.5);
+    }
+
+    function drawSnow(li, fade) {
+      ctx.save();
+      const soft = getGlowSprite('#ffffff');
+      for (const s of snowParticles) {
+        if (s.layer !== li) continue;
+        s.y += s.vy;
+        s.x += s.vx + wind * s.wind + Math.sin(totalTime * 0.9 + s.phase) * s.sway;
+        if (s.y > height + 10) {
+          s.y = -10 - Math.random() * 20;
+          s.x = Math.random() * width;
+          snowAccum = Math.min(1, snowAccum + 0.0004);
+        }
+        if (s.x > width + 12) s.x = -12;
+        if (s.x < -12) s.x = width + 12;
+        const tw = 0.75 + 0.25 * Math.sin(totalTime * 2 + s.phase);
+        if (li === 2) {
+          ctx.globalAlpha = s.alpha * fade * tw;
+          ctx.drawImage(soft, s.x - s.r * 1.3, s.y - s.r * 1.3, s.r * 2.6, s.r * 2.6);
+        } else {
+          ctx.fillStyle = `rgba(255,255,255,${s.alpha * fade * tw})`;
+          ctx.beginPath();
+          ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      ctx.restore();
+    }
 
     function hexToRgba(hex, alpha) {
       const clean = hex.replace('#', '');
@@ -1364,14 +2013,19 @@
     }
 
     function startExperience() {
+      playTreeOpenSFX();
+      playLastChristmasMusic();
       wishBannerText.textContent = getWishMessage();
       setupModal.classList.remove('open');
       hasStarted = true;
       closeSetupBtn.style.display = 'inline-block';
       controls.classList.remove('hidden-ui');
       hint.classList.remove('hide');
-      playTreeOpenSFX();
-      playLastChristmasMusic();
+      countdownEl.classList.add('show');
+      applyLockSetting();
+      ensureAudio();
+      playChime(1046, 0.07);
+      playChime(1568, 0.05, 0.14);
       buildScene(true);
       wakeUI();
     }
@@ -1382,8 +2036,211 @@
     }
 
     function closeSetupWithoutReset() {
+      applyLockSetting();
       wishBannerText.textContent = getWishMessage();
       setupModal.classList.remove('open');
+    }
+
+    
+    // ================= MANITA AUDIO & SFX ENGINE =================
+    let isSoundMuted = false;
+    let bgMusicAudio = null;
+    let sfxTreeOpenAudio = null;
+    let sfxGiftboxAudio = null;
+    let sfxPopAudio = null;
+
+    function initAudio() {
+      if (bgMusicAudio) return;
+      try {
+        bgMusicAudio = new Audio('/assets/Music/LastChristmas.mp3');
+        bgMusicAudio.loop = true;
+        bgMusicAudio.volume = 0.55;
+
+        sfxTreeOpenAudio = new Audio('/assets/Christmas/tree_open.mp3');
+        sfxTreeOpenAudio.volume = 0.85;
+
+        sfxGiftboxAudio = new Audio('/assets/Christmas/giftbox.mp3');
+        sfxGiftboxAudio.volume = 0.9;
+
+        sfxPopAudio = new Audio('/assets/SFX/pop.mp3');
+        sfxPopAudio.volume = 0.8;
+      } catch (e) {
+        console.warn('Audio init error:', e);
+      }
+    }
+
+    function playTreeOpenSFX() {
+      initAudio();
+      if (isSoundMuted || !sfxTreeOpenAudio) return;
+      try {
+        sfxTreeOpenAudio.currentTime = 0;
+        sfxTreeOpenAudio.play().catch(e => console.debug('Tree open SFX waiting gesture:', e));
+      } catch(e) {}
+    }
+
+    function playLastChristmasMusic() {
+      initAudio();
+      if (isSoundMuted || !bgMusicAudio) return;
+      try {
+        if (bgMusicAudio.paused) {
+          bgMusicAudio.play().catch(e => console.debug('BGM waiting gesture:', e));
+        }
+      } catch(e) {}
+    }
+
+    function playGiftboxSFX() {
+      initAudio();
+      if (isSoundMuted) return;
+      try {
+        if (sfxGiftboxAudio) {
+          sfxGiftboxAudio.currentTime = 0;
+          sfxGiftboxAudio.play().catch(e => {});
+        }
+      } catch(e) {}
+    }
+
+    function playPopSFX() {
+      initAudio();
+      if (isSoundMuted) return;
+      try {
+        if (sfxPopAudio) {
+          sfxPopAudio.currentTime = 0;
+          sfxPopAudio.play().catch(e => {});
+        }
+      } catch(e) {}
+    }
+
+    function toggleChristmasSound() {
+      initAudio();
+      isSoundMuted = !isSoundMuted;
+      const icon = document.getElementById('soundIcon');
+      if (isSoundMuted) {
+        if (bgMusicAudio) bgMusicAudio.pause();
+        if (icon) icon.textContent = '🔇';
+      } else {
+        if (bgMusicAudio) bgMusicAudio.play().catch(e => {});
+        if (icon) icon.textContent = '🔊';
+      }
+    }
+
+    const unlockChristmasAudio = () => {
+      initAudio();
+      if (!isSoundMuted && bgMusicAudio && bgMusicAudio.paused) {
+        bgMusicAudio.play().catch(e => {});
+      }
+      window.removeEventListener('pointerdown', unlockChristmasAudio);
+      window.removeEventListener('click', unlockChristmasAudio);
+    };
+    window.addEventListener('pointerdown', unlockChristmasAudio, { once: true });
+    window.addEventListener('click', unlockChristmasAudio, { once: true });
+
+    // ================= CREATOR LOCK SYSTEM ("ระบบตั้งค่าผู้แต่ง") =================
+    function getBangkokTime(dateObj = new Date()) {
+      const utc = dateObj.getTime() + (dateObj.getTimezoneOffset() * 60000);
+      return new Date(utc + (7 * 3600000));
+    }
+
+    let lockMode = 'immediate'; // 'immediate' | 'custom_date' | 'christmas' | 'per_box'
+    let customUnlockTime = '2026-12-25T00:00';
+    let boxUnlockTimes = [
+      '2026-12-25T00:00',
+      '2026-12-25T00:00',
+      '2026-12-25T00:00',
+      '2026-12-25T00:00',
+      '2026-12-25T00:00'
+    ];
+    let customLockToastMsg = '🔒 กล่องของขวัญยังเปิดไม่ได้นะ รอถึงเวลาปลดล็อกก่อน!';
+    let showCountdownCard = true;
+    let customCdTitle = '🎄 อีกเท่าไหร่ถึงคริสต์มาส';
+    let isRecipientMode = false;
+
+    let decorSettings = {
+      santa: true,
+      santaInterval: 'normal',
+      props: true,
+      balls: true,
+      ballCount: 18,
+      snowDensity: 'normal',
+      landscape: true,
+      sound: true
+    };
+
+    function selectLockMode(mode) {
+      lockMode = mode;
+      ['immediate', 'custom_date', 'christmas', 'per_box'].forEach(m => {
+        const btn = document.getElementById('modeBtn_' + (m === 'custom_date' ? 'custom' : m));
+        if (btn) btn.classList.toggle('active', m === mode);
+      });
+
+      const customWrap = document.getElementById('customDateWrap');
+      if (customWrap) customWrap.style.display = mode === 'custom_date' ? 'block' : 'none';
+
+      const perBoxWrap = document.getElementById('perBoxWrap');
+      if (perBoxWrap) perBoxWrap.style.display = mode === 'per_box' ? 'block' : 'none';
+
+      updateCreatorLockSettings();
+    }
+
+    function updateCreatorLockSettings() {
+      const customInput = document.getElementById('customUnlockInput');
+      if (customInput && customInput.value) customUnlockTime = customInput.value;
+
+      for (let i = 0; i < 5; i++) {
+        const el = document.getElementById('boxUnlock_' + i);
+        if (el && el.value) boxUnlockTimes[i] = el.value;
+      }
+
+      const msgInput = document.getElementById('lockMsgInput');
+      if (msgInput && msgInput.value) customLockToastMsg = msgInput.value;
+
+      const cdToggle = document.getElementById('toggleShowCountdown');
+      if (cdToggle) showCountdownCard = cdToggle.checked;
+
+      const cdTitleEl = document.getElementById('cdTitleInput');
+      if (cdTitleEl && cdTitleEl.value) customCdTitle = cdTitleEl.value;
+
+      const dSanta = document.getElementById('decorSanta');
+      if (dSanta) decorSettings.santa = dSanta.checked;
+
+      const dProps = document.getElementById('decorProps');
+      if (dProps) decorSettings.props = dProps.checked;
+
+      const dBalls = document.getElementById('decorBalls');
+      if (dBalls) decorSettings.balls = dBalls.checked;
+
+      const dLand = document.getElementById('decorLandscape');
+      if (dLand) decorSettings.landscape = dLand.checked;
+
+      updateCountdown();
+    }
+
+    function isBoxLocked(boxIndex = 0) {
+      if (previewUnlocked) return false;
+      if (lockMode === 'immediate') return false;
+
+      const nowBkk = getBangkokTime(new Date()).getTime();
+
+      if (lockMode === 'christmas') {
+        const now = getBangkokTime(new Date());
+        const currentYear = now.getFullYear();
+        const targetBkk = new Date(Date.UTC(currentYear, 11, 25, -7, 0, 0)).getTime();
+        return nowBkk < targetBkk;
+      }
+
+      if (lockMode === 'custom_date') {
+        if (!customUnlockTime) return false;
+        const targetTime = new Date(customUnlockTime + ':00+07:00').getTime();
+        return nowBkk < targetTime;
+      }
+
+      if (lockMode === 'per_box') {
+        const tStr = boxUnlockTimes[boxIndex] || customUnlockTime;
+        if (!tStr) return false;
+        const targetTime = new Date(tStr + ':00+07:00').getTime();
+        return nowBkk < targetTime;
+      }
+
+      return false;
     }
 
     // ================= 3D SCENE & GIFT BOXES =================
@@ -1398,6 +2255,7 @@
       treeHeight = Math.min(height * 0.68, 630);
       maxRadius = Math.min(width * 0.31, treeHeight * 0.42);
 
+      buildLandscape();
       buildScene(false);
     }
 
@@ -1457,6 +2315,9 @@
         sparkTrail = [];
         burstParticles = [];
         titleWrap.classList.remove('show');
+        santa.active = false;
+        santaTrail = [];
+        nextSanta = totalTime + 8;
         wishBanner.classList.remove('show');
       }
 
@@ -1546,19 +2407,24 @@
         });
       }
 
-      // 5. หิมะตก
-      for (let i = 0; i < 170; i++) {
-        const depth = 0.4 + Math.random() * 1.2;
-        snowParticles.push({
-          x: Math.random() * width,
-          y: Math.random() * height,
-          r: (0.8 + Math.random() * 2.2) * depth,
-          vy: (0.45 + Math.random() * 1.1) * depth,
-          vx: (Math.random() - 0.5) * 0.5,
-          alpha: 0.18 + Math.random() * 0.55,
-          phase: Math.random() * Math.PI * 2
-        });
-      }
+      // 5. หิมะตก 3 ชั้น (ไกล / กลาง / ใกล้-เบลอ)
+      const sk = Math.max(0.75, height / 1080);
+      SNOW_LAYERS.forEach((d, li) => {
+        for (let i = 0; i < d.n; i++) {
+          snowParticles.push({
+            layer: li,
+            x: Math.random() * width,
+            y: Math.random() * height,
+            r: (d.rMin + Math.random() * (d.rMax - d.rMin)) * (li === 2 ? sk : 1),
+            vy: d.vMin + Math.random() * (d.vMax - d.vMin),
+            vx: (Math.random() - 0.5) * 0.4,
+            alpha: d.a * (0.6 + Math.random() * 0.4),
+            wind: d.wind * (0.8 + Math.random() * 0.4),
+            sway: d.sway * (0.6 + Math.random() * 0.8),
+            phase: Math.random() * Math.PI * 2
+          });
+        }
+      });
 
       fireflies = [];
       for (let i = 0; i < 46; i++) {
@@ -1572,7 +2438,9 @@
         });
       }
 
-      // 6. กล่องของขวัญ 3 มิติ
+      // 6. ลูกบอลประดับ + มนุษย์หิมะ/ตุ๊กตาหมี + กล่องของขวัญ 3 มิติ
+      buildBalls();
+      buildProps();
       buildGiftBoxes();
     }
 
@@ -1646,6 +2514,7 @@
     function drawGiftBox3D(box, popProgress, fov, centerX, centerY, dt) {
       const targetHover = (hoveredGiftIndex === box.index) ? 1 : 0;
       box.hoverAmount += (targetHover - box.hoverAmount) * Math.min(1, dt * 10);
+      box.shake = Math.max(0, (box.shake || 0) - dt * 2.2);
 
       const scale = Math.max(0.01, easeOutBack(popProgress) * (1 + box.hoverAmount * 0.1));
       const floatY = -box.hoverAmount * 8 + Math.sin(totalTime * 2.6 + box.phase) * (box.opened ? 2.5 : 1.0);
@@ -1665,8 +2534,9 @@
         { x: -hw, y:  hh, z:  hd }
       ];
 
-      const cosL = Math.cos(box.localRot + box.hoverAmount * 0.14);
-      const sinL = Math.sin(box.localRot + box.hoverAmount * 0.14);
+      const rotA = box.localRot + box.hoverAmount * 0.14 + Math.sin(totalTime * 48) * 0.1 * (box.shake || 0);
+      const cosL = Math.cos(rotA);
+      const sinL = Math.sin(rotA);
 
       const projected = [];
       let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
@@ -1756,6 +2626,7 @@
       const bowP = project(box.x, topCenterY - 2 * scale, box.z, fov, centerX, centerY);
       if (bowP) {
         const bs = Math.max(4, 10 * bowP.scale * scale);
+        if (isBoxLocked(i)) drawPadlock(bowP.x, bowP.y - bs * 2.1, bs * 1.5, box);
         ctx.strokeStyle = pal.ribbon;
         ctx.lineWidth = Math.max(1.8, bs * 0.32);
 
@@ -1896,25 +2767,20 @@
       }
       ctx.restore();
 
-      // 2. วาดหิมะตก
+      // 2. ฉากหลัง: ดวงจันทร์ + ภูเขา + ป่าสน + หิมะหลายชั้น
       const snowFade = hasStarted ? Math.min(introTime / 2.0, 1) : 0.7;
-      ctx.save();
-      for (const s of snowParticles) {
-        s.y += s.vy;
-        s.x += s.vx + Math.sin(totalTime * 0.9 + s.phase) * 0.35;
-        if (s.y > height + 6) {
-          s.y = -6;
-          s.x = Math.random() * width;
-        }
-        if (s.x > width + 6) s.x = -6;
-        if (s.x < -6) s.x = width + 6;
-
-        ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha * snowFade * (0.7 + 0.3 * Math.sin(totalTime * 2 + s.phase))})`;
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-        ctx.fill();
+      const bdFade = hasStarted ? Math.min(0.55 + introTime / 2.5, 1) : 0.85;
+      updateWind(dt);
+      drawBackdrop(bdFade);
+      drawSnow(0, snowFade);
+      drawGround(bdFade);
+      drawSnow(1, snowFade);
+      if (hasStarted) {
+        if (!santa.active && introTime > 7 && totalTime > nextSanta) startSanta();
+        drawSantaFrame(dt);
+      } else {
+        drawSnow(2, snowFade);
       }
-      ctx.restore();
 
       if (!hasStarted) {
         requestAnimationFrame(animate);
@@ -1977,10 +2843,17 @@
           box.screenBounds = null;
         }
       }
-      visibleGifts.sort((a, b) => b.z - a.z);
-      for (const item of visibleGifts) {
-        drawGiftBox3D(item.box, item.p, fov, centerX, centerY, dt);
+      updateBalls(dt, riseHeight, fov, centerX, centerY);
+      const drawables = visibleGifts.map(it => ({ z: it.z, run: () => drawGiftBox3D(it.box, it.p, fov, centerX, centerY, dt) }));
+      for (const pr of props) {
+        if (introTime < pr.appearTime) continue;
+        const pp = Math.min((introTime - pr.appearTime) / 0.6, 1);
+        const cp = project(pr.x, pr.y, pr.z, fov, centerX, centerY);
+        drawables.push({ z: cp ? cp.z : 0, run: () => drawProp(pr, pp, fov, centerX, centerY, dt) });
       }
+      drawables.sort((a, b) => b.z - a.z);
+      for (const d of drawables) d.run();
+      drawBalls(false);
 
       // แสดงคำอวยพรอัตโนมัติเมื่อกล่องของขวัญโผล่ครบแล้ว
       if (!wishShown && introTime >= WISH_SHOW_TIME) {
@@ -2195,7 +3068,701 @@
       }
 
       ctx.restore();
+
+      drawBalls(true);
+      drawSnow(2, snowFade);
+
       requestAnimationFrame(animate);
+    }
+
+    // ================= ลูกบอลแก้ว 3D =================
+    function buildBalls() {
+      balls = [];
+      const pal = ballPalettes[currentThemeName] || ballPalettes.classic;
+      const rnd = mulberry32(777 + currentThemeName.length);
+      const sc = Math.max(0.75, Math.min(1.2, treeHeight / 540));
+      const N = 20;
+      for (let i = 0; i < N; i++) {
+        const h = 0.09 + (i / (N - 1)) * 0.76 + (rnd() - 0.5) * 0.03;
+        const angle = i * 2.399963 + rnd() * 0.4;
+        const coneR = maxRadius * Math.pow(1 - h, 0.93);
+        const r = coneR * (0.92 + rnd() * 0.1);
+        const color = pal[i % pal.length];
+        balls.push({
+          idx: i, h, color,
+          x: Math.cos(angle) * r,
+          y: treeHeight / 2 - h * treeHeight + 6,
+          z: Math.sin(angle) * r,
+          R: (13 - h * 6 + rnd() * 2.5) * sc,
+          phase: rnd() * 6.28,
+          freq: CHIME_SCALE[i % CHIME_SCALE.length],
+          cols: [shade(color, 0.7), shade(color, 0.2), color, shade(color, -0.55)],
+          wobble: 0, flash: 0, hover: 0, p: 0,
+          sx: 0, sy: 0, sr: 0, pz: 0, hx: 0, hy: 0, ang: 0
+        });
+      }
+    }
+
+    function updateBalls(dt, riseHeight, fov, cx, cy) {
+      for (const b of balls) {
+        b.p = clamp((riseHeight - b.h - 0.02) / 0.12, 0, 1);
+        if (b.p <= 0) { b.sr = 0; continue; }
+        b.wobble *= Math.pow(0.18, dt);
+        b.flash = Math.max(0, b.flash - dt * 1.6);
+        b.hover += ((hoveredBallIndex === b.idx ? 1 : 0) - b.hover) * Math.min(1, dt * 10);
+        const pr = project(b.x, b.y, b.z, fov, cx, cy);
+        if (!pr) { b.sr = 0; continue; }
+        const R = Math.max(2, b.R * pr.scale * easeOutBack(b.p) * (1 + b.hover * 0.12));
+        const L = R * 1.3;
+        const ang = Math.sin(totalTime * 1.5 + b.phase) * 0.05 + Math.sin(totalTime * 11 + b.phase) * b.wobble * 0.35;
+        b.ang = ang;
+        b.hx = pr.x;
+        b.hy = pr.y - L;
+        b.sx = b.hx + Math.sin(ang) * L;
+        b.sy = b.hy + Math.cos(ang) * L;
+        b.sr = R;
+        b.pz = pr.z;
+      }
+    }
+
+    function drawBall(b) {
+      const R = b.sr;
+      if (R <= 0) return;
+      const L = R * 1.3;
+      const a0 = Math.min(1, b.p * 2);
+      ctx.save();
+      ctx.translate(b.hx, b.hy);
+      ctx.rotate(-b.ang);
+
+      // ออร่าเรืองแสง
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = Math.min(1, (0.18 + b.hover * 0.3 + b.flash * 0.7) * a0);
+      const gs = R * (2.6 + b.flash * 3);
+      ctx.drawImage(getGlowSprite(b.color), -gs, L - gs, gs * 2, gs * 2);
+      ctx.restore();
+
+      ctx.globalAlpha = a0;
+      // เส้นแขวน + ฝาทอง
+      ctx.strokeStyle = 'rgba(255,230,160,0.85)';
+      ctx.lineWidth = Math.max(0.8, R * 0.07);
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(0, L - R * 1.18);
+      ctx.stroke();
+      ctx.fillStyle = '#e7b94a';
+      roundRectPath(-R * 0.28, L - R * 1.22, R * 0.56, R * 0.28, R * 0.06);
+      ctx.fill();
+
+      // ตัวลูกบอลแก้ว
+      const gr = ctx.createRadialGradient(-R * 0.38, L - R * 0.42, R * 0.05, 0, L, R * 1.02);
+      gr.addColorStop(0, b.cols[0]);
+      gr.addColorStop(0.28, b.cols[1]);
+      gr.addColorStop(0.65, b.cols[2]);
+      gr.addColorStop(1, b.cols[3]);
+      ctx.fillStyle = gr;
+      ctx.beginPath();
+      ctx.arc(0, L, R, 0, Math.PI * 2);
+      ctx.fill();
+
+      // แสงสะท้อนขอบ (bounce light)
+      ctx.save();
+      ctx.globalAlpha = a0 * 0.5;
+      ctx.strokeStyle = b.cols[0];
+      ctx.lineWidth = R * 0.15;
+      ctx.beginPath();
+      ctx.arc(0, L, R * 0.84, 0.15, 1.35);
+      ctx.stroke();
+      ctx.restore();
+
+      // ประกายไฟสะท้อนในแก้ว
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = a0 * 0.28;
+      const rs = R * 0.7;
+      ctx.drawImage(getGlowSprite('#ffe9a8'), R * 0.3 - rs, L + R * 0.35 - rs, rs * 2, rs * 2);
+      ctx.restore();
+
+      // ไฮไลต์
+      ctx.fillStyle = 'rgba(255,255,255,0.92)';
+      ctx.beginPath();
+      ctx.ellipse(-R * 0.36, L - R * 0.4, R * 0.26, R * 0.15, -0.65, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.55)';
+      ctx.beginPath();
+      ctx.arc(R * 0.42, L + R * 0.38, R * 0.07, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.arc(0, L, R, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawBalls(front) {
+      if (!decorSettings.balls) return;
+      const list = balls.filter(b => b.sr > 0 && (front ? b.pz <= 0 : b.pz > 0)).sort((a, b) => b.pz - a.pz);
+      for (const b of list) drawBall(b);
+    }
+
+    function findBallAt(x, y) {
+      if (!hasStarted || setupModal.classList.contains('open') || giftModal.classList.contains('open')) return -1;
+      let best = -1, bz = Infinity;
+      for (const b of balls) {
+        if (b.sr <= 0 || b.p < 0.6) continue;
+        if (Math.hypot(x - b.sx, y - b.sy) <= b.sr * 1.25 + 3 && b.pz < bz) { bz = b.pz; best = b.idx; }
+      }
+      return best;
+    }
+
+    function tapBall(i) {
+      const b = balls[i];
+      if (!b) return;
+      b.wobble = 1;
+      b.flash = 1;
+      spawnBurstAt(b.x, b.y, b.z, 16, b.color);
+      playChime(b.freq, 0.12);
+    }
+
+    // ================= มนุษย์หิมะ & ตุ๊กตาหมี =================
+    function buildProps() {
+      props = [];
+      const sc = Math.max(0.75, Math.min(1.2, treeHeight / 540));
+      const gy = treeHeight / 2 + 16;
+      const defs = [
+        { kind: 'snowman', angle: 1.28, dist: 1.2, scale: 1.4, bubble: 'สวัสดี!', by: -98 },
+        { kind: 'teddy', angle: 3.82, dist: 1.16, scale: 1.7, bubble: 'Merry! ♥', by: -62 }
+      ];
+      defs.forEach((d, i) => {
+        const r = maxRadius * d.dist;
+        props.push({ kind: d.kind, x: Math.cos(d.angle) * r, y: gy, z: Math.sin(d.angle) * r, u: d.scale * sc, bubble: d.bubble, by: d.by, appearTime: GIFTS_START_TIME + 0.95 + i * 0.25, wave: 0, phase: i * 1.7 });
+      });
+    }
+
+    function blob(cx, cy, rx, ry, c0, c1, c2) {
+      const r = Math.max(rx, ry);
+      const gr = ctx.createRadialGradient(cx - rx * 0.35, cy - ry * 0.4, r * 0.08, cx, cy, r * 1.05);
+      gr.addColorStop(0, c0);
+      gr.addColorStop(0.65, c1);
+      gr.addColorStop(1, c2);
+      ctx.fillStyle = gr;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function armTwig(sx, sy, a, L) {
+      const ex = sx + Math.cos(a) * L, ey = sy + Math.sin(a) * L;
+      ctx.beginPath();
+      ctx.moveTo(sx, sy);
+      ctx.lineTo(ex, ey);
+      for (const d of [-0.55, 0.55]) {
+        ctx.moveTo(ex - Math.cos(a) * 5, ey - Math.sin(a) * 5);
+        ctx.lineTo(ex + Math.cos(a + d) * 5.5, ey + Math.sin(a + d) * 5.5);
+      }
+      ctx.stroke();
+    }
+
+    function drawSnowman(t, wv, ph) {
+      const W0 = '#ffffff', W1 = '#e4eef8', W2 = '#93abc6';
+      blob(0, -16, 17, 16.5, W0, W1, W2);
+      blob(0, -41, 12.5, 12, W0, W1, W2);
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = '#5a3b20';
+      ctx.lineWidth = 2.3;
+      armTwig(-10.5, -43, Math.PI - 0.55 + Math.sin(t * 1.4 + ph) * 0.06, 23);
+      armTwig(10.5, -43, 0.55 + (-1.05 + Math.sin(t * 10 + ph) * 0.42 - 0.55) * wv, 23);
+      blob(0, -60.5, 9.6, 9.4, W0, W1, W2);
+      // หน้า
+      ctx.fillStyle = '#1a1a1a';
+      ctx.beginPath(); ctx.arc(-3.3, -62.3, 1.2, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(3.3, -62.3, 1.2, 0, Math.PI * 2); ctx.fill();
+      for (let i = 0; i < 5; i++) {
+        ctx.beginPath(); ctx.arc(-4 + i * 2, -55.8 + Math.pow(i - 2, 2) * 0.4 - 0.8, 0.8, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.fillStyle = '#ff8c1a';
+      ctx.beginPath(); ctx.moveTo(0, -60.4); ctx.lineTo(9, -58.8); ctx.lineTo(0, -58.2); ctx.closePath(); ctx.fill();
+      // ผ้าพันคอ
+      ctx.strokeStyle = '#e63946';
+      ctx.lineWidth = 4.2;
+      ctx.beginPath(); ctx.ellipse(0, -51.5, 9, 3.2, 0, 0.05, Math.PI - 0.05); ctx.stroke();
+      ctx.fillStyle = '#c1272d';
+      ctx.beginPath(); ctx.moveTo(3, -50); ctx.lineTo(9, -49); ctx.lineTo(10.5, -37); ctx.lineTo(5, -38); ctx.closePath(); ctx.fill();
+      // กระดุมถ่าน
+      ctx.fillStyle = '#222';
+      for (const y of [-46, -41, -36]) { ctx.beginPath(); ctx.arc(0, y, 1.3, 0, Math.PI * 2); ctx.fill(); }
+      // หมวก
+      ctx.fillStyle = '#26262f';
+      roundRectPath(-7, -82, 14, 13.5, 2); ctx.fill();
+      ctx.fillStyle = '#d62839';
+      ctx.fillRect(-7, -72.6, 14, 3.4);
+      ctx.fillStyle = '#1d1d27';
+      ctx.beginPath(); ctx.ellipse(0, -68.8, 12.5, 3, 0, 0, Math.PI * 2); ctx.fill();
+    }
+
+    function drawTeddy(t, wv, ph) {
+      const b0 = '#d9a066', b1 = '#a8683a', b2 = '#6b3f1e', cr0 = '#f6e0b8', cr1 = '#f0d3a4', cr2 = '#d2ad7c';
+      // ขา
+      for (const sx of [-7.5, 7.5]) {
+        blob(sx, -5, 5.4, 5, b0, b1, b2);
+        blob(sx, -3.6, 2.6, 2.2, cr0, cr1, cr2);
+      }
+      // ตัว + พุง
+      blob(0, -16, 11.5, 12.5, b0, b1, b2);
+      blob(0, -15, 6.7, 8.3, cr0, cr1, cr2);
+      // หู
+      for (const sx of [-8.2, 8.2]) {
+        blob(sx, -43, 4.4, 4.4, b0, b1, b2);
+        blob(sx, -43, 2.2, 2.2, cr0, cr1, cr2);
+      }
+      // หัว
+      blob(0, -35, 10.5, 9.8, b0, b1, b2);
+      blob(0, -31.5, 5, 3.9, cr0, cr1, cr2);
+      ctx.fillStyle = '#3a2314';
+      ctx.beginPath(); ctx.ellipse(0, -33, 2, 1.5, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = '#3a2314';
+      ctx.lineWidth = 0.9;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.arc(-1.5, -30.6, 1.5, 0.1, Math.PI - 0.1);
+      ctx.arc(1.5, -30.6, 1.5, 0.1, Math.PI - 0.1);
+      ctx.stroke();
+      ctx.fillStyle = '#1c1008';
+      ctx.beginPath(); ctx.arc(-3.8, -36.2, 1.4, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(3.8, -36.2, 1.4, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.arc(-3.4, -36.6, 0.45, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(4.2, -36.6, 0.45, 0, Math.PI * 2); ctx.fill();
+      // โบว์
+      ctx.fillStyle = '#d62839';
+      ctx.beginPath(); ctx.moveTo(0, -24); ctx.lineTo(-6, -27.5); ctx.lineTo(-6, -20.5); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(0, -24); ctx.lineTo(6, -27.5); ctx.lineTo(6, -20.5); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#a61e2e';
+      ctx.beginPath(); ctx.arc(0, -24, 1.8, 0, Math.PI * 2); ctx.fill();
+      // แขน (ซ้ายนิ่ง ขวาโบกมือ)
+      ctx.strokeStyle = b1;
+      ctx.lineWidth = 6.5;
+      ctx.beginPath(); ctx.moveTo(-9, -21); ctx.lineTo(-15, -12); ctx.stroke();
+      blob(-15, -12, 3.4, 3.4, b0, b1, b2);
+      const a = 0.98 + (-1.15 + Math.sin(t * 10 + ph) * 0.45 - 0.98) * wv;
+      const ex = 9 + Math.cos(a) * 11.5, ey = -21 + Math.sin(a) * 11.5;
+      ctx.strokeStyle = b1;
+      ctx.lineWidth = 6.5;
+      ctx.beginPath(); ctx.moveTo(9, -21); ctx.lineTo(ex, ey); ctx.stroke();
+      blob(ex, ey, 3.4, 3.4, b0, b1, b2);
+    }
+
+    function drawBubble(text, x, y, wv) {
+      ctx.save();
+      ctx.globalAlpha *= clamp(wv * 1.4, 0, 1);
+      const sc = 0.7 + 0.3 * clamp(wv, 0, 1);
+      ctx.translate(x, y);
+      ctx.scale(sc, sc);
+      ctx.font = '500 12px Prompt, sans-serif';
+      const w = ctx.measureText(text).width + 14;
+      roundRectPath(-w / 2, -18, w, 18, 8);
+      ctx.fillStyle = 'rgba(255,255,255,0.95)';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(-4, 0); ctx.lineTo(0, 5); ctx.lineTo(4, 0);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = '#3a2a14';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, 0, -9);
+      ctx.restore();
+    }
+
+    function drawProp(pr, popP, fov, cx, cy, dt) {
+      const p = project(pr.x, pr.y, pr.z, fov, cx, cy);
+      if (!p) return;
+      const U = p.scale * pr.u * Math.max(0.01, easeOutBack(popP));
+      const R = 170 * clamp(width / 1920, 0.7, 1.3);
+      const near = Math.hypot(mouseX - p.x, mouseY - (p.y - 38 * U)) < R;
+      pr.wave += ((near ? 1 : 0) - pr.wave) * Math.min(1, dt * 5);
+      const wv = pr.wave;
+      ctx.save();
+      ctx.globalAlpha = Math.min(1, popP * 1.8);
+      ctx.translate(p.x, p.y);
+      ctx.scale(U, U);
+      ctx.fillStyle = 'rgba(0,0,0,0.32)';
+      ctx.beginPath(); ctx.ellipse(0, 0, 24, 6, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.translate(0, -Math.abs(Math.sin(totalTime * 9 + pr.phase)) * 1.6 * wv);
+      if (pr.kind === 'snowman') drawSnowman(totalTime, wv, pr.phase); else drawTeddy(totalTime, wv, pr.phase);
+      if (wv > 0.12) drawBubble(pr.bubble, 0, pr.by, wv);
+      ctx.restore();
+    }
+
+    // ================= ซานต้า + กวางเรนเดียร์ =================
+    function callSanta() {
+      if (!hasStarted || santa.active) return;
+      startSanta();
+    }
+
+    function startSanta() {
+      santa.active = true;
+      santa.t = 0;
+      santa.dir = Math.random() > 0.5 ? 1 : -1;
+      santa.dur = 15 + Math.random() * 3;
+      nextSanta = totalTime + santa.dur + 30 + Math.random() * 25;
+      [1568, 1760, 2093, 1760].forEach((f, i) => playChime(f, 0.05, [0, 0.14, 0.28, 0.5][i]));
+    }
+
+    function drawReindeer(rx, ry, ph, lead, t) {
+      ctx.save();
+      ctx.translate(rx, ry);
+      ctx.rotate(Math.sin(t * 4 + ph) * 0.05);
+      ctx.fillStyle = '#2b1a14';
+      ctx.strokeStyle = '#2b1a14';
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.shadowColor = 'rgba(255,215,130,0.75)';
+      ctx.shadowBlur = 8;
+      ctx.lineWidth = 3.2;
+      for (const [hx, po] of [[11, 0], [6, 1.2], [-8, 2.4], [-13, 3.6]]) {
+        const a = Math.sin(t * 9 + ph + po);
+        ctx.beginPath();
+        ctx.moveTo(hx, 5);
+        ctx.lineTo(hx + a * 8, 14);
+        ctx.lineTo(hx + a * 8 - 2 + Math.cos(t * 9 + ph + po) * 4, 22);
+        ctx.stroke();
+      }
+      ctx.beginPath(); ctx.ellipse(0, 0, 19, 8.5, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(10, -5); ctx.lineTo(24, -23); ctx.lineTo(31, -18); ctx.lineTo(17, 3); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(31, -21, 8.5, 4.6, 0.4, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(25.5, -26, 3.2, 1.4, -0.6, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(-18, -4); ctx.lineTo(-27, -10); ctx.lineTo(-19, 1); ctx.closePath(); ctx.fill();
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(27, -25); ctx.lineTo(24, -36); ctx.lineTo(28, -46);
+      ctx.moveTo(24, -36); ctx.lineTo(17, -40);
+      ctx.moveTo(25.6, -31); ctx.lineTo(32, -37);
+      ctx.moveTo(27.2, -41); ctx.lineTo(21, -47);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = 'rgba(255,226,150,0.55)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.ellipse(0, 0, 19, 8.5, 0, Math.PI * 1.08, Math.PI * 1.92); ctx.stroke();
+      if (lead) {
+        ctx.shadowColor = '#ff3b3b';
+        ctx.shadowBlur = 18;
+        ctx.fillStyle = '#ff3030';
+        ctx.beginPath(); ctx.arc(39, -19.5, 2.6, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function drawSleigh() {
+      ctx.save();
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = '#ffd76b';
+      ctx.lineWidth = 3;
+      ctx.shadowColor = 'rgba(255,215,110,0.8)';
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.moveTo(-72, 4);
+      ctx.quadraticCurveTo(-76, 22, -60, 22);
+      ctx.lineTo(28, 22);
+      ctx.quadraticCurveTo(48, 22, 46, 6);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-40, 22); ctx.lineTo(-40, 12);
+      ctx.moveTo(0, 22); ctx.lineTo(0, 12);
+      ctx.stroke();
+      // ถุงของขวัญ
+      ctx.fillStyle = '#b5301f';
+      ctx.beginPath(); ctx.ellipse(-48, -24, 20, 14, -0.15, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#3a86ff'; ctx.fillRect(-58, -44, 10, 10);
+      ctx.fillStyle = '#26eb80'; ctx.fillRect(-44, -47, 9, 9);
+      ctx.fillStyle = '#ffd76b'; ctx.fillRect(-54, -44, 2, 10); ctx.fillRect(-41, -47, 2, 9);
+      // ตัวเลื่อน
+      const bg = ctx.createLinearGradient(0, -16, 0, 14);
+      bg.addColorStop(0, '#e63946');
+      bg.addColorStop(1, '#8f1622');
+      ctx.fillStyle = bg;
+      ctx.beginPath();
+      ctx.moveTo(-66, -18);
+      ctx.quadraticCurveTo(-70, 10, -56, 14);
+      ctx.lineTo(18, 14);
+      ctx.quadraticCurveTo(40, 12, 38, -6);
+      ctx.quadraticCurveTo(24, -8, 16, -16);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = '#ffd76b';
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.moveTo(-66, -18);
+      ctx.quadraticCurveTo(-70, 10, -56, 14);
+      ctx.lineTo(18, 14);
+      ctx.quadraticCurveTo(40, 12, 38, -6);
+      ctx.stroke();
+      // ซานต้า
+      ctx.fillStyle = '#d62839';
+      ctx.beginPath(); ctx.ellipse(-14, -22, 13, 14, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#1b1b1b'; ctx.fillRect(-27, -17, 26, 3.5);
+      ctx.fillStyle = '#ffd76b'; ctx.fillRect(-16, -17.5, 5, 4.5);
+      ctx.strokeStyle = '#c1272d';
+      ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.moveTo(-6, -27); ctx.lineTo(14, -15); ctx.stroke();
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.arc(15, -14.5, 3.4, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#f6d3b0';
+      ctx.beginPath(); ctx.arc(-8, -41, 7.5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.ellipse(-4, -36, 6.5, 7, 0.2, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#f2a59b';
+      ctx.beginPath(); ctx.arc(-1.5, -41.5, 1.5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#d62839';
+      ctx.beginPath();
+      ctx.moveTo(-16, -44);
+      ctx.quadraticCurveTo(-16, -62, -30, -56);
+      ctx.quadraticCurveTo(-8, -52, 1, -45);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.beginPath(); ctx.ellipse(-7.5, -44.5, 10, 3.2, 0.03, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(-30, -56, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    }
+
+    function drawSleighTrain(t) {
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = 0.22;
+      ctx.drawImage(getGlowSprite('#ffd76b'), -110, -120, 430, 230);
+      ctx.restore();
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255,226,150,0.85)';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(30, -6); ctx.lineTo(80, -2);
+      ctx.moveTo(96, -2); ctx.lineTo(138, -2);
+      ctx.moveTo(154, -2); ctx.lineTo(196, -2);
+      ctx.stroke();
+      ctx.restore();
+      drawReindeer(204, Math.sin(t * 4 + 2) * 3, 2, true, t);
+      drawReindeer(146, Math.sin(t * 4 + 1) * 3, 1, false, t);
+      drawReindeer(88, Math.sin(t * 4) * 3, 0, false, t);
+      drawSleigh();
+    }
+
+    function drawSantaFrame(dt) {
+      if (!decorSettings.santa) return;
+      const S = clamp(Math.min(width, height * 1.78) / 1920, 0.42, 1.1) * 0.85;
+      let pos = null;
+      if (santa.active) {
+        santa.t += dt;
+        const u = santa.t / santa.dur;
+        if (u >= 1) {
+          santa.active = false;
+        } else {
+          const travel = width + 760 * S;
+          pos = {
+            x: santa.dir === 1 ? -380 * S + travel * u : width + 380 * S - travel * u,
+            y: height * 0.31 - Math.sin(u * Math.PI) * height * 0.07 + Math.sin(u * Math.PI * 4) * height * 0.006,
+            tilt: -0.08 * Math.cos(u * Math.PI)
+          };
+        }
+      }
+      if (pos) {
+        for (let i = 0; i < 5; i++) {
+          const lx = i < 3 ? -80 + Math.random() * 20 : -60 + Math.random() * 290;
+          santaTrail.push({
+            x: pos.x + santa.dir * lx * S,
+            y: pos.y + (Math.random() * 40 - 15) * S,
+            vx: -santa.dir * (0.3 + Math.random() * 1.2),
+            vy: 0.2 + Math.random() * 0.8,
+            life: 1,
+            decay: 0.008 + Math.random() * 0.012,
+            size: (6 + Math.random() * 9) * S,
+            color: Math.random() > 0.5 ? '#ffe28a' : (Math.random() > 0.5 ? '#ffffff' : currentTheme.starColor)
+          });
+        }
+      }
+      if (santaTrail.length) {
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        for (let i = santaTrail.length - 1; i >= 0; i--) {
+          const q = santaTrail[i];
+          q.x += q.vx; q.y += q.vy; q.vy += 0.012; q.life -= q.decay;
+          if (q.life <= 0) { santaTrail.splice(i, 1); continue; }
+          const r = q.size * q.life;
+          ctx.globalAlpha = q.life * 0.9;
+          ctx.drawImage(getGlowSprite(q.color), q.x - r, q.y - r, r * 2, r * 2);
+        }
+        ctx.restore();
+      }
+      if (pos) {
+        ctx.save();
+        ctx.translate(pos.x, pos.y);
+        ctx.scale(santa.dir * S, S);
+        ctx.rotate(pos.tilt);
+        drawSleighTrain(santa.t);
+        ctx.restore();
+      }
+    }
+
+    // ================= นับถอยหลัง + ล็อกกล่องของขวัญ =================
+    function drawPadlock(x, y, sz, box) {
+      ctx.save();
+      ctx.translate(x, y + Math.sin(totalTime * 2.2 + box.phase) * sz * 0.08);
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha *= 0.5;
+      ctx.drawImage(getGlowSprite('#ffd76b'), -sz * 1.4, -sz * 1.4, sz * 2.8, sz * 2.8);
+      ctx.restore();
+      ctx.strokeStyle = '#e8e2d0';
+      ctx.lineWidth = Math.max(1.4, sz * 0.2);
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(-sz * 0.42, sz * 0.1);
+      ctx.lineTo(-sz * 0.42, -sz * 0.15);
+      ctx.arc(0, -sz * 0.15, sz * 0.42, Math.PI, Math.PI * 2);
+      ctx.lineTo(sz * 0.42, sz * 0.1);
+      ctx.stroke();
+      const bg = ctx.createLinearGradient(0, 0, 0, sz);
+      bg.addColorStop(0, '#ffe28a');
+      bg.addColorStop(1, '#d99e26');
+      ctx.fillStyle = bg;
+      roundRectPath(-sz * 0.62, sz * 0.08, sz * 1.24, sz * 0.88, sz * 0.14);
+      ctx.fill();
+      ctx.fillStyle = '#5a3a08';
+      ctx.beginPath();
+      ctx.arc(0, sz * 0.42, sz * 0.13, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillRect(-sz * 0.045, sz * 0.42, sz * 0.09, sz * 0.24);
+      ctx.restore();
+    }
+
+    let cdState = { d: 0, h: 0, m: 0, s: 0 };
+    function updateCountdown() {
+      const nowBkk = getBangkokTime(new Date());
+      let targetTime = null;
+      let isUnlockedAll = false;
+
+      if (lockMode === 'immediate' || previewUnlocked) {
+        isUnlockedAll = true;
+      } else if (lockMode === 'christmas') {
+        const year = nowBkk.getFullYear();
+        targetTime = new Date(Date.UTC(year, 11, 25, -7, 0, 0)).getTime();
+        isUnlockedAll = nowBkk.getTime() >= targetTime;
+      } else if (lockMode === 'custom_date') {
+        if (customUnlockTime) {
+          targetTime = new Date(customUnlockTime + ':00+07:00').getTime();
+          isUnlockedAll = nowBkk.getTime() >= targetTime;
+        } else {
+          isUnlockedAll = true;
+        }
+      } else if (lockMode === 'per_box') {
+        const times = boxUnlockTimes.map((t, idx) => ({
+          idx,
+          ms: new Date((t || customUnlockTime) + ':00+07:00').getTime()
+        })).filter(t => t.ms > nowBkk.getTime());
+
+        if (times.length > 0) {
+          times.sort((a, b) => a.ms - b.ms);
+          targetTime = times[0].ms;
+          isUnlockedAll = false;
+        } else {
+          isUnlockedAll = true;
+        }
+      }
+
+      let diff = 0;
+      if (targetTime && !isUnlockedAll) {
+        diff = Math.max(0, targetTime - nowBkk.getTime());
+      }
+
+      const d = Math.floor(diff / 86400000);
+      const h = Math.floor((diff % 86400000) / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const sec = Math.floor((diff % 60000) / 1000);
+      cdState = { d, h, m, s: sec };
+      const pad2 = (n) => String(n).padStart(2, '0');
+      cdD.textContent = d;
+      cdH.textContent = pad2(h);
+      cdM.textContent = pad2(m);
+      cdS.textContent = pad2(sec);
+
+      countdownEl.classList.toggle('done', isUnlockedAll);
+      countdownEl.style.display = showCountdownCard ? 'block' : 'none';
+
+      cdTitle.textContent = isUnlockedAll
+        ? '🎅 ปลดล็อกของขวัญแล้ว! Merry Christmas!'
+        : (customCdTitle || '🎄 อีกเท่าไหร่ถึงเวลาเปิดของขวัญ');
+
+      const anyBoxLocked = giftBoxes.some((_, i) => isBoxLocked(i));
+      giftLocked = anyBoxLocked;
+
+      cdSub.textContent = isUnlockedAll
+        ? 'กล่องของขวัญปลดล็อกแล้ว 🎁'
+        : (lockMode === 'per_box' ? '🔒 แต่ละกล่องมีเวลาเปิดต่างกัน' : '🔒 กล่องของขวัญจะเปิดได้เมื่อถึงเวลา');
+
+      if (lockToastTime) {
+        lockToastTime.textContent = isUnlockedAll
+          ? '✨ ปลดล็อกเรียบร้อยแล้ว'
+          : `เหลืออีก ${d} วัน ${pad2(h)}:${pad2(m)}:${pad2(sec)}`;
+      }
+
+      const st = String(anyBoxLocked);
+      if (wishCta && wishCta.dataset.state !== st) {
+        wishCta.dataset.state = st;
+        wishCta.textContent = anyBoxLocked
+          ? '🔒 มีกล่องของขวัญที่ยังล็อกอยู่ — รอนับถอยหลังถึงเวลาเปิดนะ'
+          : '🎁 คลิกที่กล่องของขวัญใต้ต้นไม้เพื่อเปิดดูรูปด้านใน';
+      }
+    }
+
+    function applyLockSetting() {
+      if (lockToggle.checked && !lockEnabled) previewUnlocked = false;
+      lockEnabled = lockToggle.checked;
+      updateCountdown();
+    }
+
+    function showLockToast(boxIndex) {
+      pendingBoxIndex = boxIndex || 0;
+      const box = giftBoxes[pendingBoxIndex];
+      if (box) box.shake = 1;
+      playThud();
+      updateCountdown();
+
+      const lockMain = document.getElementById('lockToastMain');
+      if (lockMain) {
+        if (lockMode === 'per_box') {
+          lockMain.innerHTML = '🔒 กล่องที่ ' + (pendingBoxIndex + 1) + ' ยังเปิดไม่ได้นะ<br>' + customLockToastMsg;
+        } else {
+          lockMain.innerHTML = customLockToastMsg.replace(/\n/g, '<br>');
+        }
+      }
+
+      lockToast.classList.add('show');
+      clearTimeout(lockToastTimer);
+      lockToastTimer = setTimeout(hideLockToast, 7000);
+    }
+
+    function hideLockToast() {
+      clearTimeout(lockToastTimer);
+      lockToast.classList.remove('show');
+    }
+
+    function unlockCelebration() {
+      giftBoxes.forEach((b, i) => {
+        setTimeout(() => spawnBurstAt(b.x, b.y - b.h * 0.4, b.z, 26, b.palette.ribbon), i * 90);
+      });
+      [988, 1319, 1568, 1976].forEach((f, i) => playChime(f, 0.08, i * 0.12));
+    }
+
+    function previewUnlock() {
+      previewUnlocked = true;
+      updateCountdown();
+      hideLockToast();
+      unlockCelebration();
+      const idx = pendingBoxIndex;
+      setTimeout(() => openGiftModal(idx), 700);
     }
 
     // ================= GIFT OPENING MODAL & ANIMATION =================
@@ -2272,98 +3839,6 @@
       renderGalleryView(false);
     }
 
-    // ================= AUDIO & SFX ENGINE =================
-    let isSoundMuted = false;
-    let bgMusicAudio = null;
-    let sfxTreeOpenAudio = null;
-    let sfxGiftboxAudio = null;
-    let sfxPopAudio = null;
-
-    function initAudio() {
-      if (bgMusicAudio) return;
-      try {
-        bgMusicAudio = new Audio('/assets/Music/LastChristmas.mp3');
-        bgMusicAudio.loop = true;
-        bgMusicAudio.volume = 0.55;
-
-        sfxTreeOpenAudio = new Audio('/assets/Christmas/tree_open.mp3');
-        sfxTreeOpenAudio.volume = 0.85;
-
-        sfxGiftboxAudio = new Audio('/assets/Christmas/giftbox.mp3');
-        sfxGiftboxAudio.volume = 0.9;
-
-        sfxPopAudio = new Audio('/assets/SFX/pop.mp3');
-        sfxPopAudio.volume = 0.8;
-      } catch (e) {
-        console.warn('Audio init error:', e);
-      }
-    }
-
-    function playTreeOpenSFX() {
-      initAudio();
-      if (isSoundMuted || !sfxTreeOpenAudio) return;
-      try {
-        sfxTreeOpenAudio.currentTime = 0;
-        sfxTreeOpenAudio.play().catch(e => console.debug('Tree open SFX waiting gesture:', e));
-      } catch(e) {}
-    }
-
-    function playLastChristmasMusic() {
-      initAudio();
-      if (isSoundMuted || !bgMusicAudio) return;
-      try {
-        if (bgMusicAudio.paused) {
-          bgMusicAudio.play().catch(e => console.debug('BGM waiting gesture:', e));
-        }
-      } catch(e) {}
-    }
-
-    function playGiftboxSFX() {
-      initAudio();
-      if (isSoundMuted) return;
-      try {
-        if (sfxGiftboxAudio) {
-          sfxGiftboxAudio.currentTime = 0;
-          sfxGiftboxAudio.play().catch(e => {});
-        }
-      } catch(e) {}
-    }
-
-    function playPopSFX() {
-      initAudio();
-      if (isSoundMuted) return;
-      try {
-        if (sfxPopAudio) {
-          sfxPopAudio.currentTime = 0;
-          sfxPopAudio.play().catch(e => {});
-        }
-      } catch(e) {}
-    }
-
-    function toggleChristmasSound() {
-      initAudio();
-      isSoundMuted = !isSoundMuted;
-      const icon = document.getElementById('soundIcon');
-      if (isSoundMuted) {
-        if (bgMusicAudio) bgMusicAudio.pause();
-        if (icon) icon.textContent = '🔇';
-      } else {
-        if (bgMusicAudio) bgMusicAudio.play().catch(e => {});
-        if (icon) icon.textContent = '🔊';
-      }
-    }
-
-    const unlockChristmasAudio = () => {
-      initAudio();
-      if (!isSoundMuted && bgMusicAudio && bgMusicAudio.paused) {
-        bgMusicAudio.play().catch(e => {});
-      }
-      window.removeEventListener('pointerdown', unlockChristmasAudio);
-      window.removeEventListener('click', unlockChristmasAudio);
-    };
-    window.addEventListener('pointerdown', unlockChristmasAudio, { once: true });
-    window.addEventListener('click', unlockChristmasAudio, { once: true });
-
     function runGiftOpenSequence() {
       clearGiftTimers();
       giftModal.classList.remove('state-shaking', 'state-opening', 'state-revealed');
@@ -2372,8 +3847,6 @@
 
       // บังคับ reflow เพื่อให้ animation เริ่มใหม่ทุกครั้ง
       void cssGiftBox.offsetWidth;
-
-      // เล่นเสียง pop ตอนกล่องเริ่มเล่น animate เขย่า
       playPopSFX();
 
       giftModal.classList.add('state-shaking');
@@ -2383,7 +3856,6 @@
         stageLabel.textContent = '✨ เซอร์ไพรส์! ✨';
         giftModal.classList.add('state-opening');
         spawnModalConfetti();
-        // เล่นเสียงกล่องเปิด และ pop ตอนฝากล่องเปิด
         playGiftboxSFX();
         playPopSFX();
       }, 1050));
@@ -2396,6 +3868,7 @@
 
     function openGiftModal(boxIndex = 0) {
       if (!hasStarted) return;
+      if (isBoxLocked(boxIndex)) { showLockToast(boxIndex); return; }
 
       const box = giftBoxes[boxIndex] || giftBoxes[0];
       if (box) {
@@ -2460,6 +3933,8 @@
 
     function setTheme(name, btn) {
       currentTheme = themes[name];
+      currentThemeName = name;
+      buildLandscape();
       bgLayer.style.background = currentTheme.bg;
       titleText.style.textShadow = currentTheme.titleShadow;
 
@@ -2469,9 +3944,9 @@
     }
 
     function replayIntro() {
-      closeGiftModal();
       playTreeOpenSFX();
       playLastChristmasMusic();
+      closeGiftModal();
       buildScene(true);
     }
 
@@ -2528,7 +4003,8 @@
         rotationY += dragVelocity;
       } else {
         hoveredGiftIndex = findGiftBoxAt(e.clientX, e.clientY);
-        canvas.classList.toggle('hover-gift', hoveredGiftIndex !== -1);
+        hoveredBallIndex = hoveredGiftIndex === -1 ? findBallAt(e.clientX, e.clientY) : -1;
+        canvas.classList.toggle('hover-gift', hoveredGiftIndex !== -1 || hoveredBallIndex !== -1);
       }
     });
 
@@ -2539,12 +4015,15 @@
         const hitIdx = findGiftBoxAt(e.clientX, e.clientY);
         if (hitIdx !== -1) {
           openGiftModal(hitIdx);
+        } else {
+          const bi = findBallAt(e.clientX, e.clientY);
+          if (bi !== -1) tapBall(bi);
         }
       }
     });
 
     canvas.addEventListener('dblclick', (e) => {
-      if (findGiftBoxAt(e.clientX, e.clientY) !== -1) return;
+      if (findGiftBoxAt(e.clientX, e.clientY) !== -1 || findBallAt(e.clientX, e.clientY) !== -1) return;
       toggleFullscreen();
     });
 
@@ -2566,17 +4045,35 @@
       if (cursorSparks.length > 120) cursorSparks.splice(0, cursorSparks.length - 120);
     });
 
+    // ติดตามเมาส์/นิ้ว สำหรับลมหิมะและมนุษย์หิมะโบกมือ
+    window.addEventListener('pointermove', (e) => {
+      const dx = mouseX > -999 ? e.clientX - mouseX : 0;
+      windGust = clamp(windGust + dx * 0.02, -3, 3);
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+    });
+    window.addEventListener('pointerdown', (e) => { mouseX = e.clientX; mouseY = e.clientY; });
+    window.addEventListener('pointerup', (e) => {
+      if (e.pointerType === 'touch') setTimeout(() => { mouseX = -9999; mouseY = -9999; }, 1600);
+    });
+    document.documentElement.addEventListener('mouseleave', () => { mouseX = -9999; mouseY = -9999; });
+    lockToggle.addEventListener('change', applyLockSetting);
+
     resize();
     buildScene(true);
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
     requestAnimationFrame(animate);
+  </script>
 
-    // MANITA Recipient / Preview Mode Integrator
+    // ================= MANITA RECIPIENT & DATA INTEGRATOR =================
     (function initManitaTree() {
       const params = new URLSearchParams(window.location.search);
       const isCleanView = params.get('view') === 'recipient' || params.get('view') === 'preview' || params.get('controls') === 'hide' || !params.has('raw');
-      
+
       if (isCleanView) {
         document.body.classList.add('recipient-mode', 'manita-clean');
+        isRecipientMode = true;
         if (typeof controls !== 'undefined' && controls) {
           controls.classList.add('hidden-ui');
           controls.style.display = 'none';
@@ -2592,7 +4089,6 @@
         }, 200);
       }
 
-      // Sync custom wish, theme & photos from parent window / storage
       function applyCustomData(data) {
         if (!data) return;
         if (data.wishTitle && typeof titleText !== 'undefined' && titleText) {
@@ -2612,9 +4108,28 @@
         if (data.photos && Array.isArray(data.photos) && data.photos.length > 0) {
           uploadedPhotos = data.photos.filter(p => p.url).map((p, i) => ({
             url: p.url,
-            name: p.caption || `photo_${i}`
+            name: p.caption || ('photo_' + i)
           }));
         }
+
+        // Apply Creator Lock & Decoration Settings
+        if (data.lockMode) selectLockMode(data.lockMode);
+        if (data.unlockDate) customUnlockTime = data.unlockDate;
+        if (data.boxUnlockDates && Array.isArray(data.boxUnlockDates)) boxUnlockTimes = data.boxUnlockDates;
+        if (data.lockMessage) customLockToastMsg = data.lockMessage;
+        if (data.showCountdown !== undefined) {
+          showCountdownCard = !!data.showCountdown;
+          const cdToggle = document.getElementById('toggleShowCountdown');
+          if (cdToggle) cdToggle.checked = showCountdownCard;
+        }
+        if (data.countdownTitle) customCdTitle = data.countdownTitle;
+        if (data.decorations) decorSettings = { ...decorSettings, ...data.decorations };
+        if (data.isRecipient) {
+          isRecipientMode = true;
+          document.body.classList.add('recipient-mode', 'manita-clean');
+        }
+
+        updateCountdown();
       }
 
       // Read from localStorage draft if available
@@ -2622,7 +4137,19 @@
         const raw = localStorage.getItem('manita_studio_draft_v1');
         if (raw) {
           const cfg = JSON.parse(raw);
-          applyCustomData({ wishMessage: cfg.treeWish, wishTitle: cfg.treeTitle, treeTheme: cfg.treeTheme, photos: cfg.photos });
+          applyCustomData({
+            wishMessage: cfg.treeWish,
+            wishTitle: cfg.treeTitle,
+            treeTheme: cfg.treeTheme,
+            photos: cfg.photos,
+            lockMode: cfg.treeLockMode,
+            unlockDate: cfg.treeUnlockDate,
+            boxUnlockDates: cfg.treeBoxUnlockDates,
+            lockMessage: cfg.treeLockMessage,
+            showCountdown: cfg.treeShowCountdown,
+            countdownTitle: cfg.treeCountdownTitle,
+            decorations: cfg.treeDecorations
+          });
         }
       } catch(e) {}
 
@@ -2632,6 +4159,6 @@
         }
       });
     })();
-  </script>
+
 </body>
 </html>

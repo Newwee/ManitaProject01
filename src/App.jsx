@@ -242,6 +242,13 @@ export default function App() {
               wishMessage={config.treeWish}
               photos={config.photos}
               treeTheme={config.treeTheme || 'classic'}
+              lockMode={config.treeLockMode || 'immediate'}
+              unlockDate={config.treeUnlockDate || '2026-12-25T00:00'}
+              boxUnlockDates={config.treeBoxUnlockDates || []}
+              lockMessage={config.treeLockMessage || ''}
+              showCountdown={config.treeShowCountdown !== undefined ? config.treeShowCountdown : true}
+              countdownTitle={config.treeCountdownTitle || ''}
+              decorations={config.treeDecorations || {}}
               isRecipient={isRecipientOnly}
             />
           </div>

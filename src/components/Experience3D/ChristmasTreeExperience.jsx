@@ -6,6 +6,13 @@ export default function ChristmasTreeExperience({
   wishMessage = 'ขอให้คริสต์มาสนี้เต็มไปด้วยความสุข ความอบอุ่น และรอยยิ้ม ขอให้ปีที่กำลังจะมาถึงใจดีกับเธอในทุกๆ วันนะ 🎄✨',
   photos = [],
   treeTheme = 'classic',
+  lockMode = 'immediate',
+  unlockDate = '2026-12-25T00:00',
+  boxUnlockDates = [],
+  lockMessage = '',
+  showCountdown = true,
+  countdownTitle = '',
+  decorations = {},
   isRecipient = false
 }) {
   const iframeRef = useRef(null);
@@ -18,7 +25,15 @@ export default function ChristmasTreeExperience({
           wishMessage,
           wishTitle: title,
           treeTheme,
-          photos
+          photos,
+          lockMode,
+          unlockDate,
+          boxUnlockDates,
+          lockMessage,
+          showCountdown,
+          countdownTitle,
+          decorations,
+          isRecipient
         }, '*');
       }
     };
@@ -26,7 +41,6 @@ export default function ChristmasTreeExperience({
     const frame = iframeRef.current;
     if (frame) {
       frame.addEventListener('load', handleLoad);
-      // Also post immediately if already loaded
       try {
         if (frame.contentWindow) {
           frame.contentWindow.postMessage({
@@ -34,20 +48,43 @@ export default function ChristmasTreeExperience({
             wishMessage,
             wishTitle: title,
             treeTheme,
-            photos
+            photos,
+            lockMode,
+            unlockDate,
+            boxUnlockDates,
+            lockMessage,
+            showCountdown,
+            countdownTitle,
+            decorations,
+            isRecipient
           }, '*');
         }
       } catch (e) {}
 
       return () => frame.removeEventListener('load', handleLoad);
     }
-  }, [wishMessage, title, treeTheme, photos]);
+  }, [
+    wishMessage,
+    title,
+    treeTheme,
+    photos,
+    lockMode,
+    unlockDate,
+    boxUnlockDates,
+    lockMessage,
+    showCountdown,
+    countdownTitle,
+    decorations,
+    isRecipient
+  ]);
+
+  const viewMode = isRecipient ? 'recipient' : 'preview';
 
   return (
     <div className="w-full h-full relative bg-black overflow-hidden flex-1">
       <iframe
         ref={iframeRef}
-        src={`/experiences/ChristmasTree.html?view=clean&theme=${treeTheme}&v=2`}
+        src={`/experiences/ChristmasTree.html?view=${viewMode}&theme=${treeTheme}&v=2.1`}
         className="w-full h-full border-0 absolute inset-0 block"
         title="MANITA 3D Christmas Tree Experience"
         allow="autoplay; fullscreen"

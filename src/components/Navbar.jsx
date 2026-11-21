@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Volume2, VolumeX, Eye, Edit3, Share2, Sparkles, Sun, Moon, Laptop, CheckCircle, Disc } from 'lucide-react';
 import MusicPlayerCard from './UI/MusicPlayerCard';
+import AboutModal from './UI/AboutModal';
 
 export default function Navbar({
   appMode,
@@ -16,19 +17,24 @@ export default function Navbar({
   isDarkMode = false
 }) {
   const [isMusicPlayerOpen, setIsMusicPlayerOpen] = useState(false);
+  const [isAboutModalOpen, setIsAboutModalOpen] = useState(false);
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/90 dark:bg-stone-900/90 backdrop-blur-md border-b border-stone-200 dark:border-stone-800 px-3 py-2.5 shadow-sm transition-colors duration-300">
       <div className="max-w-5xl mx-auto flex items-center justify-between gap-2">
-        {/* Brand with ManitaLogo.png */}
-        <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+        {/* Brand with ManitaLogo.png (Click to open About MANITA) */}
+        <div
+          onClick={() => setIsAboutModalOpen(true)}
+          className="flex items-center gap-2 sm:gap-2.5 shrink-0 cursor-pointer hover:opacity-85 active:scale-95 transition group"
+          title="เกี่ยวกับ MANITA (About MANITA)"
+        >
           <img
             src="/assets/ManitaLogo.png"
             alt="MANITA Logo"
-            className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl object-contain shadow-sm shrink-0"
+            className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl object-contain shadow-sm shrink-0 group-hover:scale-105 transition-transform"
           />
           <div>
             <div className="flex items-center gap-1.5">
-              <h1 className="text-sm font-extrabold text-stone-900 dark:text-stone-100 tracking-tight leading-none">
+              <h1 className="text-sm font-extrabold text-stone-900 dark:text-stone-100 tracking-tight leading-none group-hover:text-rose-500 transition-colors">
                 MANITA
               </h1>
               <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950 text-rose-700 dark:text-rose-300 font-bold leading-none">
@@ -157,6 +163,12 @@ export default function Navbar({
         isMusicPlaying={isMusicPlaying}
         onToggleMusic={onToggleMusic}
         isDarkMode={isDarkMode}
+      />
+
+      {/* About MANITA Modal */}
+      <AboutModal
+        isOpen={isAboutModalOpen}
+        onClose={() => setIsAboutModalOpen(false)}
       />
     </header>
   );

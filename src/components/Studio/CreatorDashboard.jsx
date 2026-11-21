@@ -51,6 +51,23 @@ export default function CreatorDashboard({
       presetCategory: catId,
       revealType: catId === 'chat_camera' ? 'camera' : 'scratch'
     });
+
+    // Auto-advance to Tab 2 on preset selection & scroll tab into view
+    const nextTab =
+      catId === 'christmas_tree'
+        ? 'tree_settings'
+        : catId === 'arrow_birthday'
+        ? 'arrow_settings'
+        : 'theme';
+
+    setActiveTab(nextTab);
+
+    setTimeout(() => {
+      const tabBtn = document.getElementById(`studio-tab-${nextTab}`);
+      if (tabBtn) {
+        tabBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }
+    }, 100);
   };
 
   const handleSelectThemePreset = (themeKey) => {
@@ -297,6 +314,7 @@ export default function CreatorDashboard({
         <div className="lg:col-span-1">
           <div className="flex lg:flex-col overflow-x-auto lg:overflow-visible pb-2.5 lg:pb-0 gap-1.5 no-scrollbar scroll-smooth">
             <button
+              id="studio-tab-category"
               onClick={() => setActiveTab('category')}
               className={`shrink-0 whitespace-nowrap lg:whitespace-normal text-left px-3.5 py-2.5 lg:py-3 rounded-2xl text-xs font-bold flex items-center gap-2 transition ${
                 activeTab === 'category'
@@ -311,6 +329,7 @@ export default function CreatorDashboard({
             {(currentCategory === 'chat_scratch' || currentCategory === 'chat_camera') && (
               <>
                 <button
+                  id="studio-tab-theme"
                   onClick={() => setActiveTab('theme')}
                   className={`shrink-0 whitespace-nowrap lg:whitespace-normal text-left px-3.5 py-2.5 lg:py-3 rounded-2xl text-xs font-bold flex items-center gap-2 transition ${
                     activeTab === 'theme'
@@ -323,6 +342,7 @@ export default function CreatorDashboard({
                 </button>
 
                 <button
+                  id="studio-tab-entry"
                   onClick={() => setActiveTab('entry')}
                   className={`shrink-0 whitespace-nowrap lg:whitespace-normal text-left px-3.5 py-2.5 lg:py-3 rounded-2xl text-xs font-bold flex items-center gap-2 transition ${
                     activeTab === 'entry'
@@ -335,6 +355,7 @@ export default function CreatorDashboard({
                 </button>
 
                 <button
+                  id="studio-tab-passcode"
                   onClick={() => setActiveTab('passcode')}
                   className={`shrink-0 whitespace-nowrap lg:whitespace-normal text-left px-3.5 py-2.5 lg:py-3 rounded-2xl text-xs font-bold flex items-center gap-2 transition ${
                     activeTab === 'passcode'
@@ -347,6 +368,7 @@ export default function CreatorDashboard({
                 </button>
 
                 <button
+                  id="studio-tab-chat"
                   onClick={() => setActiveTab('chat')}
                   className={`shrink-0 whitespace-nowrap lg:whitespace-normal text-left px-3.5 py-2.5 lg:py-3 rounded-2xl text-xs font-bold flex items-center gap-2 transition ${
                     activeTab === 'chat'
@@ -359,6 +381,7 @@ export default function CreatorDashboard({
                 </button>
 
                 <button
+                  id="studio-tab-reveal"
                   onClick={() => setActiveTab('reveal')}
                   className={`shrink-0 whitespace-nowrap lg:whitespace-normal text-left px-3.5 py-2.5 lg:py-3 rounded-2xl text-xs font-bold flex items-center gap-2 transition ${
                     activeTab === 'reveal'
@@ -378,6 +401,7 @@ export default function CreatorDashboard({
 
             {currentCategory === 'christmas_tree' && (
               <button
+                id="studio-tab-tree_settings"
                 onClick={() => setActiveTab('tree_settings')}
                 className={`shrink-0 whitespace-nowrap lg:whitespace-normal text-left px-3.5 py-2.5 lg:py-3 rounded-2xl text-xs font-bold flex items-center gap-2 transition ${
                   activeTab === 'tree_settings'
@@ -392,6 +416,7 @@ export default function CreatorDashboard({
 
             {currentCategory === 'arrow_birthday' && (
               <button
+                id="studio-tab-arrow_settings"
                 onClick={() => setActiveTab('arrow_settings')}
                 className={`shrink-0 whitespace-nowrap lg:whitespace-normal text-left px-3.5 py-2.5 lg:py-3 rounded-2xl text-xs font-bold flex items-center gap-2 transition ${
                   activeTab === 'arrow_settings'
@@ -405,6 +430,7 @@ export default function CreatorDashboard({
             )}
 
             <button
+              id="studio-tab-photos"
               onClick={() => setActiveTab('photos')}
               className={`shrink-0 whitespace-nowrap lg:whitespace-normal text-left px-3.5 py-2.5 lg:py-3 rounded-2xl text-xs font-bold flex items-center gap-2 transition ${
                 activeTab === 'photos'
@@ -418,6 +444,7 @@ export default function CreatorDashboard({
 
             {(currentCategory === 'chat_scratch' || currentCategory === 'chat_camera') && (
               <button
+                id="studio-tab-coupons"
                 onClick={() => setActiveTab('coupons')}
                 className={`shrink-0 whitespace-nowrap lg:whitespace-normal text-left px-3.5 py-2.5 lg:py-3 rounded-2xl text-xs font-bold flex items-center gap-2 transition ${
                   activeTab === 'coupons'
@@ -906,6 +933,146 @@ export default function CreatorDashboard({
                       onChange={(e) => onChangeConfig({ ...config, treeWish: e.target.value })}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-stone-800 dark:text-stone-100 bg-white dark:bg-stone-800 focus:outline-none focus:border-rose-500"
                     />
+                  </div>
+
+                  {/* Creator Lock System (4 Modes) */}
+                  <div className="pt-3 border-t border-stone-200 dark:border-stone-800">
+                    <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1.5 flex items-center justify-between">
+                      <span>🔒 ระบบล็อกและเงื่อนไขการเปิดกล่องของขวัญ (Lock Settings):</span>
+                      <span className="text-[10px] text-stone-400 font-normal">เวลาไทย (Asia/Bangkok)</span>
+                    </label>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+                      {[
+                        { id: 'immediate', label: '🔓 เปิดได้ทันที', desc: 'ไม่ล็อกกล่อง' },
+                        { id: 'custom_date', label: '📅 กำหนดวันเอง', desc: 'ระบุวัน-เวลาปลดล็อก' },
+                        { id: 'christmas', label: '🎄 วันคริสต์มาส', desc: 'ล็อกถึง 25 ธ.ค. 00:00' },
+                        { id: 'per_box', label: '📦 ล็อกรายกล่อง', desc: 'ตั้งเวลาแยก 5 กล่อง' }
+                      ].map((m) => {
+                        const isSel = (config.treeLockMode || 'immediate') === m.id;
+                        return (
+                          <div
+                            key={m.id}
+                            onClick={() => onChangeConfig({ ...config, treeLockMode: m.id })}
+                            className={`p-2.5 rounded-xl border-2 cursor-pointer transition text-left ${
+                              isSel
+                                ? 'border-rose-500 bg-rose-50/70 dark:bg-rose-950/40 text-stone-900 dark:text-white shadow-xs'
+                                : 'border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600 bg-stone-50 dark:bg-stone-800/40 text-stone-600 dark:text-stone-400'
+                            }`}
+                          >
+                            <span className="text-xs font-bold block">{m.label}</span>
+                            <span className="text-[10px] text-stone-400 dark:text-stone-500 block">{m.desc}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Mode 2: Custom Date input */}
+                    {config.treeLockMode === 'custom_date' && (
+                      <div className="p-3 bg-stone-50 dark:bg-stone-800/50 rounded-2xl border border-stone-200 dark:border-stone-700 mb-3">
+                        <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                          ⏰ กำหนดวัน-เวลาปลดล็อกกล่องของขวัญ (Asia/Bangkok)
+                        </label>
+                        <input
+                          type="datetime-local"
+                          value={config.treeUnlockDate || '2026-12-25T00:00'}
+                          onChange={(e) => onChangeConfig({ ...config, treeUnlockDate: e.target.value })}
+                          className="w-full px-3.5 py-2 rounded-xl border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-stone-800 dark:text-stone-100 bg-white dark:bg-stone-800 focus:outline-none focus:border-rose-500"
+                        />
+                      </div>
+                    )}
+
+                    {/* Mode 4: Per-box Date inputs */}
+                    {config.treeLockMode === 'per_box' && (
+                      <div className="p-3 bg-stone-50 dark:bg-stone-800/50 rounded-2xl border border-stone-200 dark:border-stone-700 mb-3 space-y-2">
+                        <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                          📦 กำหนดวัน-เวลาปลดล็อกแยกตามกล่อง (กล่อง 1 - 5):
+                        </label>
+                        {[0, 1, 2, 3, 4].map((idx) => {
+                          const dates = config.treeBoxUnlockDates || ['2026-12-25T00:00', '2026-12-25T00:00', '2026-12-25T00:00', '2026-12-25T00:00', '2026-12-25T00:00'];
+                          return (
+                            <div key={idx} className="flex items-center gap-2 text-xs">
+                              <span className="font-bold text-stone-700 dark:text-stone-300 w-16 shrink-0">กล่องที่ {idx + 1}:</span>
+                              <input
+                                type="datetime-local"
+                                value={dates[idx] || '2026-12-25T00:00'}
+                                onChange={(e) => {
+                                  const newDates = [...dates];
+                                  newDates[idx] = e.target.value;
+                                  onChangeConfig({ ...config, treeBoxUnlockDates: newDates });
+                                }}
+                                className="flex-1 px-3 py-1.5 rounded-xl border border-stone-200 dark:border-stone-700 text-xs text-stone-800 dark:text-stone-100 bg-white dark:bg-stone-800 focus:outline-none focus:border-rose-500"
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Locked Message */}
+                    <div className="mb-3">
+                      <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                        ข้อความแจ้งเตือนเมื่อผู้รับคลิกกล่องที่ยังล็อก (Lock Toast Message)
+                      </label>
+                      <input
+                        type="text"
+                        value={config.treeLockMessage || '🔒 กล่องของขวัญยังเปิดไม่ได้นะ รอถึงเวลาปลดล็อกก่อน!'}
+                        onChange={(e) => onChangeConfig({ ...config, treeLockMessage: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-stone-800 dark:text-stone-100 bg-white dark:bg-stone-800 focus:outline-none focus:border-rose-500"
+                        placeholder="ข้อความแจ้งเตือนเมื่อกล่องยังล็อก"
+                      />
+                    </div>
+
+                    {/* Show Countdown Card Toggle */}
+                    <div className="flex items-center gap-2 mb-3">
+                      <input
+                        type="checkbox"
+                        id="treeShowCountdownCheck"
+                        checked={config.treeShowCountdown !== undefined ? config.treeShowCountdown : true}
+                        onChange={(e) => onChangeConfig({ ...config, treeShowCountdown: e.target.checked })}
+                        className="w-4 h-4 rounded text-rose-500 focus:ring-rose-400"
+                      />
+                      <label htmlFor="treeShowCountdownCheck" className="text-xs font-bold text-stone-700 dark:text-stone-300 cursor-pointer">
+                        แสดงการ์ดนับถอยหลังลอยบนหน้าจอ (Countdown Card)
+                      </label>
+                    </div>
+
+                    {/* 3D Decoration Switches */}
+                    <div className="pt-2 border-t border-stone-200/80 dark:border-stone-800">
+                      <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-2">
+                        สวิตช์เปิด/ปิดฟีเจอร์ตกแต่ง 3D (Decorations):
+                      </label>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                        {[
+                          { key: 'santa', label: '🎅 ซานต้าบินผ่าน' },
+                          { key: 'props', label: '⛄ มนุษย์หิมะ & หมี' },
+                          { key: 'balls', label: '🔮 ลูกบอลแก้ว 3D' },
+                          { key: 'landscape', label: '🏔️ ดวงจันทร์ & ภูเขา' }
+                        ].map((item) => {
+                          const decs = config.treeDecorations || { santa: true, props: true, balls: true, landscape: true };
+                          const isEnabled = decs[item.key] !== false;
+                          return (
+                            <label key={item.key} className="flex items-center gap-2 p-2 rounded-xl bg-stone-50 dark:bg-stone-800/40 border border-stone-200 dark:border-stone-700 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={isEnabled}
+                                onChange={(e) => {
+                                  onChangeConfig({
+                                    ...config,
+                                    treeDecorations: {
+                                      ...decs,
+                                      [item.key]: e.target.checked
+                                    }
+                                  });
+                                }}
+                                className="w-3.5 h-3.5 rounded text-rose-500"
+                              />
+                              <span className="font-semibold text-stone-700 dark:text-stone-300 text-[11px]">{item.label}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
