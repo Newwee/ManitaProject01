@@ -2048,33 +2048,37 @@
     function clearUploadedPhotos() {
       uploadedPhotos.forEach(p => URL.revokeObjectURL(p.url));
       uploadedPhotos = [];
-      photoInput.value = '';
+      if (photoInput) photoInput.value = '';
       renderPhotoPreviews();
     }
 
-    photoInput.addEventListener('change', (e) => {
-      if (e.target.files.length) {
-        handleFiles(e.target.files);
-        photoInput.value = '';
-      }
-    });
+    if (photoInput) {
+      photoInput.addEventListener('change', (e) => {
+        if (e.target.files.length) {
+          handleFiles(e.target.files);
+          photoInput.value = '';
+        }
+      });
+    }
 
-    uploadZone.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      uploadZone.classList.add('dragover');
-    });
+    if (uploadZone) {
+      uploadZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadZone.classList.add('dragover');
+      });
 
-    uploadZone.addEventListener('dragleave', () => {
-      uploadZone.classList.remove('dragover');
-    });
+      uploadZone.addEventListener('dragleave', () => {
+        uploadZone.classList.remove('dragover');
+      });
 
-    uploadZone.addEventListener('drop', (e) => {
-      e.preventDefault();
-      uploadZone.classList.remove('dragover');
-      if (e.dataTransfer.files.length) {
-        handleFiles(e.dataTransfer.files);
-      }
-    });
+      uploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadZone.classList.remove('dragover');
+        if (e.dataTransfer.files.length) {
+          handleFiles(e.dataTransfer.files);
+        }
+      });
+    }
 
     function getWishMessage() {
       const val = wishInput.value.trim();
@@ -3811,8 +3815,8 @@
     }
 
     function applyLockSetting() {
-      if (lockToggle.checked && !lockEnabled) previewUnlocked = false;
-      lockEnabled = lockToggle.checked;
+      if (lockToggle && lockToggle.checked && !lockEnabled) previewUnlocked = false;
+      lockEnabled = lockToggle ? lockToggle.checked : (lockMode !== 'immediate');
       updateCountdown();
     }
 
@@ -4150,7 +4154,9 @@
       if (e.pointerType === 'touch') setTimeout(() => { mouseX = -9999; mouseY = -9999; }, 1600);
     });
     document.documentElement.addEventListener('mouseleave', () => { mouseX = -9999; mouseY = -9999; });
-    lockToggle.addEventListener('change', applyLockSetting);
+    if (lockToggle) {
+      lockToggle.addEventListener('change', applyLockSetting);
+    }
 
     resize();
     buildScene(true);

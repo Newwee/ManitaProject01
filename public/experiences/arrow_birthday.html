@@ -1410,10 +1410,12 @@
       return photoDeck.pop();
     }
 
-    photoInput.addEventListener('change', (e) => {
-      addUploadedFiles(e.target.files);
-      photoInput.value = '';
-    });
+    if (photoInput) {
+      photoInput.addEventListener('change', (e) => {
+        addUploadedFiles(e.target.files);
+        photoInput.value = '';
+      });
+    }
 
     window.addEventListener('dragover', (e) => e.preventDefault());
     window.addEventListener('drop', (e) => {
