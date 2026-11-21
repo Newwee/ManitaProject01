@@ -1025,6 +1025,16 @@
       box-shadow: 0 0 20px rgba(255, 215, 120, 0.5);
     }
 
+    /* Hide sound toggle when running embedded or in clean recipient/preview mode */
+    body.recipient-mode .sound-floating-btn,
+    body.manita-clean .sound-floating-btn,
+    .recipient-mode .sound-floating-btn,
+    .manita-clean .sound-floating-btn {
+      display: none !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
+
     /* Creator Setup: Lock System & 3D Decorations Panel */
     .creator-settings-panel {
       background: rgba(255, 255, 255, 0.05);
@@ -2072,21 +2082,43 @@
     }
 
     function startExperience() {
-      playTreeOpenSFX();
-      playLastChristmasMusic();
-      wishBannerText.textContent = getWishMessage();
-      setupModal.classList.remove('open');
       hasStarted = true;
-      closeSetupBtn.style.display = 'inline-block';
-      controls.classList.remove('hidden-ui');
-      hint.classList.remove('hide');
-      countdownEl.classList.add('show');
-      applyLockSetting();
-      ensureAudio();
-      playChime(1046, 0.07);
-      playChime(1568, 0.05, 0.14);
-      buildScene(true);
-      wakeUI();
+      try {
+        wishBannerText.textContent = getWishMessage();
+        if (typeof setupModal !== 'undefined' && setupModal) {
+          setupModal.classList.remove('open');
+        }
+        if (typeof closeSetupBtn !== 'undefined' && closeSetupBtn) {
+          closeSetupBtn.style.display = 'inline-block';
+        }
+        if (typeof controls !== 'undefined' && controls) {
+          controls.classList.remove('hidden-ui');
+        }
+        if (typeof hint !== 'undefined' && hint) {
+          hint.classList.remove('hide');
+        }
+        if (typeof countdownEl !== 'undefined' && countdownEl) {
+          countdownEl.classList.add('show');
+        }
+        applyLockSetting();
+        buildScene(true);
+        wakeUI();
+      } catch (err) {
+        console.warn('Error during scene startup:', err);
+      }
+
+      // Audio is only triggered internally when running standalone; in iframe, ChristmasMusicPlayer plays it
+      if (window.self === window.top) {
+        try {
+          playTreeOpenSFX();
+          playLastChristmasMusic();
+          ensureAudio();
+          playChime(1046, 0.07);
+          playChime(1568, 0.05, 0.14);
+        } catch (audioErr) {
+          console.debug('Standalone audio playback waiting interaction:', audioErr);
+        }
+      }
     }
 
     function openSetupModal() {
@@ -2129,6 +2161,7 @@
     }
 
     function playTreeOpenSFX() {
+      if (window.self !== window.top) return; // Embedded in React app, silenced
       initAudio();
       if (isSoundMuted || !sfxTreeOpenAudio) return;
       try {
@@ -2138,6 +2171,7 @@
     }
 
     function playLastChristmasMusic() {
+      if (window.self !== window.top) return; // Embedded in React app, ChristmasMusicPlayer is single source of truth
       initAudio();
       if (isSoundMuted || !bgMusicAudio) return;
       try {
@@ -4141,15 +4175,16 @@
           setupModal.classList.remove('open');
           setupModal.style.display = 'none';
         }
-        setTimeout(() => {
-          if (typeof startExperience === 'function' && !hasStarted) {
-            startExperience();
-          }
-        }, 150);
+        if (typeof startExperience === 'function' && !hasStarted) {
+          startExperience();
+        }
       }
 
       function applyCustomData(data) {
         if (!data) return;
+        if (!hasStarted && typeof startExperience === 'function') {
+          startExperience();
+        }
         if (data.wishTitle && typeof titleText !== 'undefined' && titleText) {
           titleText.textContent = data.wishTitle;
         }
@@ -4167,7 +4202,7 @@
         if (data.photos && Array.isArray(data.photos) && data.photos.length > 0) {
           uploadedPhotos = data.photos.filter(p => p.url).map((p, i) => ({
             url: p.url,
-            name: p.caption || ('photo_' + i)
+            name: (p.caption || ('photo_' + i)).replace(/\s*\(\d+(\.\d+)?\s*KB\)/i, '')
           }));
         }
 

@@ -1,46 +1,77 @@
-import React from 'react';
-import { X, Sparkles, Heart, Gift, Camera, MessageSquare, HelpCircle, ShieldCheck, Smartphone, ExternalLink } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { X, Sparkles, Heart } from 'lucide-react';
 
 export default function AboutModal({ isOpen, onClose }) {
-  if (!isOpen) return null;
+  // Close on Escape key press
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (!isOpen || typeof document === 'undefined') return;
+    const originalStyle = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = originalStyle;
+    };
+  }, [isOpen]);
+
+  if (!isOpen || typeof document === 'undefined') return null;
+
+  const modalContent = (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="about-modal-title"
+    >
       <div
-        className="w-full max-w-lg bg-white dark:bg-[#1a1823] text-stone-900 dark:text-stone-100 rounded-3xl p-6 sm:p-7 shadow-2xl border border-stone-200/80 dark:border-stone-800 relative max-h-[90vh] overflow-y-auto no-scrollbar"
+        className="w-full max-w-lg bg-white dark:bg-[#1a1823] text-stone-900 dark:text-stone-100 rounded-3xl shadow-2xl border border-stone-200/80 dark:border-stone-800 relative my-auto max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close Button */}
+        {/* Sticky Close Button (Always visible inside card frame) */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-full text-stone-400 hover:text-stone-700 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-stone-800 transition"
+          className="absolute top-3.5 right-3.5 z-20 p-2 rounded-full text-stone-400 hover:text-stone-700 dark:hover:text-white bg-white/80 dark:bg-stone-800/80 hover:bg-stone-100 dark:hover:bg-stone-700 backdrop-blur-sm shadow-sm transition active:scale-95 border border-stone-200/50 dark:border-stone-700/50"
           aria-label="Close modal"
         >
           <X className="w-5 h-5" />
         </button>
 
-        {/* Big Website Logo & Brand Header */}
-        <div className="text-center pt-2 pb-4">
-          <div className="w-24 h-24 sm:w-28 sm:h-28 mx-auto mb-3 rounded-3xl overflow-hidden shadow-xl ring-4 ring-rose-100 dark:ring-rose-950/60 bg-gradient-to-tr from-rose-50 to-pink-50 p-2 flex items-center justify-center">
-            <img
-              src="/assets/ManitaLogo.png"
-              alt="MANITA Logo"
-              className="w-full h-full object-contain"
-            />
+        {/* Scrollable Container */}
+        <div className="overflow-y-auto p-5 sm:p-7 space-y-4">
+          {/* Big Website Logo & Brand Header */}
+          <div className="text-center pt-1 pb-3">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-3 rounded-3xl overflow-hidden shadow-xl ring-4 ring-rose-100 dark:ring-rose-950/60 bg-gradient-to-tr from-rose-50 to-pink-50 p-2 flex items-center justify-center">
+              <img
+                src="/assets/ManitaLogo.png"
+                alt="MANITA Logo"
+                className="w-full h-full object-contain"
+              />
+            </div>
+            <h2
+              id="about-modal-title"
+              className="font-theme-display text-2xl sm:text-3xl font-extrabold text-stone-900 dark:text-white tracking-tight"
+            >
+              MANITA
+            </h2>
+            <p className="text-xs uppercase font-bold tracking-widest text-rose-500 mt-0.5">
+              Create Something Meaningful
+            </p>
+            <p className="text-xs text-stone-500 dark:text-stone-400 mt-2 max-w-sm mx-auto leading-relaxed">
+              แพลตฟอร์มสร้างสรรค์ของขวัญดิจิทัลและบันทึกความทรงจำแบบ Interactive สำหรับคนพิเศษในทุกเทศกาลและโอกาสสำคัญ
+            </p>
           </div>
-          <h2 className="font-theme-display text-2xl sm:text-3xl font-extrabold text-stone-900 dark:text-white tracking-tight">
-            MANITA
-          </h2>
-          <p className="text-xs uppercase font-bold tracking-widest text-rose-500 mt-0.5">
-            Create Something Meaningful
-          </p>
-          <p className="text-xs text-stone-500 dark:text-stone-400 mt-2 max-w-sm mx-auto leading-relaxed">
-            แพลตฟอร์มสร้างสรรค์ของขวัญดิจิทัลและบันทึกความทรงจำแบบ Interactive สำหรับคนพิเศษในทุกเทศกาลและโอกาสสำคัญ
-          </p>
-        </div>
 
-        {/* Feature Capabilities */}
-        <div className="space-y-4 my-4">
+          {/* Feature Capabilities */}
           <div className="bg-stone-50 dark:bg-stone-800/50 p-4 rounded-2xl border border-stone-200/60 dark:border-stone-700/60">
             <h3 className="text-xs font-bold uppercase tracking-wider text-stone-700 dark:text-stone-300 mb-2.5 flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-amber-500" />
@@ -97,18 +128,20 @@ export default function AboutModal({ isOpen, onClose }) {
               </p>
             </div>
           </div>
-        </div>
 
-        {/* Footer */}
-        <div className="pt-3 border-t border-stone-200 dark:border-stone-800 text-center">
-          <p className="text-[11px] font-bold text-stone-500 dark:text-stone-400">
-            พัฒนาด้วยความใส่ใจโดย <span className="text-rose-500">MANITA Team</span>
-          </p>
-          <p className="text-[10px] text-stone-400 mt-0.5">
-            © 2026 MANITA. All rights reserved.
-          </p>
+          {/* Footer */}
+          <div className="pt-2 border-t border-stone-200 dark:border-stone-800 text-center">
+            <p className="text-[11px] font-bold text-stone-500 dark:text-stone-400">
+              พัฒนาด้วยความใส่ใจโดย <span className="text-rose-500">MANITA Team</span>
+            </p>
+            <p className="text-[10px] text-stone-400 mt-0.5">
+              © 2026 MANITA. All rights reserved.
+            </p>
+          </div>
         </div>
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

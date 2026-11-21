@@ -119,20 +119,22 @@ export default function Navbar({
             </div>
           )}
 
-          {/* Music Sound Toggle */}
-          <button
-            onClick={() => {
-              if (onToggleMusic) onToggleMusic();
-            }}
-            title={isMusicPlaying ? "ปิดเสียงดนตรี" : "เปิดเสียงดนตรีประจำธีม"}
-            className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
-              isMusicPlaying
-                ? 'bg-rose-500 text-white shadow-md shadow-rose-200 animate-pulse'
-                : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-700'
-            }`}
-          >
-            {isMusicPlaying ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-          </button>
+          {/* Music Sound Toggle (Hidden for Christmas Tree to prevent audio overlapping with dedicated player) */}
+          {presetCategory !== 'christmas_tree' && (
+            <button
+              onClick={() => {
+                if (onToggleMusic) onToggleMusic();
+              }}
+              title={isMusicPlaying ? "ปิดเสียงดนตรี" : "เปิดเสียงดนตรีประจำธีม"}
+              className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                isMusicPlaying
+                  ? 'bg-rose-500 text-white shadow-md shadow-rose-200 animate-pulse'
+                  : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-700'
+              }`}
+            >
+              {isMusicPlaying ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+            </button>
+          )}
 
           {/* Finish & Save / Share Button */}
           {!isRecipientOnly && (

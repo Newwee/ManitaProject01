@@ -118,19 +118,36 @@ export default function App() {
     }
   }, [studioTheme, isDarkMode]);
 
+  // Sanitize photo captions to ensure no file sizes like '(197 KB)' leak into UI
+  const sanitizePhotos = (photos) => {
+    if (!Array.isArray(photos)) return [];
+    return photos.map((p) => ({
+      ...p,
+      caption: (p.caption || 'ภาพความทรงจำ').replace(/\s*\(\d+(\.\d+)?\s*KB\)/i, '').trim() || 'ภาพความทรงจำ'
+    }));
+  };
+
   // Initialize from URL or Local Draft
   useEffect(() => {
     const initApp = async () => {
       try {
         const giftFromUrl = await resolveGiftFromUrl();
         if (giftFromUrl && giftFromUrl.config) {
-          setConfig(giftFromUrl.config);
+          const cleanCfg = {
+            ...giftFromUrl.config,
+            photos: sanitizePhotos(giftFromUrl.config.photos)
+          };
+          setConfig(cleanCfg);
           setIsRecipientOnly(true);
           setAppMode('preview');
         } else {
           const draft = loadLocalDraft();
           if (draft) {
-            setConfig((prev) => ({ ...prev, ...draft }));
+            const cleanCfg = {
+              ...draft,
+              photos: sanitizePhotos(draft.photos)
+            };
+            setConfig((prev) => ({ ...prev, ...cleanCfg }));
           }
         }
       } catch (e) {
@@ -145,7 +162,11 @@ export default function App() {
     const handleHashOrPopState = async () => {
       const giftFromUrl = await resolveGiftFromUrl();
       if (giftFromUrl && giftFromUrl.config) {
-        setConfig(giftFromUrl.config);
+        const cleanCfg = {
+          ...giftFromUrl.config,
+          photos: sanitizePhotos(giftFromUrl.config.photos)
+        };
+        setConfig(cleanCfg);
         setIsRecipientOnly(true);
         setAppMode('preview');
       }
@@ -211,6 +232,14 @@ export default function App() {
   }
 
   const category = config.presetCategory || 'chat_scratch';
+
+  // Ensure website ambient BGM does not overlap when entering Christmas tree experience
+  useEffect(() => {
+    if (category === 'christmas_tree' && isMusicPlaying) {
+      stopMusic();
+      setIsMusicPlaying(false);
+    }
+  }, [category, isMusicPlaying]);
 
   return (
     <div

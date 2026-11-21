@@ -1247,7 +1247,7 @@ export default function CreatorDashboard({
                           </label>
                           <input
                             type="text"
-                            value={photo.caption || ''}
+                            value={(photo.caption || '').replace(/\s*\(\d+(\.\d+)?\s*KB\)/i, '')}
                             onChange={(e) => handleUpdatePhotoCaption(idx, e.target.value)}
                             className="w-full px-3 py-1.5 rounded-xl border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-stone-800 dark:text-stone-100 bg-white dark:bg-stone-800"
                             placeholder="คำบรรยายความทรงจำ..."
