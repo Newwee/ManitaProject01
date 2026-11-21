@@ -1,17 +1,25 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 
 /**
- * React Bits - BlurText Component
- * Renders elegant, staggered letter-by-letter or word-by-word blur-to-focus text reveals.
+ * React Bits - BlurText Component (Mobile 60fps & GPU-Optimized)
+ * Staggered text reveal using GPU-accelerated transform & opacity,
+ * with heavy CSS blur filter omitted on mobile devices to prevent GPU thrashing.
  */
 export default function BlurText({
   text = '',
-  delay = 40,
+  delay = 35,
   animateBy = 'words', // 'words' | 'letters'
   className = '',
   onAnimationComplete
 }) {
   const [inView, setInView] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsMobile(window.matchMedia('(max-width: 768px), (prefers-reduced-motion: reduce)').matches);
+    }
+  }, []);
 
   useEffect(() => {
     setInView(false);
@@ -21,7 +29,9 @@ export default function BlurText({
     return () => clearTimeout(timer);
   }, [text]);
 
-  const items = animateBy === 'letters' ? Array.from(text) : text.split(' ');
+  const items = useMemo(() => {
+    return animateBy === 'letters' ? Array.from(text) : text.split(' ');
+  }, [text, animateBy]);
 
   return (
     <span className={`inline-block overflow-hidden ${className}`}>
@@ -30,11 +40,11 @@ export default function BlurText({
         return (
           <span
             key={index}
-            className="inline-block transition-all duration-700 ease-out will-change-[transform,filter,opacity]"
+            className="inline-block transition-all duration-500 ease-out will-change-[transform,opacity]"
             style={{
               opacity: inView ? 1 : 0,
-              filter: inView ? 'blur(0px)' : 'blur(8px)',
-              transform: inView ? 'translateY(0px)' : 'translateY(12px)',
+              filter: isMobile ? 'none' : inView ? 'blur(0px)' : 'blur(6px)',
+              transform: inView ? 'translateY(0px)' : 'translateY(10px)',
               transitionDelay: `${itemDelay}ms`,
               marginRight: animateBy === 'words' && index < items.length - 1 ? '0.25em' : '0'
             }}

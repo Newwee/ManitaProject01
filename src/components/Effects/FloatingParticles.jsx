@@ -1,35 +1,41 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { THEME_PRESETS } from '../../types/themePresets';
 
-export default function FloatingParticles({ theme = 'scrapbook' }) {
+function FloatingParticles({ theme = 'scrapbook' }) {
   const [particles, setParticles] = useState([]);
   const themeData = THEME_PRESETS[theme] || THEME_PRESETS.scrapbook;
-  const symbols = themeData.particles || ['♥', '✨', '🌸'];
+  const symbols = useMemo(() => themeData.particles || ['♥', '✨', '🌸'], [themeData]);
 
   useEffect(() => {
-    // Generate gentle background floating particles periodically
+    const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches;
+    const maxParticles = isMobile ? 5 : 12;
+    const spawnInterval = isMobile ? 3200 : 1800;
+
     const interval = setInterval(() => {
+      // Don't spawn if tab is hidden
+      if (document.hidden) return;
+
       const id = Date.now() + Math.random();
       const symbol = symbols[Math.floor(Math.random() * symbols.length)];
       const left = Math.random() * 95; // 0 - 95%
       const duration = 5 + Math.random() * 5; // 5 - 10s
-      const size = 12 + Math.random() * 16; // 12 - 28px
+      const size = isMobile ? 12 + Math.random() * 8 : 12 + Math.random() * 16;
 
       setParticles((prev) => [
-        ...prev.slice(-12), // keep at most 12 particles
+        ...prev.slice(-(maxParticles - 1)),
         { id, symbol, left, duration, size }
       ]);
-    }, 1800);
+    }, spawnInterval);
 
     return () => clearInterval(interval);
-  }, [theme, symbols]);
+  }, [symbols]);
 
   return (
     <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
       {particles.map((p) => (
         <span
           key={p.id}
-          className="particle-item select-none opacity-60"
+          className="particle-item select-none opacity-60 will-change-transform"
           style={{
             left: `${p.left}%`,
             fontSize: `${p.size}px`,
@@ -42,3 +48,5 @@ export default function FloatingParticles({ theme = 'scrapbook' }) {
     </div>
   );
 }
+
+export default React.memo(FloatingParticles);

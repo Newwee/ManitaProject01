@@ -8,16 +8,19 @@ import Stage3_Quiz from './components/GiftExperience/Stage3_Quiz';
 import Stage4_Scratch from './components/GiftExperience/Stage4_Scratch';
 import Stage_Camera from './components/GiftExperience/Stage_Camera';
 import Stage5_Finale from './components/GiftExperience/Stage5_Finale';
-import ChristmasTreeExperience from './components/Experience3D/ChristmasTreeExperience';
-import ArrowBirthdayExperience from './components/Experience3D/ArrowBirthdayExperience';
 import CreatorDashboard from './components/Studio/CreatorDashboard';
-import ShareModal from './components/Studio/ShareModal';
 import FloatingParticles from './components/Effects/FloatingParticles';
 import ClickSpark from './components/UI/ClickSpark';
 import SoftAurora from './components/UI/SoftAurora';
 import { THEME_PRESETS, DEFAULT_QUIZZES } from './types/themePresets';
 import { saveLocalDraft, loadLocalDraft, resolveGiftFromUrl } from './lib/giftStorage';
 import { toggleMusic, stopMusic } from './lib/soundEngine';
+
+// Code Splitting & Lazy Loading for heavy 3D experiences, shaders, and modals
+const ChristmasTreeExperience = React.lazy(() => import('./components/Experience3D/ChristmasTreeExperience'));
+const ArrowBirthdayExperience = React.lazy(() => import('./components/Experience3D/ArrowBirthdayExperience'));
+const GhostFibers = React.lazy(() => import('./components/UI/GhostFibers'));
+const ShareModal = React.lazy(() => import('./components/Studio/ShareModal'));
 
 export default function App() {
   const initialPreset = THEME_PRESETS.scrapbook;
@@ -79,12 +82,27 @@ export default function App() {
     return false;
   });
 
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.matchMedia('(max-width: 768px)').matches;
+    }
+    return false;
+  });
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const media = window.matchMedia('(prefers-color-scheme: dark)');
     const listener = (e) => setIsSystemDark(e.matches);
     media.addEventListener('change', listener);
-    return () => media.removeEventListener('change', listener);
+
+    const mobileMedia = window.matchMedia('(max-width: 768px)');
+    const mobileListener = (e) => setIsMobile(e.matches);
+    mobileMedia.addEventListener('change', mobileListener);
+
+    return () => {
+      media.removeEventListener('change', listener);
+      mobileMedia.removeEventListener('change', mobileListener);
+    };
   }, []);
 
   const isDarkMode = studioTheme === 'dark' || (studioTheme === 'system' && isSystemDark);
@@ -207,14 +225,62 @@ export default function App() {
         backgroundSize: '24px 24px'
       }}
     >
-      {/* React Bits - Ambient Soft Aurora Background */}
-      <SoftAurora theme={config.theme} isDarkMode={isDarkMode} />
+      {/* Studio Ambient Background: Ghost Fibers (React Bits) */}
+      {appMode === 'builder' && (
+        <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden opacity-60 dark:opacity-80 transition-opacity duration-1000">
+          <React.Suspense fallback={null}>
+            <GhostFibers
+              glowColor="#8b5cf6"
+              layers={isMobile ? 2 : 3}
+              twist={1.2}
+              threads={isMobile ? 36 : 72}
+              fiberStyle="dots"
+              depthOfField={0.85}
+              hoverEffect="focus"
+              intro
+              mouseInteraction={!isMobile}
+              lineColor="#dfd1fc"
+              secondaryColor="#6f4ac5"
+              gradient="depth"
+              waves={1}
+              volume={0.7}
+              spread={1}
+              scale={1}
+              rotation={18}
+              perspective={0.65}
+              density={1}
+              thickness={1}
+              tips={0}
+              foldGlow={1}
+              speed={0.5}
+              flow={0.4}
+              rollSpeed={0.15}
+              focusDepth={0}
+              particles={isMobile ? 0.2 : 0.5}
+              sparkle={0.5}
+              glow={0.8}
+              brightness={1}
+              vignette={0.3}
+              grain={0.06}
+              mouseStrength={1}
+              pulseOnClick
+              lightMode={!isDarkMode}
+              dpr={isMobile ? 1 : 1.5}
+            />
+          </React.Suspense>
+        </div>
+      )}
+
+      {/* Preview Ambient Backgrounds: Paused during 3D fullscreen to guarantee 60fps on mobile */}
+      {appMode === 'preview' && category !== 'christmas_tree' && category !== 'arrow_birthday' && (
+        <>
+          <SoftAurora theme={config.theme} isDarkMode={isDarkMode} />
+          <FloatingParticles theme={config.theme} />
+        </>
+      )}
 
       {/* React Bits - Interactive Click Spark Emitter */}
       <ClickSpark sparkColor={isDarkMode ? '#fb7185' : '#f43f5e'} />
-
-      {/* Background Floating Particles */}
-      <FloatingParticles theme={config.theme} />
 
       {/* Top Navbar */}
       <Navbar
@@ -236,33 +302,51 @@ export default function App() {
         category === 'christmas_tree' ? (
           /* Preset Category 3: 3D Christmas Tree - FULL SCREEN */
           <div className="fixed inset-0 top-14 w-full h-[calc(100vh-56px)] bg-black z-10 overflow-hidden flex flex-col">
-            <ChristmasTreeExperience
-              title={config.treeTitle || 'Merry Christmas'}
-              subtitle={config.treeSubtitle || 'A SPECIAL WISH FOR YOU'}
-              wishMessage={config.treeWish}
-              photos={config.photos}
-              treeTheme={config.treeTheme || 'classic'}
-              lockMode={config.treeLockMode || 'immediate'}
-              unlockDate={config.treeUnlockDate || '2026-12-25T00:00'}
-              boxUnlockDates={config.treeBoxUnlockDates || []}
-              lockMessage={config.treeLockMessage || ''}
-              showCountdown={config.treeShowCountdown !== undefined ? config.treeShowCountdown : true}
-              countdownTitle={config.treeCountdownTitle || ''}
-              decorations={config.treeDecorations || {}}
-              isRecipient={isRecipientOnly}
-            />
+            <React.Suspense
+              fallback={
+                <div className="w-full h-full flex items-center justify-center bg-black text-rose-300 text-xs gap-2">
+                  <div className="w-5 h-5 border-2 border-rose-500 border-t-transparent rounded-full animate-spin" />
+                  <span>กำลังโหลด 3D Christmas Tree...</span>
+                </div>
+              }
+            >
+              <ChristmasTreeExperience
+                title={config.treeTitle || 'Merry Christmas'}
+                subtitle={config.treeSubtitle || 'A SPECIAL WISH FOR YOU'}
+                wishMessage={config.treeWish}
+                photos={config.photos}
+                treeTheme={config.treeTheme || 'classic'}
+                lockMode={config.treeLockMode || 'immediate'}
+                unlockDate={config.treeUnlockDate || '2026-12-25T00:00'}
+                boxUnlockDates={config.treeBoxUnlockDates || []}
+                lockMessage={config.treeLockMessage || ''}
+                showCountdown={config.treeShowCountdown !== undefined ? config.treeShowCountdown : true}
+                countdownTitle={config.treeCountdownTitle || ''}
+                decorations={config.treeDecorations || {}}
+                isRecipient={isRecipientOnly}
+              />
+            </React.Suspense>
           </div>
         ) : category === 'arrow_birthday' ? (
           /* Preset Category 4: 3D Arrow Birthday Shooting - FULL SCREEN */
           <div className="fixed inset-0 top-14 w-full h-[calc(100vh-56px)] bg-[#04020a] z-10 overflow-hidden flex flex-col">
-            <ArrowBirthdayExperience
-              title={config.arrowTitle || 'Happy Birthday'}
-              subtitle={config.arrowSubtitle || 'WISHING YOU ENDLESS HAPPINESS ✨'}
-              wishMessage={config.arrowWish}
-              wishSign={config.arrowSign}
-              photos={config.photos}
-              isRecipient={isRecipientOnly}
-            />
+            <React.Suspense
+              fallback={
+                <div className="w-full h-full flex items-center justify-center bg-[#04020a] text-pink-300 text-xs gap-2">
+                  <div className="w-5 h-5 border-2 border-pink-500 border-t-transparent rounded-full animate-spin" />
+                  <span>กำลังโหลด 3D Birthday Experience...</span>
+                </div>
+              }
+            >
+              <ArrowBirthdayExperience
+                title={config.arrowTitle || 'Happy Birthday'}
+                subtitle={config.arrowSubtitle || 'WISHING YOU ENDLESS HAPPINESS ✨'}
+                wishMessage={config.arrowWish}
+                wishSign={config.arrowSign}
+                photos={config.photos}
+                isRecipient={isRecipientOnly}
+              />
+            </React.Suspense>
           </div>
         ) : (
           /* Preset Category 1 & 2: Chat + Scratch OR Chat + Camera */
@@ -362,12 +446,16 @@ export default function App() {
       )}
 
       {/* Share & QR Code Modal */}
-      <ShareModal
-        isOpen={isShareModalOpen}
-        onClose={() => setIsShareModalOpen(false)}
-        config={config}
-        isDarkMode={isDarkMode}
-      />
+      <React.Suspense fallback={null}>
+        {isShareModalOpen && (
+          <ShareModal
+            isOpen={isShareModalOpen}
+            onClose={() => setIsShareModalOpen(false)}
+            config={config}
+            isDarkMode={isDarkMode}
+          />
+        )}
+      </React.Suspense>
     </div>
   );
 }

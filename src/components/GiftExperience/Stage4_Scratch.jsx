@@ -11,6 +11,14 @@ export default function Stage4_Scratch({
   const [isRevealed, setIsRevealed] = useState(false);
   const [percentScratched, setPercentScratched] = useState(0);
   const isDrawing = useRef(false);
+  const strokeCount = useRef(0);
+  const checkRafId = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (checkRafId.current) cancelAnimationFrame(checkRafId.current);
+    };
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -70,11 +78,20 @@ export default function Stage4_Scratch({
 
     ctx.globalCompositeOperation = 'destination-out';
     ctx.beginPath();
-    ctx.arc(pos.x, pos.y, 18, 0, Math.PI * 2);
+    ctx.arc(pos.x, pos.y, 20, 0, Math.PI * 2);
     ctx.fill();
 
-    playScratchSound();
-    checkPercentScratched();
+    strokeCount.current++;
+    // Throttled pixel sampling via rAF every 6 strokes prevents mobile GPU pipeline stalls
+    if (strokeCount.current % 6 === 0) {
+      playScratchSound();
+      if (!checkRafId.current) {
+        checkRafId.current = requestAnimationFrame(() => {
+          checkPercentScratched();
+          checkRafId.current = null;
+        });
+      }
+    }
   };
 
   const checkPercentScratched = () => {
