@@ -83,6 +83,23 @@ export default function App() {
     };
 
     initApp();
+
+    const handleHashOrPopState = async () => {
+      const giftFromUrl = await resolveGiftFromUrl();
+      if (giftFromUrl && giftFromUrl.config) {
+        setConfig(giftFromUrl.config);
+        setIsRecipientOnly(true);
+        setAppMode('preview');
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashOrPopState);
+    window.addEventListener('popstate', handleHashOrPopState);
+
+    return () => {
+      window.removeEventListener('hashchange', handleHashOrPopState);
+      window.removeEventListener('popstate', handleHashOrPopState);
+    };
   }, []);
 
   // Sync draft to local storage on config changes

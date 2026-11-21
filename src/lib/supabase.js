@@ -4,34 +4,69 @@
  */
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_Xo74Bbfm9KhDDezjLrLdzg_HPoQqX8s';
-
-export const isSupabaseConfigured = () => {
-  return Boolean(supabaseUrl && supabaseUrl.startsWith('http') && supabaseAnonKey);
+const getStoredSupabaseUrl = () => {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('manita_supabase_url') || '';
+  }
+  return '';
 };
 
-export const supabase = isSupabaseConfigured()
-  ? createClient(supabaseUrl, supabaseAnonKey)
-  : null;
+export const getSupabaseUrl = () => {
+  return import.meta.env.VITE_SUPABASE_URL || getStoredSupabaseUrl();
+};
+
+export const getSupabaseAnonKey = () => {
+  return import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_Xo74Bbfm9KhDDezjLrLdzg_HPoQqX8s';
+};
+
+export const setStoredSupabaseUrl = (url) => {
+  if (typeof window !== 'undefined') {
+    if (url) {
+      localStorage.setItem('manita_supabase_url', url.trim());
+    } else {
+      localStorage.removeItem('manita_supabase_url');
+    }
+  }
+};
+
+export const isSupabaseConfigured = () => {
+  const url = getSupabaseUrl();
+  const key = getSupabaseAnonKey();
+  return Boolean(url && url.startsWith('http') && key);
+};
+
+export const getSupabaseClient = () => {
+  const url = getSupabaseUrl();
+  const key = getSupabaseAnonKey();
+  if (url && url.startsWith('http') && key) {
+    try {
+      return createClient(url, key);
+    } catch (e) {
+      console.warn('Failed to initialize Supabase client:', e);
+      return null;
+    }
+  }
+  return null;
+};
 
 /**
  * Save a digital gift configuration to Supabase
  */
 export async function saveGiftToSupabase(giftId, giftData) {
-  if (!supabase) {
-    throw new Error('Supabase URL is not configured. Please set VITE_SUPABASE_URL in your environment or use link sharing.');
+  const client = getSupabaseClient();
+  if (!client) {
+    throw new Error('Supabase is not configured');
   }
 
   const payload = {
     id: giftId,
-    title: giftData.introTitle || 'MANITA Digital Gift',
+    title: giftData.introTitle || giftData.treeTitle || giftData.arrowTitle || 'MANITA Digital Gift',
     theme: giftData.theme || 'scrapbook',
     config: giftData,
     updated_at: new Date().toISOString()
   };
 
-  const { data, error } = await supabase
+  const { data, error } = await client
     .from('manita_gifts')
     .upsert(payload)
     .select();
@@ -48,10 +83,11 @@ export async function saveGiftToSupabase(giftId, giftData) {
  * Load a digital gift configuration from Supabase by ID
  */
 export async function loadGiftFromSupabase(giftId) {
-  if (!supabase) return null;
+  const client = getSupabaseClient();
+  if (!client) return null;
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await client
       .from('manita_gifts')
       .select('*')
       .eq('id', giftId)
