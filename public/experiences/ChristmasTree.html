@@ -1581,6 +1581,121 @@
     }
 
     // ---------- เสียง ----------
+    // ---------- 10 Timeline SFX Manager ----------
+    const SFX_CONFIG = {
+      introTime: { path: '/assets/Christmas/TimeLine/introTime.mp3', vol: 0.70 },
+      introTime2: { path: '/assets/Christmas/TimeLine/introTime2.mp3', vol: 0.70 },
+      introTime3: { path: '/assets/Christmas/TimeLine/introTime3.mp3', vol: 0.85 },
+      introTime4: { path: '/assets/Christmas/TimeLine/introTime4.mp3', vol: 0.65 },
+      introTime5: { path: '/assets/Christmas/TimeLine/introTime5.mp3', vol: 0.70 },
+      introTime7: { path: '/assets/Christmas/TimeLine/introTime7.mp3', vol: 0.75 },
+      tapBall: { path: '/assets/Christmas/TimeLine/tapBall.mp3', vol: 0.80 },
+      showLockToast: { path: '/assets/Christmas/TimeLine/showLockToast.mp3', vol: 0.80 },
+      unlockCelebration: { path: '/assets/Christmas/TimeLine/unlockCelebration.mp3', vol: 0.85 },
+      runGiftOpenSequence: { path: '/assets/Christmas/TimeLine/runGiftOpenSequence.mp3', vol: 0.90 }
+    };
+
+    const sfxManager = {
+      pool: {},
+      activeInstances: [],
+      introTime2Played: false,
+      introTime5Played: false,
+
+      init() {
+        Object.entries(SFX_CONFIG).forEach(([key, cfg]) => {
+          try {
+            const a = new Audio(cfg.path);
+            a.preload = 'auto';
+            a.volume = cfg.vol;
+            this.pool[key] = a;
+          } catch (e) {
+            console.warn('SFX preload error for', key, e);
+          }
+        });
+      },
+
+      play(name, options = {}) {
+        if (!soundOn || (typeof isSoundMuted !== 'undefined' && isSoundMuted)) return null;
+        const cfg = SFX_CONFIG[name];
+        if (!cfg) return null;
+
+        const baseAudio = this.pool[name];
+        if (!baseAudio) return null;
+
+        let sound;
+        if (name === 'introTime4' || name === 'tapBall' || options.clone) {
+          try {
+            sound = baseAudio.cloneNode();
+          } catch (e) {
+            sound = baseAudio;
+          }
+        } else {
+          sound = baseAudio;
+          try {
+            sound.currentTime = 0;
+          } catch (e) {}
+        }
+
+        const vol = (options.volume !== undefined ? options.volume : cfg.vol);
+        try {
+          sound.volume = Math.max(0, Math.min(1, vol));
+        } catch (e) {}
+
+        if (options.playbackRate !== undefined) {
+          sound.playbackRate = options.playbackRate;
+        } else if (name === 'introTime4') {
+          sound.playbackRate = 0.95 + Math.random() * 0.17;
+        } else if (name === 'tapBall' && options.pitch !== undefined) {
+          const p = typeof options.pitch === 'number' ? options.pitch : 0.5;
+          sound.playbackRate = 0.85 + Math.min(1, Math.max(0, p)) * 0.5;
+        }
+
+        this.activeInstances.push(sound);
+        sound.addEventListener('ended', () => {
+          const idx = this.activeInstances.indexOf(sound);
+          if (idx !== -1) this.activeInstances.splice(idx, 1);
+        }, { once: true });
+
+        const p = sound.play();
+        if (p && typeof p.catch === 'function') {
+          p.catch(() => {});
+        }
+        return sound;
+      },
+
+      stop(name) {
+        const baseAudio = this.pool[name];
+        if (baseAudio) {
+          try {
+            baseAudio.pause();
+            baseAudio.currentTime = 0;
+          } catch (e) {}
+        }
+      },
+
+      stopAll() {
+        this.activeInstances.forEach(a => {
+          try {
+            a.pause();
+            a.currentTime = 0;
+          } catch (e) {}
+        });
+        this.activeInstances = [];
+        Object.values(this.pool).forEach(a => {
+          try {
+            a.pause();
+            a.currentTime = 0;
+          } catch (e) {}
+        });
+      },
+
+      resetRound() {
+        this.introTime2Played = false;
+        this.introTime5Played = false;
+      }
+    };
+    try { sfxManager.init(); } catch(e) {}
+
     function ensureAudio() {
       if (!soundOn) return null;
       try {
@@ -1632,7 +1747,11 @@
     function toggleSound() {
       soundOn = !soundOn;
       soundBtn.textContent = soundOn ? '🔊 เสียง' : '🔇 ปิดเสียง';
-      if (soundOn) playChime(1046, 0.08);
+      if (!soundOn) {
+        sfxManager.stopAll();
+      } else {
+        playChime(1046, 0.08);
+      }
     }
 
     // ---------- ภูเขา / ป่าสน / กระท่อม / ทุ่งหิมะ (เรนเดอร์ครั้งเดียวลง offscreen) ----------
@@ -2106,6 +2225,9 @@
         }
         applyLockSetting();
         buildScene(true);
+        sfxManager.stopAll();
+        sfxManager.resetRound();
+        sfxManager.play('introTime');
         wakeUI();
       } catch (err) {
         console.warn('Error during scene startup:', err);
@@ -2213,6 +2335,7 @@
       const icon = document.getElementById('soundIcon');
       if (isSoundMuted) {
         if (bgMusicAudio) bgMusicAudio.pause();
+        if (typeof sfxManager !== 'undefined') sfxManager.stopAll();
         if (icon) icon.textContent = '🔇';
       } else {
         if (bgMusicAudio) bgMusicAudio.play().catch(e => {});
@@ -2429,6 +2552,7 @@
         santaTrail = [];
         nextSanta = totalTime + 8;
         wishBanner.classList.remove('show');
+        if (typeof sfxManager !== 'undefined') sfxManager.resetRound();
       }
 
       // 1. ดาวพื้นหลัง
@@ -2577,6 +2701,7 @@
       starFlash = 1.0;
       titleWrap.classList.add('show');
       spawnBurstAt(0, -treeHeight / 2 - 14, 0, 85, currentTheme.starColor);
+      sfxManager.play('introTime3');
     }
 
     function project(x, y, z, fov, centerX, centerY) {
@@ -2901,6 +3026,11 @@
       const riseRaw = Math.max(0, Math.min((introTime - 0.35) / (INTRO_DURATION - 0.35), 1));
       const riseHeight = 1 - Math.pow(1 - riseRaw, 1.35);
 
+      if (introTime >= 0.35 && !sfxManager.introTime2Played) {
+        sfxManager.introTime2Played = true;
+        sfxManager.play('introTime2');
+      }
+
       // เอฟเฟกต์: แสงสะท้อนพื้นใต้ต้นไม้
       {
         const g0 = project(0, treeHeight / 2 + 16, 0, fov, centerX, centerY);
@@ -2947,6 +3077,7 @@
           if (!box.bursted) {
             box.bursted = true;
             spawnBurstAt(box.x, box.y - box.h * 0.3, box.z, 18, box.palette.ribbon);
+            sfxManager.play('introTime4');
           }
           const cp = project(box.x, box.y, box.z, fov, centerX, centerY);
           visibleGifts.push({ box, p, z: cp ? cp.z : 0 });
@@ -2976,6 +3107,10 @@
       if (!wishShown && introTime >= WISH_SHOW_TIME) {
         wishShown = true;
         wishBanner.classList.add('show');
+        if (!sfxManager.introTime5Played) {
+          sfxManager.introTime5Played = true;
+          sfxManager.play('introTime5');
+        }
       }
 
       // 5. โหมด Additive Glow สำหรับต้นคริสต์มาส ลำแสง และออร่ากล่องของขวัญ
@@ -3339,7 +3474,8 @@
       b.wobble = 1;
       b.flash = 1;
       spawnBurstAt(b.x, b.y, b.z, 16, b.color);
-      playChime(b.freq, 0.12);
+      sfxManager.play('tapBall', { pitch: b.h });
+      playChime(b.freq, 0.08);
     }
 
     // ================= มนุษย์หิมะ & ตุ๊กตาหมี =================
@@ -3524,7 +3660,7 @@
       santa.dir = Math.random() > 0.5 ? 1 : -1;
       santa.dur = 15 + Math.random() * 3;
       nextSanta = totalTime + santa.dur + 30 + Math.random() * 25;
-      [1568, 1760, 2093, 1760].forEach((f, i) => playChime(f, 0.05, [0, 0.14, 0.28, 0.5][i]));
+      sfxManager.play('introTime7');
     }
 
     function drawReindeer(rx, ry, ph, lead, t) {
@@ -3844,6 +3980,7 @@
       pendingBoxIndex = boxIndex || 0;
       const box = giftBoxes[pendingBoxIndex];
       if (box) box.shake = 1;
+      sfxManager.play('showLockToast');
       playThud();
       updateCountdown();
 
@@ -3867,6 +4004,7 @@
     }
 
     function unlockCelebration() {
+      sfxManager.play('unlockCelebration');
       giftBoxes.forEach((b, i) => {
         setTimeout(() => spawnBurstAt(b.x, b.y - b.h * 0.4, b.z, 26, b.palette.ribbon), i * 90);
       });
@@ -3958,6 +4096,7 @@
 
     function runGiftOpenSequence() {
       clearGiftTimers();
+      sfxManager.play('runGiftOpenSequence');
       giftModal.classList.remove('state-shaking', 'state-opening', 'state-revealed');
       confettiLayer.innerHTML = '';
       stageLabel.textContent = 'กำลังเปิดกล่องของขวัญ...';
@@ -4012,6 +4151,7 @@
     }
 
     function replayGiftOpenAnimation() {
+      sfxManager.stop('runGiftOpenSequence');
       runGiftOpenSequence();
     }
 
@@ -4061,10 +4201,13 @@
     }
 
     function replayIntro() {
+      sfxManager.stopAll();
+      sfxManager.resetRound();
       playTreeOpenSFX();
       playLastChristmasMusic();
       closeGiftModal();
       buildScene(true);
+      sfxManager.play('introTime');
     }
 
     function toggleFullscreen() {
