@@ -18,7 +18,8 @@ export default function ArrowBirthdayExperience({
           wishMessage,
           wishTitle: title,
           wishSign,
-          photos
+          photos,
+          isRecipient
         }, '*');
       }
     };
@@ -33,20 +34,21 @@ export default function ArrowBirthdayExperience({
             wishMessage,
             wishTitle: title,
             wishSign,
-            photos
+            photos,
+            isRecipient
           }, '*');
         }
       } catch (e) {}
 
       return () => frame.removeEventListener('load', handleLoad);
     }
-  }, [wishMessage, title, wishSign, photos]);
+  }, [wishMessage, title, wishSign, photos, isRecipient]);
 
   return (
     <div className="w-full h-full relative bg-[#04020a] overflow-hidden flex-1">
       <iframe
         ref={iframeRef}
-        src={`/experiences/arrow_birthday.html?view=clean&v=2`}
+        src={`/experiences/arrow_birthday.html?view=clean&v=3${isRecipient ? '&recipient=true' : ''}`}
         className="w-full h-full border-0 absolute inset-0 block"
         title="MANITA Arrow Birthday Experience"
         allow="autoplay; fullscreen"

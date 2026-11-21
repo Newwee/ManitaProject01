@@ -294,16 +294,25 @@
       margin-top: 24px;
     }
 
-    /* Recipient & Preview Clean Mode - Hide all creator control bars */
+    /* Recipient & Preview Clean Mode - Hide all creator control bars & edit buttons */
     body.recipient-mode .controls,
     body.recipient-mode #controls,
+    body.recipient-mode #wishModal,
+    body.recipient-mode #photoInput,
+    body.recipient-mode #editWishBtn,
+    body.recipient-mode .edit-wish-btn,
     .recipient-mode .controls,
+    .recipient-mode #controls,
     .recipient-mode #wishModal,
     .recipient-mode #photoInput,
+    .recipient-mode #editWishBtn,
+    .recipient-mode .edit-wish-btn,
     .manita-clean .controls,
     .manita-clean #controls,
     .manita-clean #wishModal,
-    .manita-clean #photoInput {
+    .manita-clean #photoInput,
+    .manita-clean #editWishBtn,
+    .manita-clean .edit-wish-btn {
       display: none !important;
       visibility: hidden !important;
       pointer-events: none !important;
@@ -544,7 +553,7 @@
       <div class="wishes-actions">
         <button class="btn" onclick="backToCake()">🎂 กลับไปดูเค้ก</button>
         <button class="btn primary" onclick="triggerAutoShoot()">🏹 ยิงธนูเล่นใหม่</button>
-        <button class="btn" onclick="openEditModal()">✏️ แก้คำอวยพร</button>
+        <button class="btn edit-wish-btn" id="editWishBtn" onclick="openEditModal()">✏️ แก้คำอวยพร</button>
       </div>
     </div>
   </div>
@@ -2438,9 +2447,66 @@
         }
       }
 
+      // Helper to asynchronously load custom images into photoLibrary for falling cards & wishes
+      function loadCustomPhotosFromUrls(photoItems) {
+        if (!photoItems || !Array.isArray(photoItems)) return;
+        const validPhotos = photoItems.filter(p => p && p.url);
+        if (!validPhotos.length) return;
+
+        const newlyLoaded = [];
+        let done = 0;
+
+        validPhotos.forEach((p, idx) => {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => {
+            newlyLoaded.push({
+              img,
+              src: p.url,
+              caption: (p.caption || p.name || 'ความทรงจำพิเศษ ✨').replace(/\s*\(\d+(\.\d+)?\s*KB\)/i, ''),
+              isDefault: false
+            });
+            done++;
+            if (done === validPhotos.length) {
+              applyLoadedPhotos(newlyLoaded);
+            }
+          };
+          img.onerror = () => {
+            done++;
+            if (done === validPhotos.length && newlyLoaded.length > 0) {
+              applyLoadedPhotos(newlyLoaded);
+            }
+          };
+          img.src = p.url;
+        });
+      }
+
+      function applyLoadedPhotos(newlyLoaded) {
+        if (!newlyLoaded || !newlyLoaded.length) return;
+        photoLibrary = newlyLoaded;
+        hasCustomPhotos = true;
+        photoDeck = [];
+        if (typeof updateGalleryUI === 'function') updateGalleryUI();
+        if (typeof initFallingPhotos === 'function') initFallingPhotos();
+        if (typeof state !== 'undefined' && state === 'wishes' && typeof renderWishesPhotoStrip === 'function') {
+          renderWishesPhotoStrip();
+        }
+        // If falling photos are already on screen, reassign them immediately
+        if (typeof fallingPhotos !== 'undefined' && fallingPhotos.length > 0) {
+          for (let c of fallingPhotos) {
+            c.photo = getNextPhotoFromDeck();
+          }
+        }
+      }
+
       // Sync custom wish & photos from parent window / storage
       function applyCustomData(data) {
         if (!data) return;
+        if (data.isRecipient || isCleanView) {
+          document.body.classList.add('recipient-mode', 'manita-clean');
+          const editBtn = document.getElementById('editWishBtn');
+          if (editBtn) editBtn.style.display = 'none';
+        }
         if (data.wishMessage && typeof wishData !== 'undefined') {
           wishData.body = data.wishMessage;
           if (typeof wishMessageEl !== 'undefined' && wishMessageEl) {
@@ -2460,10 +2526,7 @@
           }
         }
         if (data.photos && Array.isArray(data.photos) && data.photos.length > 0) {
-          uploadedPhotos = data.photos.filter(p => p.url).map((p, i) => ({
-            url: p.url,
-            name: p.caption || `photo_${i}`
-          }));
+          loadCustomPhotosFromUrls(data.photos);
         }
       }
 

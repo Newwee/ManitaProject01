@@ -904,10 +904,40 @@
       pointer-events: none !important;
       opacity: 0 !important;
     }
+    .sound-floating-btn {
+      position: fixed;
+      top: 14px;
+      right: 14px;
+      z-index: 100;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: rgba(15, 25, 20, 0.7);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 215, 120, 0.35);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 15px;
+      transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
+    }
+    .sound-floating-btn:hover {
+      transform: scale(1.1);
+      background: rgba(25, 45, 30, 0.9);
+      border-color: rgba(255, 215, 120, 0.8);
+      box-shadow: 0 0 20px rgba(255, 215, 120, 0.4);
+    }
   </style>
 </head>
 <body>
   <div id="bgLayer"></div>
+  <button id="christmasSoundToggle" class="sound-floating-btn" onclick="toggleChristmasSound()" title="เปิด/ปิดเสียงดนตรี & SFX">
+    <span id="soundIcon">🔊</span>
+  </button>
 
   <!-- หัวข้อและคำอวยพร -->
   <div class="title-wrap" id="titleWrap">
@@ -1340,6 +1370,8 @@
       closeSetupBtn.style.display = 'inline-block';
       controls.classList.remove('hidden-ui');
       hint.classList.remove('hide');
+      playTreeOpenSFX();
+      playLastChristmasMusic();
       buildScene(true);
       wakeUI();
     }
@@ -2240,6 +2272,98 @@
       renderGalleryView(false);
     }
 
+    // ================= AUDIO & SFX ENGINE =================
+    let isSoundMuted = false;
+    let bgMusicAudio = null;
+    let sfxTreeOpenAudio = null;
+    let sfxGiftboxAudio = null;
+    let sfxPopAudio = null;
+
+    function initAudio() {
+      if (bgMusicAudio) return;
+      try {
+        bgMusicAudio = new Audio('/assets/Music/LastChristmas.mp3');
+        bgMusicAudio.loop = true;
+        bgMusicAudio.volume = 0.55;
+
+        sfxTreeOpenAudio = new Audio('/assets/Christmas/tree_open.mp3');
+        sfxTreeOpenAudio.volume = 0.85;
+
+        sfxGiftboxAudio = new Audio('/assets/Christmas/giftbox.mp3');
+        sfxGiftboxAudio.volume = 0.9;
+
+        sfxPopAudio = new Audio('/assets/SFX/pop.mp3');
+        sfxPopAudio.volume = 0.8;
+      } catch (e) {
+        console.warn('Audio init error:', e);
+      }
+    }
+
+    function playTreeOpenSFX() {
+      initAudio();
+      if (isSoundMuted || !sfxTreeOpenAudio) return;
+      try {
+        sfxTreeOpenAudio.currentTime = 0;
+        sfxTreeOpenAudio.play().catch(e => console.debug('Tree open SFX waiting gesture:', e));
+      } catch(e) {}
+    }
+
+    function playLastChristmasMusic() {
+      initAudio();
+      if (isSoundMuted || !bgMusicAudio) return;
+      try {
+        if (bgMusicAudio.paused) {
+          bgMusicAudio.play().catch(e => console.debug('BGM waiting gesture:', e));
+        }
+      } catch(e) {}
+    }
+
+    function playGiftboxSFX() {
+      initAudio();
+      if (isSoundMuted) return;
+      try {
+        if (sfxGiftboxAudio) {
+          sfxGiftboxAudio.currentTime = 0;
+          sfxGiftboxAudio.play().catch(e => {});
+        }
+      } catch(e) {}
+    }
+
+    function playPopSFX() {
+      initAudio();
+      if (isSoundMuted) return;
+      try {
+        if (sfxPopAudio) {
+          sfxPopAudio.currentTime = 0;
+          sfxPopAudio.play().catch(e => {});
+        }
+      } catch(e) {}
+    }
+
+    function toggleChristmasSound() {
+      initAudio();
+      isSoundMuted = !isSoundMuted;
+      const icon = document.getElementById('soundIcon');
+      if (isSoundMuted) {
+        if (bgMusicAudio) bgMusicAudio.pause();
+        if (icon) icon.textContent = '🔇';
+      } else {
+        if (bgMusicAudio) bgMusicAudio.play().catch(e => {});
+        if (icon) icon.textContent = '🔊';
+      }
+    }
+
+    const unlockChristmasAudio = () => {
+      initAudio();
+      if (!isSoundMuted && bgMusicAudio && bgMusicAudio.paused) {
+        bgMusicAudio.play().catch(e => {});
+      }
+      window.removeEventListener('pointerdown', unlockChristmasAudio);
+      window.removeEventListener('click', unlockChristmasAudio);
+    };
+    window.addEventListener('pointerdown', unlockChristmasAudio, { once: true });
+    window.addEventListener('click', unlockChristmasAudio, { once: true });
+
     function runGiftOpenSequence() {
       clearGiftTimers();
       giftModal.classList.remove('state-shaking', 'state-opening', 'state-revealed');
@@ -2249,6 +2373,9 @@
       // บังคับ reflow เพื่อให้ animation เริ่มใหม่ทุกครั้ง
       void cssGiftBox.offsetWidth;
 
+      // เล่นเสียง pop ตอนกล่องเริ่มเล่น animate เขย่า
+      playPopSFX();
+
       giftModal.classList.add('state-shaking');
 
       // 1.05 วิ -> ฝาเด้งเปิด + แสงพุ่ง + กระดาษสีระเบิด
@@ -2256,6 +2383,9 @@
         stageLabel.textContent = '✨ เซอร์ไพรส์! ✨';
         giftModal.classList.add('state-opening');
         spawnModalConfetti();
+        // เล่นเสียงกล่องเปิด และ pop ตอนฝากล่องเปิด
+        playGiftboxSFX();
+        playPopSFX();
       }, 1050));
 
       // 1.55 วิ -> รูปภาพลอยออกมาจากกล่อง
@@ -2340,6 +2470,8 @@
 
     function replayIntro() {
       closeGiftModal();
+      playTreeOpenSFX();
+      playLastChristmasMusic();
       buildScene(true);
     }
 
