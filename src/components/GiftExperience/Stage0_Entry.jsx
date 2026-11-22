@@ -1,9 +1,326 @@
-import React, { useState, useEffect } from 'react';
-import { Lock, Clock, Heart, Sparkles, ChevronRight, Gift } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Lock, Clock, Heart, Sparkles, ChevronRight, Gift, Plus, Minus, RotateCw } from 'lucide-react';
 import { playChime } from '../../lib/soundEngine';
 import confetti from 'canvas-confetti';
 import BlurText from '../UI/BlurText';
 import GlareHover from '../UI/GlareHover';
+
+/**
+ * Interactive & Transformable Wax Seal Button
+ * Supports dragging anywhere on the envelope, corner scale, rotation, and tap-to-open
+ */
+function WaxSealButton({
+  pos = { x: 50, y: 50 },
+  scale = 1,
+  rotation = 0,
+  isOpen = false,
+  isEditable = false,
+  wrapperRef,
+  onOpen,
+  onChangeConfig
+}) {
+  const [isSelected, setIsSelected] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [tempPos, setTempPos] = useState(null);
+  const [tempScale, setTempScale] = useState(null);
+  const [tempRotation, setTempRotation] = useState(null);
+
+  const activeTransformRef = useRef(null);
+  const sealRef = useRef(null);
+
+  const currentX = tempPos?.x !== undefined ? tempPos.x : (pos?.x !== undefined ? pos.x : 50);
+  const currentY = tempPos?.y !== undefined ? tempPos.y : (pos?.y !== undefined ? pos.y : 50);
+  const currentScale = tempScale !== null ? tempScale : (scale || 1);
+  const currentRotation = tempRotation !== null ? tempRotation : (rotation || 0);
+
+  // Auto-deselect when clicking outside
+  useEffect(() => {
+    if (!isSelected) return;
+    const handleOutsideClick = (e) => {
+      if (sealRef.current && !sealRef.current.contains(e.target)) {
+        setIsSelected(false);
+      }
+    };
+    window.addEventListener('pointerdown', handleOutsideClick);
+    return () => window.removeEventListener('pointerdown', handleOutsideClick);
+  }, [isSelected]);
+
+  // 1. Move Pointer Down
+  const handleMovePointerDown = (e) => {
+    e.stopPropagation();
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch (err) {}
+
+    const rect = wrapperRef.current ? wrapperRef.current.getBoundingClientRect() : { width: 300, height: 200 };
+    activeTransformRef.current = {
+      type: 'move',
+      startX: e.clientX,
+      startY: e.clientY,
+      initX: currentX,
+      initY: currentY,
+      width: rect.width,
+      height: rect.height,
+      hasMoved: false
+    };
+    setIsDragging(true);
+  };
+
+  // 2. Corner Scale Pointer Down
+  const handleScalePointerDown = (e) => {
+    if (!isEditable) return;
+    e.stopPropagation();
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch (err) {}
+
+    const rect = sealRef.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const initialDist = Math.max(15, Math.hypot(e.clientX - centerX, e.clientY - centerY));
+
+    activeTransformRef.current = {
+      type: 'scale',
+      centerX,
+      centerY,
+      initialDist,
+      initScale: currentScale,
+      hasMoved: false
+    };
+    setIsDragging(true);
+  };
+
+  // 3. Rotation Pointer Down
+  const handleRotatePointerDown = (e) => {
+    if (!isEditable) return;
+    e.stopPropagation();
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch (err) {}
+
+    const rect = sealRef.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const initialAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * (180 / Math.PI);
+
+    activeTransformRef.current = {
+      type: 'rotate',
+      centerX,
+      centerY,
+      initialAngle,
+      initRotation: currentRotation,
+      hasMoved: false
+    };
+    setIsDragging(true);
+  };
+
+  // Unified Pointer Move
+  const handlePointerMove = (e) => {
+    const transform = activeTransformRef.current;
+    if (!transform) return;
+    e.stopPropagation();
+
+    const dist = Math.hypot(
+      e.clientX - (transform.startX || transform.centerX),
+      e.clientY - (transform.startY || transform.centerY)
+    );
+    if (dist > 4) transform.hasMoved = true;
+
+    if (transform.type === 'move') {
+      const { startX, startY, initX, initY, width, height } = transform;
+      const dx = ((e.clientX - startX) / width) * 100;
+      const dy = ((e.clientY - startY) / height) * 100;
+      const newX = Math.round(Math.max(5, Math.min(95, initX + dx)));
+      const newY = Math.round(Math.max(5, Math.min(95, initY + dy)));
+      setTempPos({ x: newX, y: newY });
+    } else if (transform.type === 'scale') {
+      const { centerX, centerY, initialDist, initScale } = transform;
+      const currentDist = Math.hypot(e.clientX - centerX, e.clientY - centerY);
+      const ratio = currentDist / initialDist;
+      const newScale = Math.max(0.5, Math.min(2.5, +(initScale * ratio).toFixed(2)));
+      setTempScale(newScale);
+    } else if (transform.type === 'rotate') {
+      const { centerX, centerY, initialAngle, initRotation } = transform;
+      const currentAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * (180 / Math.PI);
+      const delta = currentAngle - initialAngle;
+      let newRot = Math.round((initRotation + delta) % 360);
+      if (newRot < 0) newRot += 360;
+      setTempRotation(newRot);
+    }
+  };
+
+  // Unified Pointer Up
+  const handlePointerUp = (e) => {
+    const transform = activeTransformRef.current;
+    if (!transform) return;
+    e.stopPropagation();
+
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch (err) {}
+
+    const { type, hasMoved } = transform;
+    activeTransformRef.current = null;
+    setIsDragging(false);
+
+    if (hasMoved) {
+      if (type === 'move' && tempPos) {
+        onChangeConfig && onChangeConfig({ waxSealPos: tempPos });
+      } else if (type === 'scale' && tempScale) {
+        onChangeConfig && onChangeConfig({ waxSealScale: tempScale });
+      } else if (type === 'rotate' && tempRotation !== null) {
+        onChangeConfig && onChangeConfig({ waxSealRotation: tempRotation });
+      }
+      return;
+    }
+
+    // Clean tap without drag
+    if (!isEditable) {
+      onOpen && onOpen();
+    } else {
+      if (isSelected) {
+        onOpen && onOpen();
+      } else {
+        setIsSelected(true);
+      }
+    }
+  };
+
+  // Quick action toolbar helpers
+  const handleStepScale = (e, delta) => {
+    e.stopPropagation();
+    const nextScale = Math.max(0.5, Math.min(2.5, +(currentScale + delta).toFixed(2)));
+    setTempScale(null);
+    onChangeConfig && onChangeConfig({ waxSealScale: nextScale });
+  };
+
+  const handleStepRotate = (e) => {
+    e.stopPropagation();
+    const nextRot = (currentRotation + 20) % 360;
+    setTempRotation(null);
+    onChangeConfig && onChangeConfig({ waxSealRotation: nextRot });
+  };
+
+  const handleReset = (e) => {
+    e.stopPropagation();
+    setTempPos(null);
+    setTempScale(null);
+    setTempRotation(null);
+    onChangeConfig && onChangeConfig({ waxSealPos: { x: 50, y: 50 }, waxSealScale: 1, waxSealRotation: 0 });
+  };
+
+  return (
+    <div
+      ref={sealRef}
+      style={{
+        left: `${currentX}%`,
+        top: `${currentY}%`,
+        transform: `translate(-50%, -50%) rotate(${currentRotation}deg) scale(${currentScale})`,
+        touchAction: 'none'
+      }}
+      className={`absolute z-40 select-none ${
+        isOpen ? 'scale-0 opacity-0 pointer-events-none' : ''
+      } transition-transform duration-300`}
+    >
+      {/* Wax Seal Circle Button */}
+      <div
+        onPointerDown={handleMovePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        className={`w-12 h-12 rounded-full bg-[#A8383B] border-4 border-[#8E2B2E] shadow-xl flex items-center justify-center text-white text-lg relative transition-all ${
+          isEditable ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer animate-pulse hover:scale-110'
+        } ${isSelected && isEditable ? 'ring-2 ring-dashed ring-rose-400 shadow-[0_0_15px_rgba(244,63,94,0.5)]' : ''}`}
+        title={isEditable ? 'คลิกลากเพื่อย้ายตำแหน่ง หรือแตะเพื่อปรับแต่ง/เปิดซอง' : 'แตะเพื่อเปิดซองจดหมาย'}
+      >
+        <Heart className="w-5 h-5 fill-white text-white pointer-events-none" />
+
+        {/* Transform Gizmo Handles when selected in Edit mode */}
+        {isSelected && isEditable && (
+          <>
+            {/* Top Rotation Stem & Handle */}
+            <div className="absolute -top-9 left-1/2 -translate-x-1/2 flex flex-col items-center select-none z-50">
+              <div
+                onPointerDown={handleRotatePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                onPointerCancel={handlePointerUp}
+                className="w-6 h-6 rounded-full bg-white border-2 border-rose-500 shadow-md flex items-center justify-center text-rose-600 hover:bg-rose-50 active:scale-110 cursor-grab active:cursor-grabbing touch-none"
+                title="ลากเพื่อหมุนองศา"
+              >
+                <RotateCw className="w-3 h-3" />
+              </div>
+              <div className="w-0.5 h-2.5 bg-rose-500" />
+            </div>
+
+            {/* Corner Scale Pull Handle (SE) */}
+            <div
+              onPointerDown={handleScalePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+              onPointerCancel={handlePointerUp}
+              className="absolute -bottom-2 -right-2 w-5 h-5 rounded-full bg-white border-2 border-rose-500 shadow-md flex items-center justify-center cursor-nwse-resize z-50 hover:scale-125 active:scale-125 touch-none"
+              title="ลากเพื่อย่อ-ขยายตราประทับ"
+            >
+              <div className="w-1.5 h-1.5 bg-rose-500 rounded-full" />
+            </div>
+
+            {/* Quick Action Floating Toolbar */}
+            <div
+              className="absolute -top-16 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-stone-900/95 backdrop-blur-md text-white rounded-full px-2 py-0.5 shadow-2xl border border-white/25 z-50 whitespace-nowrap text-[11px]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={(e) => handleStepScale(e, 0.15)}
+                className="p-1 hover:text-rose-400 active:scale-90 transition rounded-full"
+                title="ขยายขนาด (+)"
+              >
+                <Plus className="w-3 h-3" />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => handleStepScale(e, -0.15)}
+                className="p-1 hover:text-rose-400 active:scale-90 transition rounded-full"
+                title="ย่อขนาด (-)"
+              >
+                <Minus className="w-3 h-3" />
+              </button>
+              <button
+                type="button"
+                onClick={handleStepRotate}
+                className="p-1 hover:text-amber-400 active:scale-90 transition rounded-full"
+                title="หมุนองศา (+20°)"
+              >
+                <RotateCw className="w-3 h-3" />
+              </button>
+              <button
+                type="button"
+                onClick={handleReset}
+                className="px-1.5 py-0.5 hover:text-rose-300 active:scale-90 transition text-[10px] font-semibold"
+                title="รีเซ็ตกลับตรงกลาง"
+              >
+                กึ่งกลาง
+              </button>
+              <div className="w-px h-3 bg-white/20 mx-0.5" />
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onOpen && onOpen();
+                }}
+                className="px-2 py-0.5 bg-rose-500 hover:bg-rose-600 rounded-full text-white text-[10px] font-bold active:scale-95 transition flex items-center gap-1"
+                title="ทดสอบเปิดซองจดหมาย"
+              >
+                <span>เปิดซอง 💌</span>
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function Stage0_Entry({
   theme = 'scrapbook',
@@ -15,6 +332,9 @@ export default function Stage0_Entry({
   introSubPos = { x: 0, y: 0 },
   badgePos = { x: 0, y: 0 },
   promptPos = { x: 0, y: 0 },
+  waxSealPos = { x: 50, y: 50 },
+  waxSealScale = 1,
+  waxSealRotation = 0,
   badgeText = 'วันครบรอบ ♡',
   promptText = 'แตะที่ของขวัญเพื่อเปิดดูด่านต่อไป',
   onChangeConfig,
@@ -27,6 +347,9 @@ export default function Stage0_Entry({
   const [isLocked, setIsLocked] = useState(false);
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, mins: 0, secs: 0 });
   const [isBypassed, setIsBypassed] = useState(false);
+
+  const customEnvelopeWrapperRef = useRef(null);
+  const scrapbookEnvelopeWrapperRef = useRef(null);
 
   // Helper to drag text elements interactively (Requirement 8 - Position Saved & Remembered)
   const handleDragText = (e, key, currentPos) => {
@@ -196,6 +519,7 @@ export default function Stage0_Entry({
       {envelopeStyle && envelopeStyle !== 'default' ? (
         <GlareHover maxTilt={8} glareOpacity={0.25} borderRadius="20px" className="mt-4 sm:mt-6">
           <div
+            ref={customEnvelopeWrapperRef}
             onClick={handleOpen}
             className={`envelope-wrapper relative w-72 h-52 sm:w-80 sm:h-56 cursor-pointer select-none transition-transform duration-200 hover:scale-[1.02] active:scale-95 ${
               isOpen ? 'envelope-open' : ''
@@ -234,19 +558,23 @@ export default function Stage0_Entry({
               />
             </div>
 
-            {/* Front Wax Seal Heart Button */}
-            <div
-              className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-40 w-12 h-12 rounded-full bg-[#A8383B] border-4 border-[#8E2B2E] shadow-xl flex items-center justify-center text-white text-lg transition-transform duration-300 ${
-                isOpen ? 'scale-0 opacity-0' : 'animate-pulse hover:scale-110'
-              }`}
-            >
-              <Heart className="w-5 h-5 fill-white text-white" />
-            </div>
+            {/* Front Wax Seal Heart Button - Draggable & Transformable */}
+            <WaxSealButton
+              pos={waxSealPos}
+              scale={waxSealScale}
+              rotation={waxSealRotation}
+              isOpen={isOpen}
+              isEditable={isEditable}
+              wrapperRef={customEnvelopeWrapperRef}
+              onOpen={handleOpen}
+              onChangeConfig={onChangeConfig}
+            />
           </div>
         </GlareHover>
       ) : theme === 'scrapbook' ? (
         <GlareHover maxTilt={7} glareOpacity={0.3} borderRadius="16px" className="mt-4 sm:mt-6">
           <div
+            ref={scrapbookEnvelopeWrapperRef}
             onClick={handleOpen}
             className={`envelope-wrapper relative w-72 h-48 cursor-pointer select-none transition-transform duration-200 hover:scale-[1.02] active:scale-95 ${
               isOpen ? 'envelope-open' : ''
@@ -294,14 +622,17 @@ export default function Stage0_Entry({
               <div className="w-12 h-0.5 bg-rose-200 mt-2 rounded-full" />
             </div>
 
-            {/* Front Wax Seal Button */}
-            <div
-              className={`absolute left-1/2 top-[52%] -translate-x-1/2 -translate-y-1/2 z-40 w-12 h-12 rounded-full bg-[#A8383B] border-4 border-[#8E2B2E] shadow-xl flex items-center justify-center text-white text-lg transition-transform duration-300 ${
-                isOpen ? 'scale-0 opacity-0' : 'animate-pulse hover:scale-110'
-              }`}
-            >
-              <Heart className="w-5 h-5 fill-white text-white" />
-            </div>
+            {/* Front Wax Seal Button - Draggable & Transformable */}
+            <WaxSealButton
+              pos={waxSealPos}
+              scale={waxSealScale}
+              rotation={waxSealRotation}
+              isOpen={isOpen}
+              isEditable={isEditable}
+              wrapperRef={scrapbookEnvelopeWrapperRef}
+              onOpen={handleOpen}
+              onChangeConfig={onChangeConfig}
+            />
           </div>
         </GlareHover>
       ) : null}

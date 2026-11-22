@@ -441,6 +441,9 @@ export default function App() {
                   introSubPos={config.introSubPos}
                   badgePos={config.badgePos}
                   promptPos={config.promptPos}
+                  waxSealPos={config.waxSealPos}
+                  waxSealScale={config.waxSealScale}
+                  waxSealRotation={config.waxSealRotation}
                   badgeText={config.badgeText || 'วันครบรอบ ♡'}
                   promptText={config.promptText || 'แตะที่ของขวัญเพื่อเปิดดูด่านต่อไป'}
                   onChangeConfig={(updates) => {
