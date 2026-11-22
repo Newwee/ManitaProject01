@@ -203,8 +203,8 @@ export default function Stage0_Entry({
           >
             {/* Protruding Letter inside that peeks out and slides up on tap */}
             <div
-              className={`envelope-letter absolute inset-x-6 -top-10 bottom-4 bg-[#FFFDF9] rounded-2xl border-2 border-[#D5C2B0] shadow-md p-3.5 flex flex-col items-center justify-start text-center z-10 transition-all duration-700 ease-out ${
-                isOpen ? '-translate-y-24 sm:-translate-y-28 shadow-2xl z-30' : 'hover:-translate-y-1'
+              className={`envelope-letter absolute w-[72%] max-w-[210px] mx-auto inset-x-0 -top-8 bottom-12 bg-[#FFFDF9] rounded-2xl border-2 border-[#D5C2B0] shadow-md p-3.5 flex flex-col items-center justify-start text-center z-10 transition-all duration-700 ease-out ${
+                isOpen ? '-translate-y-26 sm:-translate-y-30 shadow-2xl z-30' : 'hover:-translate-y-1'
               }`}
               style={{
                 backgroundImage: 'repeating-linear-gradient(transparent, transparent 18px, #EFE7DE 19px)'
@@ -274,8 +274,8 @@ export default function Stage0_Entry({
 
             {/* Protruding Letter inside that peeks out and slides up */}
             <div
-              className={`envelope-letter absolute inset-x-5 -top-10 bottom-2 bg-[#FFFDF9] rounded-xl border-2 border-[#D5C2B0] shadow-md p-3 flex flex-col items-center justify-start text-center z-15 transition-all duration-700 ease-out ${
-                isOpen ? '-translate-y-24 sm:-translate-y-28 shadow-2xl z-30' : 'hover:-translate-y-1'
+              className={`envelope-letter absolute w-[78%] max-w-[220px] mx-auto inset-x-0 -top-8 bottom-8 bg-[#FFFDF9] rounded-xl border-2 border-[#D5C2B0] shadow-md p-3 flex flex-col items-center justify-start text-center z-15 transition-all duration-700 ease-out ${
+                isOpen ? '-translate-y-26 sm:-translate-y-30 shadow-2xl z-30' : 'hover:-translate-y-1'
               }`}
               style={{
                 backgroundImage: 'repeating-linear-gradient(transparent, transparent 18px, #EFE7DE 19px)'
