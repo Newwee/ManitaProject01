@@ -66,6 +66,47 @@ export default function CreatorDashboard({
   const [envelopeViewMode, setEnvelopeViewMode] = useState('carousel'); // 'carousel' | 'grid'
   const decorScrollRef = useRef(null);
   const envelopeScrollRef = useRef(null);
+  const catScrollRef = useRef(null);
+  const placedScrollRef = useRef(null);
+
+  // Mouse Drag-To-Scroll Moved tracking refs
+  const decorMovedRef = useRef(false);
+  const envelopeMovedRef = useRef(false);
+  const catMovedRef = useRef(false);
+  const placedMovedRef = useRef(false);
+
+  // Smooth Click-and-Drag-To-Scroll for PC mouse users
+  const bindDragScroll = (ref, isMovedRef) => ({
+    onMouseDown: (e) => {
+      if (e.button !== 0 || !ref.current) return;
+      ref.current.isMouseDown = true;
+      ref.current.startX = e.pageX - ref.current.offsetLeft;
+      ref.current.scrollStart = ref.current.scrollLeft;
+      if (isMovedRef) isMovedRef.current = false;
+    },
+    onMouseMove: (e) => {
+      if (!ref.current?.isMouseDown) return;
+      e.preventDefault();
+      const x = e.pageX - ref.current.offsetLeft;
+      const walk = (x - ref.current.startX) * 1.5;
+      if (Math.abs(walk) > 4) {
+        if (isMovedRef) isMovedRef.current = true;
+      }
+      ref.current.scrollLeft = ref.current.scrollStart - walk;
+    },
+    onMouseUp: () => {
+      if (ref.current) ref.current.isMouseDown = false;
+      setTimeout(() => {
+        if (isMovedRef) isMovedRef.current = false;
+      }, 80);
+    },
+    onMouseLeave: () => {
+      if (ref.current) ref.current.isMouseDown = false;
+      setTimeout(() => {
+        if (isMovedRef) isMovedRef.current = false;
+      }, 80);
+    }
+  });
 
   const handleScroll = (ref, offset) => {
     if (ref.current) {
@@ -819,13 +860,23 @@ export default function CreatorDashboard({
                     </div>
                   </div>
 
-                  {/* Category Filter Pills */}
-                  <div className="flex items-center gap-1 overflow-x-auto pb-1.5 mb-2 no-scrollbar">
+                  {/* Category Filter Pills (Mouse Drag-to-Scroll) */}
+                  <div
+                    ref={catScrollRef}
+                    {...bindDragScroll(catScrollRef, catMovedRef)}
+                    onWheel={(e) => {
+                      if (e.deltaY !== 0) e.currentTarget.scrollLeft += e.deltaY;
+                    }}
+                    className="flex items-center gap-1 overflow-x-auto pb-1.5 mb-2 no-scrollbar cursor-grab active:cursor-grabbing select-none"
+                  >
                     {DECORATION_CATEGORIES.map((cat) => (
                       <button
                         key={cat.id}
                         type="button"
-                        onClick={() => setDecorCategory(cat.id)}
+                        onClick={() => {
+                          if (catMovedRef.current) return;
+                          setDecorCategory(cat.id);
+                        }}
                         className={`px-2.5 py-1 rounded-xl text-[11px] font-bold shrink-0 transition ${
                           decorCategory === cat.id
                             ? 'bg-rose-500 text-white shadow-2xs'
@@ -837,17 +888,18 @@ export default function CreatorDashboard({
                     ))}
                   </div>
 
-                  {/* Stickers Display (Carousel or Grid) */}
+                  {/* Stickers Display (Carousel with Mouse Drag-to-Scroll or Grid) */}
                   {decorViewMode === 'carousel' ? (
                     <div className="relative">
                       <div
                         ref={decorScrollRef}
+                        {...bindDragScroll(decorScrollRef, decorMovedRef)}
                         onWheel={(e) => {
                           if (e.deltaY !== 0) {
                             e.currentTarget.scrollLeft += e.deltaY;
                           }
                         }}
-                        className="flex items-center gap-2 overflow-x-auto pb-2.5 scrollbar-thin scrollbar-thumb-stone-300 dark:scrollbar-thumb-stone-600 border border-stone-200 dark:border-stone-700/60 p-2.5 rounded-2xl bg-stone-50/50 dark:bg-stone-850"
+                        className="flex items-center gap-2 overflow-x-auto pb-2.5 scrollbar-thin scrollbar-thumb-stone-300 dark:scrollbar-thumb-stone-600 border border-stone-200 dark:border-stone-700/60 p-2.5 rounded-2xl bg-stone-50/50 dark:bg-stone-850 cursor-grab active:cursor-grabbing select-none"
                       >
                         {DECORATION_ASSETS.filter((item) => {
                           if (decorCategory === 'all') return true;
@@ -857,14 +909,22 @@ export default function CreatorDashboard({
                           <button
                             key={dec.id}
                             type="button"
-                            onClick={() => handleAddDecoration(dec)}
-                            title={`สติกเกอร์ที่ ${idx + 1}`}
-                            className="w-12 h-12 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 hover:border-rose-400 hover:scale-110 active:scale-95 transition shrink-0 p-1 flex items-center justify-center relative group/btn shadow-2xs"
+                            onClick={(e) => {
+                              if (decorMovedRef.current) {
+                                e.preventDefault();
+                                return;
+                              }
+                              handleAddDecoration(dec);
+                            }}
+                            title={`สติกเกอร์ที่ ${idx + 1} (แตะเพื่อเพิ่มลงบนจอ)`}
+                            className="w-12 h-12 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 hover:border-rose-400 hover:scale-110 active:scale-95 transition shrink-0 p-1 flex items-center justify-center relative group/btn shadow-2xs select-none"
                           >
                             <img
                               src={dec.src}
                               alt={`Dec ${idx + 1}`}
-                              className="w-full h-full object-contain pointer-events-none"
+                              draggable={false}
+                              onDragStart={(e) => e.preventDefault()}
+                              className="w-full h-full object-contain pointer-events-none select-none"
                               loading="lazy"
                             />
                             <span className="absolute inset-0 bg-rose-500/10 opacity-0 group-hover/btn:opacity-100 rounded-xl transition flex items-center justify-center">
@@ -886,12 +946,14 @@ export default function CreatorDashboard({
                           type="button"
                           onClick={() => handleAddDecoration(dec)}
                           title={`สติกเกอร์ที่ ${idx + 1}`}
-                          className="w-full aspect-square rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 hover:border-rose-400 hover:scale-105 active:scale-95 transition p-1 flex items-center justify-center relative group/btn shadow-2xs"
+                          className="w-full aspect-square rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 hover:border-rose-400 hover:scale-105 active:scale-95 transition p-1 flex items-center justify-center relative group/btn shadow-2xs select-none"
                         >
                           <img
                             src={dec.src}
                             alt={`Dec ${idx + 1}`}
-                            className="w-full h-full object-contain pointer-events-none"
+                            draggable={false}
+                            onDragStart={(e) => e.preventDefault()}
+                            className="w-full h-full object-contain pointer-events-none select-none"
                             loading="lazy"
                           />
                           <span className="absolute inset-0 bg-rose-500/10 opacity-0 group-hover/btn:opacity-100 rounded-xl transition flex items-center justify-center">
@@ -907,21 +969,46 @@ export default function CreatorDashboard({
                     <div className="mt-3 p-3 rounded-2xl bg-rose-50/40 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/40">
                       <div className="flex items-center justify-between text-xs font-bold text-rose-800 dark:text-rose-300 mb-2">
                         <span>ของตกแต่งบนหน้าจอ ({config.decorations.length} ชิ้น)</span>
-                        <button
-                          type="button"
-                          onClick={() => onChangeConfig({ ...config, decorations: [] })}
-                          className="text-[10px] text-rose-600 hover:underline font-semibold"
-                        >
-                          ล้างทั้งหมด
-                        </button>
+                        <div className="flex items-center gap-2">
+                          {onSwitchToPreview && (
+                            <button
+                              type="button"
+                              onClick={onSwitchToPreview}
+                              className="px-2.5 py-1 rounded-lg bg-rose-500 hover:bg-rose-600 text-white text-[10px] font-bold transition flex items-center gap-1 shadow-2xs"
+                            >
+                              <Eye className="w-3 h-3" />
+                              <span>ไปหน้าตัวอย่างเพื่อลากย้าย</span>
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => onChangeConfig({ ...config, decorations: [] })}
+                            className="text-[10px] text-rose-600 hover:underline font-semibold"
+                          >
+                            ล้างทั้งหมด
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+                      <div
+                        ref={placedScrollRef}
+                        {...bindDragScroll(placedScrollRef, placedMovedRef)}
+                        onWheel={(e) => {
+                          if (e.deltaY !== 0) e.currentTarget.scrollLeft += e.deltaY;
+                        }}
+                        className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-rose-200 dark:scrollbar-thumb-rose-800 cursor-grab active:cursor-grabbing select-none"
+                      >
                         {config.decorations.map((d, i) => (
                           <div
                             key={d.id}
-                            className="relative w-10 h-10 rounded-xl bg-white dark:bg-stone-800 border border-rose-200 p-1 flex items-center justify-center shrink-0 group"
+                            className="relative w-10 h-10 rounded-xl bg-white dark:bg-stone-800 border border-rose-200 p-1 flex items-center justify-center shrink-0 group select-none"
                           >
-                            <img src={d.src} alt="Placed dec" className="w-full h-full object-contain" />
+                            <img
+                              src={d.src}
+                              alt="Placed dec"
+                              draggable={false}
+                              onDragStart={(e) => e.preventDefault()}
+                              className="w-full h-full object-contain pointer-events-none select-none"
+                            />
                             <button
                               type="button"
                               onClick={() => handleRemoveDecoration(d.id)}
@@ -1698,25 +1785,29 @@ export default function CreatorDashboard({
                   {envelopeViewMode === 'carousel' ? (
                     <div
                       ref={envelopeScrollRef}
+                      {...bindDragScroll(envelopeScrollRef, envelopeMovedRef)}
                       onWheel={(e) => {
                         if (e.deltaY !== 0) {
                           e.currentTarget.scrollLeft += e.deltaY;
                         }
                       }}
-                      className="flex items-center gap-2.5 overflow-x-auto pb-2.5 scrollbar-thin scrollbar-thumb-stone-300 dark:scrollbar-thumb-stone-600 border border-stone-200 dark:border-stone-700 p-2.5 rounded-2xl bg-stone-50/50 dark:bg-stone-850"
+                      className="flex items-center gap-2.5 overflow-x-auto pb-2.5 scrollbar-thin scrollbar-thumb-stone-300 dark:scrollbar-thumb-stone-600 border border-stone-200 dark:border-stone-700 p-2.5 rounded-2xl bg-stone-50/50 dark:bg-stone-850 cursor-grab active:cursor-grabbing select-none"
                     >
                       {/* Classic Paper Envelope */}
                       <button
                         type="button"
-                        onClick={() => onChangeConfig({ ...config, envelopeStyle: '' })}
-                        className={`h-20 w-28 rounded-xl border-2 p-2 shrink-0 transition flex flex-col items-center justify-center text-center ${
+                        onClick={() => {
+                          if (envelopeMovedRef.current) return;
+                          onChangeConfig({ ...config, envelopeStyle: '' });
+                        }}
+                        className={`h-20 w-28 rounded-xl border-2 p-2 shrink-0 transition flex flex-col items-center justify-center text-center select-none ${
                           !config.envelopeStyle
                             ? 'border-rose-500 bg-rose-50/70 dark:bg-rose-950/40 text-rose-600 font-bold shadow-xs'
                             : 'border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-600 dark:text-stone-300'
                         }`}
                       >
-                        <span className="text-xl mb-1">✉️</span>
-                        <span className="text-[11px] font-semibold">กระดาษคลาสสิก</span>
+                        <span className="text-xl mb-1 pointer-events-none">✉️</span>
+                        <span className="text-[11px] font-semibold pointer-events-none">กระดาษคลาสสิก</span>
                       </button>
 
                       {/* All Sliced Envelope Assets */}
@@ -1724,9 +1815,12 @@ export default function CreatorDashboard({
                         <button
                           key={env.id}
                           type="button"
-                          onClick={() => onChangeConfig({ ...config, envelopeStyle: env.src })}
+                          onClick={() => {
+                            if (envelopeMovedRef.current) return;
+                            onChangeConfig({ ...config, envelopeStyle: env.src });
+                          }}
                           title={`ซองจดหมายแบบที่ ${idx + 1}`}
-                          className={`h-20 w-28 rounded-xl border-2 p-1.5 shrink-0 transition flex items-center justify-center relative bg-white dark:bg-stone-800 ${
+                          className={`h-20 w-28 rounded-xl border-2 p-1.5 shrink-0 transition flex items-center justify-center relative bg-white dark:bg-stone-800 select-none ${
                             config.envelopeStyle === env.src
                               ? 'border-rose-500 ring-2 ring-rose-500/30 shadow-xs'
                               : 'border-stone-200 dark:border-stone-700 hover:border-rose-300'
@@ -1735,7 +1829,9 @@ export default function CreatorDashboard({
                           <img
                             src={env.src}
                             alt={`Envelope ${idx + 1}`}
-                            className="w-full h-full object-contain"
+                            draggable={false}
+                            onDragStart={(e) => e.preventDefault()}
+                            className="w-full h-full object-contain pointer-events-none select-none"
                             loading="lazy"
                           />
                         </button>

@@ -57,6 +57,7 @@ export default function ShareModal({
   const [qrFrameId, setQrFrameId] = useState('none');
   const canvasRef = useRef(null);
   const qrFrameScrollRef = useRef(null);
+  const qrMovedRef = useRef(false);
 
   const generateLinkAndQR = async (chosenUrl) => {
     setIsGenerating(true);
@@ -461,17 +462,43 @@ export default function ShareModal({
             </div>
             <div
               ref={qrFrameScrollRef}
+              onMouseDown={(e) => {
+                if (e.button !== 0 || !qrFrameScrollRef.current) return;
+                qrFrameScrollRef.current.isMouseDown = true;
+                qrFrameScrollRef.current.startX = e.pageX - qrFrameScrollRef.current.offsetLeft;
+                qrFrameScrollRef.current.scrollStart = qrFrameScrollRef.current.scrollLeft;
+                qrMovedRef.current = false;
+              }}
+              onMouseMove={(e) => {
+                if (!qrFrameScrollRef.current?.isMouseDown) return;
+                e.preventDefault();
+                const x = e.pageX - qrFrameScrollRef.current.offsetLeft;
+                const walk = (x - qrFrameScrollRef.current.startX) * 1.5;
+                if (Math.abs(walk) > 4) qrMovedRef.current = true;
+                qrFrameScrollRef.current.scrollLeft = qrFrameScrollRef.current.scrollStart - walk;
+              }}
+              onMouseUp={() => {
+                if (qrFrameScrollRef.current) qrFrameScrollRef.current.isMouseDown = false;
+                setTimeout(() => { qrMovedRef.current = false; }, 80);
+              }}
+              onMouseLeave={() => {
+                if (qrFrameScrollRef.current) qrFrameScrollRef.current.isMouseDown = false;
+                setTimeout(() => { qrMovedRef.current = false; }, 80);
+              }}
               onWheel={(e) => {
                 if (e.deltaY !== 0) {
                   e.currentTarget.scrollLeft += e.deltaY;
                 }
               }}
-              className="flex items-center gap-1.5 overflow-x-auto pb-1.5 scrollbar-thin scrollbar-thumb-stone-300 dark:scrollbar-thumb-stone-600 max-w-full"
+              className="flex items-center gap-1.5 overflow-x-auto pb-1.5 scrollbar-thin scrollbar-thumb-stone-300 dark:scrollbar-thumb-stone-600 max-w-full cursor-grab active:cursor-grabbing select-none"
             >
               <button
                 type="button"
-                onClick={() => setQrFrameId('none')}
-                className={`px-2.5 py-1.5 rounded-xl text-[10px] font-bold shrink-0 border transition flex items-center gap-1 ${
+                onClick={() => {
+                  if (qrMovedRef.current) return;
+                  setQrFrameId('none');
+                }}
+                className={`px-2.5 py-1.5 rounded-xl text-[10px] font-bold shrink-0 border transition flex items-center gap-1 select-none ${
                   qrFrameId === 'none'
                     ? 'border-rose-500 bg-rose-500/10 text-rose-600 dark:text-rose-400'
                     : 'border-stone-200 dark:border-stone-700 bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400'
@@ -483,9 +510,12 @@ export default function ShareModal({
                 <button
                   key={frame.id}
                   type="button"
-                  onClick={() => setQrFrameId(frame.id)}
+                  onClick={() => {
+                    if (qrMovedRef.current) return;
+                    setQrFrameId(frame.id);
+                  }}
                   title={`กรอบแบบที่ ${idx + 1}`}
-                  className={`w-9 h-9 rounded-xl border p-0.5 shrink-0 transition relative overflow-hidden flex items-center justify-center bg-white ${
+                  className={`w-9 h-9 rounded-xl border p-0.5 shrink-0 transition relative overflow-hidden flex items-center justify-center bg-white select-none ${
                     qrFrameId === frame.id
                       ? 'border-rose-500 ring-2 ring-rose-500/40 shadow-xs'
                       : 'border-stone-200 dark:border-stone-700 hover:border-rose-300'
@@ -494,7 +524,9 @@ export default function ShareModal({
                   <img
                     src={frame.src}
                     alt={`Frame ${idx + 1}`}
-                    className="w-full h-full object-contain"
+                    draggable={false}
+                    onDragStart={(e) => e.preventDefault()}
+                    className="w-full h-full object-contain pointer-events-none select-none"
                     loading="lazy"
                   />
                 </button>

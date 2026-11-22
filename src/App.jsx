@@ -404,10 +404,10 @@ export default function App() {
               onPrevStage={handlePrevStage}
               onSelectStage={(idx) => setCurrentStage(idx)}
               decorations={config.decorations || []}
-              onUpdateDecorations={(decs) => {
+              onUpdateDecorations={(decs, flush = true) => {
                 setConfig((prev) => {
                   const updated = { ...prev, decorations: decs };
-                  if (!isRecipientOnly) saveLocalDraft(updated);
+                  if (!isRecipientOnly && flush) saveLocalDraft(updated);
                   return updated;
                 });
               }}

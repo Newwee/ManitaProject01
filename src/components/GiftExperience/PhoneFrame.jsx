@@ -44,10 +44,12 @@ export default function PhoneFrame({
 }) {
   const [timeStr, setTimeStr] = useState('12:00');
   const [selectedDecId, setSelectedDecId] = useState(null);
+  const [draggingDecId, setDraggingDecId] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [drawerCategory, setDrawerCategory] = useState('all');
   const themeData = THEME_PRESETS[theme] || THEME_PRESETS.scrapbook;
   const containerRef = useRef(null);
+  const dragStateRef = useRef(null);
 
   // Keep ref up-to-date with current decorations to eliminate stale closure bugs during drag
   const decorationsRef = useRef(decorations);
@@ -71,61 +73,77 @@ export default function PhoneFrame({
     return () => clearInterval(interval);
   }, []);
 
-  // Draggable item helper for custom placed decorations (Saved & Remembered)
-  const handleDecPointerDown = (e, decId) => {
+  // Draggable item handlers using pointer capture for 100% reliable 60fps tracking
+  const handleDecPointerDown = (e, dec) => {
     if (!isEditable) return;
     e.stopPropagation();
-    e.preventDefault();
-    if (!onUpdateDecorations || !containerRef.current) return;
 
-    setSelectedDecId(decId);
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch (err) {}
 
-    const startX = e.clientX;
-    const startY = e.clientY;
-    const currentList = [...(decorationsRef.current || [])];
-    const targetDec = currentList.find((d) => d.id === decId);
-    if (!targetDec) return;
+    setSelectedDecId(dec.id);
+    setDraggingDecId(dec.id);
 
-    const initX = targetDec.x !== undefined ? targetDec.x : 50;
-    const initY = targetDec.y !== undefined ? targetDec.y : 50;
     const rect = containerRef.current.getBoundingClientRect();
-
-    let lastX = initX;
-    let lastY = initY;
-
-    const handlePointerMove = (me) => {
-      me.preventDefault();
-      const dx = ((me.clientX - startX) / rect.width) * 100;
-      const dy = ((me.clientY - startY) / rect.height) * 100;
-      const newX = Math.round(Math.max(4, Math.min(96, initX + dx)));
-      const newY = Math.round(Math.max(4, Math.min(96, initY + dy)));
-
-      lastX = newX;
-      lastY = newY;
-
-      const nextList = (decorationsRef.current || []).map((d) =>
-        d.id === decId ? { ...d, x: newX, y: newY } : d
-      );
-      decorationsRef.current = nextList;
-      onUpdateDecorations(nextList);
+    dragStateRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      initX: dec.x !== undefined ? dec.x : 50,
+      initY: dec.y !== undefined ? dec.y : 50,
+      width: rect.width,
+      height: rect.height,
+      currentX: dec.x !== undefined ? dec.x : 50,
+      currentY: dec.y !== undefined ? dec.y : 50
     };
+  };
 
-    const handlePointerUp = () => {
-      window.removeEventListener('pointermove', handlePointerMove);
-      window.removeEventListener('pointerup', handlePointerUp);
-      window.removeEventListener('pointercancel', handlePointerUp);
+  const handleDecPointerMove = (e, decId) => {
+    if (draggingDecId !== decId || !dragStateRef.current) return;
+    e.stopPropagation();
 
-      // Commit final position to remember
+    const { startX, startY, initX, initY, width, height } = dragStateRef.current;
+    const dx = ((e.clientX - startX) / width) * 100;
+    const dy = ((e.clientY - startY) / height) * 100;
+
+    const newX = Math.round(Math.max(4, Math.min(96, initX + dx)));
+    const newY = Math.round(Math.max(4, Math.min(96, initY + dy)));
+
+    dragStateRef.current.currentX = newX;
+    dragStateRef.current.currentY = newY;
+
+    const nextList = (decorationsRef.current || []).map((d) =>
+      d.id === decId ? { ...d, x: newX, y: newY } : d
+    );
+    decorationsRef.current = nextList;
+    if (onUpdateDecorations) {
+      onUpdateDecorations(nextList, false); // Fast update without blocking disk write
+    }
+  };
+
+  const handleDecPointerUp = (e, decId) => {
+    if (draggingDecId === decId) {
+      e.stopPropagation();
+      try {
+        e.currentTarget.releasePointerCapture(e.pointerId);
+      } catch (err) {}
+
+      const finalX = dragStateRef.current?.currentX;
+      const finalY = dragStateRef.current?.currentY;
+
+      setDraggingDecId(null);
+      dragStateRef.current = null;
+
       const finalList = (decorationsRef.current || []).map((d) =>
-        d.id === decId ? { ...d, x: lastX, y: lastY } : d
+        d.id === decId && finalX !== undefined && finalY !== undefined
+          ? { ...d, x: finalX, y: finalY }
+          : d
       );
       decorationsRef.current = finalList;
-      onUpdateDecorations(finalList);
-    };
-
-    window.addEventListener('pointermove', handlePointerMove, { passive: false });
-    window.addEventListener('pointerup', handlePointerUp);
-    window.addEventListener('pointercancel', handlePointerUp);
+      if (onUpdateDecorations) {
+        onUpdateDecorations(finalList, true); // Commit and persist to localStorage
+      }
+    }
   };
 
   const handleRemoveDecoration = (e, decId) => {
@@ -133,7 +151,7 @@ export default function PhoneFrame({
     if (onUpdateDecorations) {
       const nextList = (decorationsRef.current || []).filter((d) => d.id !== decId);
       decorationsRef.current = nextList;
-      onUpdateDecorations(nextList);
+      onUpdateDecorations(nextList, true);
       if (selectedDecId === decId) setSelectedDecId(null);
     }
   };
@@ -150,7 +168,7 @@ export default function PhoneFrame({
         return d;
       });
       decorationsRef.current = nextList;
-      onUpdateDecorations(nextList);
+      onUpdateDecorations(nextList, true);
     }
   };
 
@@ -165,7 +183,7 @@ export default function PhoneFrame({
         return d;
       });
       decorationsRef.current = nextList;
-      onUpdateDecorations(nextList);
+      onUpdateDecorations(nextList, true);
     }
   };
 
@@ -263,10 +281,14 @@ export default function PhoneFrame({
       {decorations &&
         decorations.map((dec) => {
           const isSelected = selectedDecId === dec.id;
+          const isDragging = draggingDecId === dec.id;
           return (
             <div
               key={dec.id}
-              onPointerDown={(e) => handleDecPointerDown(e, dec.id)}
+              onPointerDown={(e) => handleDecPointerDown(e, dec)}
+              onPointerMove={(e) => handleDecPointerMove(e, dec.id)}
+              onPointerUp={(e) => handleDecPointerUp(e, dec.id)}
+              onPointerCancel={(e) => handleDecPointerUp(e, dec.id)}
               onClick={(e) => {
                 e.stopPropagation();
                 setSelectedDecId(dec.id);
@@ -274,18 +296,24 @@ export default function PhoneFrame({
               style={{
                 left: `${dec.x !== undefined ? dec.x : 50}%`,
                 top: `${dec.y !== undefined ? dec.y : 50}%`,
-                transform: `translate(-50%, -50%) rotate(${dec.rotation || 0}deg) scale(${dec.scale || 1})`,
+                transform: `translate(-50%, -50%) rotate(${dec.rotation || 0}deg) scale(${
+                  (dec.scale || 1) * (isDragging ? 1.08 : 1)
+                })`,
                 touchAction: 'none'
               }}
-              className={`absolute z-25 select-none transition-shadow ${
+              className={`absolute z-35 select-none transition-shadow ${
                 isEditable ? 'cursor-grab active:cursor-grabbing' : 'pointer-events-none'
-              } ${isSelected && isEditable ? 'ring-2 ring-rose-500 ring-offset-2 ring-offset-white/70 rounded-xl' : ''}`}
+              } ${isSelected && isEditable ? 'ring-2 ring-rose-500 ring-offset-2 ring-offset-white/70 rounded-xl' : ''} ${
+                isDragging ? 'opacity-90 shadow-2xl scale-105' : ''
+              }`}
               title={isEditable ? 'แตะค้างแล้วลากเพื่อย้ายตำแหน่งของตกแต่ง' : undefined}
             >
               <img
                 src={dec.src}
                 alt="decoration"
-                className="w-14 h-14 sm:w-16 sm:h-16 object-contain pointer-events-none drop-shadow-md"
+                draggable={false}
+                onDragStart={(e) => e.preventDefault()}
+                className="w-14 h-14 sm:w-16 sm:h-16 object-contain pointer-events-none drop-shadow-md select-none"
               />
 
               {/* Action Toolbar on Selected / Hovered Decoration */}
