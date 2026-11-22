@@ -14,14 +14,9 @@ import {
   Terminal,
   Palette,
   Heart,
-  Gift,
-  Image as ImageIcon,
-  LayoutTemplate,
-  ChevronLeft,
-  ChevronRight
+  Gift
 } from 'lucide-react';
 import { createShareableGift } from '../../lib/giftStorage';
-import { QR_FRAME_ASSETS } from '../../types/assetManifests';
 import {
   MANITA_SQL_SETUP,
   USER_PROJECT_URL
@@ -34,37 +29,6 @@ const QR_PALETTES = [
   { id: 'gold', name: 'Royal Gold', dark: '#854d0e', light: '#fefce8', border: '#fef08a', accent: '#eab308' },
   { id: 'midnight', name: 'Midnight Velvet', dark: '#312e81', light: '#f5f3ff', border: '#ddd6fe', accent: '#6366f1' }
 ];
-
-/**
- * Config Object สำหรับปรับแต่งตำแหน่ง (x, y) และขนาด (size) ของ QR Code ที่ฝังบนตัวการ์ตูนแต่ละตัว
- * - xPercent: ตำแหน่งกึ่งกลาง QR แนวนอน (0-100%, 50 คือกึ่งกลาง)
- * - yPercent: ตำแหน่งกึ่งกลาง QR แนวตั้ง (0-100%, 50 คือกึ่งกลาง)
- * - sizePercent: ขนาดของ QR Code เทียบกับขนาดตัวการ์ตูน (เช่น 65-72%)
- * - opacity: ความโปร่งใสของจุด QR Code เพื่อความกลมกลืนกับลายเส้นการ์ตูน (เช่น 0.85)
- * - blendMode: โหมดผสมสีบน Canvas ('multiply' หรือ 'source-atop')
- */
-export const QR_CHARACTER_OVERLAY_CONFIG = {
-  default: {
-    xPercent: 50,
-    yPercent: 49,
-    sizePercent: 68,
-    opacity: 0.85,
-    blendMode: 'multiply'
-  },
-  // ปรับแต่งแยกรายตัวการ์ตูน (ตาม id หรือ sourceFile):
-  qr_frame_1: { xPercent: 50, yPercent: 48, sizePercent: 72, opacity: 0.85, blendMode: 'multiply' }, // หัวใจสีชมพู
-  qr_frame_2: { xPercent: 49, yPercent: 48, sizePercent: 68, opacity: 0.85, blendMode: 'multiply' }, // น้องแมวสีฟ้า
-  qr_frame_3: { xPercent: 50, yPercent: 50, sizePercent: 66, opacity: 0.85, blendMode: 'multiply' }, // น้องหมาสีน้ำตาล
-  qr_frame_4: { xPercent: 50, yPercent: 48, sizePercent: 66, opacity: 0.85, blendMode: 'multiply' }, // กระต่ายสีม่วง
-  qr_frame_5: { xPercent: 50, yPercent: 48, sizePercent: 70, opacity: 0.85, blendMode: 'multiply' }, // ผีเสื้อ
-  qr_frame_6: { xPercent: 50, yPercent: 50, sizePercent: 68, opacity: 0.85, blendMode: 'multiply' }, // ดอกไม้
-  qr_frame_7: { xPercent: 50, yPercent: 50, sizePercent: 66, opacity: 0.85, blendMode: 'multiply' }, // หมีสีน้ำตาล
-  qr_frame_8: { xPercent: 50, yPercent: 50, sizePercent: 70, opacity: 0.85, blendMode: 'multiply' }, // ดาวสีเหลือง
-  qr_frame_9: { xPercent: 46, yPercent: 50, sizePercent: 64, opacity: 0.85, blendMode: 'multiply' }, // พระจันทร์
-  qr_frame_10: { xPercent: 50, yPercent: 50, sizePercent: 68, opacity: 0.85, blendMode: 'multiply' }, // รอยเท้าแมว
-  qr_frame_11: { xPercent: 50, yPercent: 52, sizePercent: 68, opacity: 0.85, blendMode: 'multiply' }, // สตรอว์เบอร์รี
-  qr_frame_12: { xPercent: 50, yPercent: 50, sizePercent: 70, opacity: 0.85, blendMode: 'multiply' }  // ก้อนเมฆ
-};
 
 export default function ShareModal({
   isOpen,
@@ -85,10 +49,6 @@ export default function ShareModal({
   // QR Customization States
   const [qrTheme, setQrTheme] = useState('classic');
   const [qrCenterBadge, setQrCenterBadge] = useState('none'); // Default to 'none' (no logo) as requested
-  const [qrFrameId, setQrFrameId] = useState('none');
-  const canvasRef = useRef(null);
-  const qrFrameScrollRef = useRef(null);
-  const qrMovedRef = useRef(false);
 
   const generateLinkAndQR = async (chosenUrl) => {
     setIsGenerating(true);
@@ -104,7 +64,7 @@ export default function ShareModal({
         setIsCloudSaved(result.isCloudSaved);
       }
 
-      await renderStyledQR(targetUrl, qrTheme, qrCenterBadge, qrFrameId);
+      await renderStyledQR(targetUrl, qrTheme, qrCenterBadge);
     } catch (err) {
       console.error('Failed to generate shareable gift:', err);
       setErrorMsg('เกิดข้อผิดพลาดในการสร้างลิงก์ กรุณาลองใหม่อีกครั้ง');
@@ -113,12 +73,12 @@ export default function ShareModal({
     }
   };
 
-  const renderStyledQR = async (url, themeId, badge, frameId = qrFrameId) => {
+  const renderStyledQR = async (url, themeId, badge = qrCenterBadge) => {
     if (!url) return;
-    const theme = QR_PALETTES.find(t => t.id === themeId) || QR_PALETTES[0];
-    const size = 360;
+    const theme = QR_PALETTES.find((t) => t.id === themeId) || QR_PALETTES[0];
+    const size = 420; // High resolution, crisp, large QR code
 
-    // Use offscreen canvas to render QR Code with High Error Correction (Level H for maximum resilience)
+    // Use offscreen canvas to render QR Code with High Error Correction (Level H)
     const canvas = document.createElement('canvas');
     canvas.width = size;
     canvas.height = size;
@@ -150,14 +110,14 @@ export default function ShareModal({
 
     const ctx = canvas.getContext('2d');
 
-    // Draw center badge if chosen (default is none)
+    // Draw center badge only if user explicitly selects one (default is 'none')
     if (badge && badge !== 'none') {
       const center = size / 2;
       const badgeSize = size * 0.2; // 20% width (safe under 30% ECC)
 
       // Circular backing with subtle shadow
       ctx.save();
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.18)';
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
       ctx.shadowBlur = 8;
       ctx.shadowOffsetY = 2;
 
@@ -172,7 +132,7 @@ export default function ShareModal({
       ctx.restore();
 
       if (badge === 'logo') {
-        // Draw MANITA Logo with safety timeout
+        // Draw MANITA Logo
         await new Promise((resolve) => {
           const logoImg = new Image();
           logoImg.crossOrigin = 'anonymous';
@@ -204,118 +164,6 @@ export default function ShareModal({
       }
     }
 
-    // If a cute character sticker is selected, embed and blend QR Code directly onto the character!
-    if (frameId && frameId !== 'none') {
-      const frameAsset = QR_FRAME_ASSETS.find(f => f.id === frameId);
-      if (frameAsset) {
-        // High-res canvas matching the character image aspect ratio
-        const canvasWidth = 600;
-        const canvasHeight = Math.round(canvasWidth * (frameAsset.height / frameAsset.width));
-
-        const charCanvas = document.createElement('canvas');
-        charCanvas.width = canvasWidth;
-        charCanvas.height = canvasHeight;
-        const ctx = charCanvas.getContext('2d');
-
-        // Layer 1: Draw the character sticker image as the background
-        await new Promise((resolve) => {
-          const charImg = new Image();
-          charImg.crossOrigin = 'anonymous';
-          charImg.onload = () => {
-            ctx.drawImage(charImg, 0, 0, canvasWidth, canvasHeight);
-            resolve();
-          };
-          charImg.onerror = () => resolve();
-          charImg.src = frameAsset.src;
-        });
-
-        // Config lookup for x, y, size, opacity, blendMode
-        const cfg = QR_CHARACTER_OVERLAY_CONFIG[frameAsset.id] ||
-                    QR_CHARACTER_OVERLAY_CONFIG[frameAsset.sourceFile] ||
-                    QR_CHARACTER_OVERLAY_CONFIG.default;
-
-        const qrSize = Math.round(Math.min(canvasWidth, canvasHeight) * (cfg.sizePercent / 100));
-        const qrX = Math.round((canvasWidth * (cfg.xPercent / 100)) - (qrSize / 2));
-        const qrY = Math.round((canvasHeight * (cfg.yPercent / 100)) - (qrSize / 2));
-
-        // Layer 2: Render QR Code with transparent background & High Error Correction (Level H)
-        const qrCanvas = document.createElement('canvas');
-        qrCanvas.width = qrSize;
-        qrCanvas.height = qrSize;
-
-        await QRCode.toCanvas(qrCanvas, url, {
-          errorCorrectionLevel: 'H',
-          width: qrSize,
-          margin: 0,
-          color: {
-            dark: theme.dark,
-            light: '#00000000' // transparent background
-          }
-        });
-
-        // Draw center badge on QR if chosen
-        if (badge && badge !== 'none') {
-          const qrCtx = qrCanvas.getContext('2d');
-          const center = qrSize / 2;
-          const badgeSize = qrSize * 0.2; // 20% width
-
-          qrCtx.save();
-          qrCtx.shadowColor = 'rgba(0, 0, 0, 0.2)';
-          qrCtx.shadowBlur = 6;
-          qrCtx.shadowOffsetY = 2;
-          qrCtx.beginPath();
-          qrCtx.arc(center, center, badgeSize / 2 + 2, 0, Math.PI * 2);
-          qrCtx.fillStyle = '#ffffff';
-          qrCtx.fill();
-          qrCtx.lineWidth = 2;
-          qrCtx.strokeStyle = theme.dark;
-          qrCtx.stroke();
-          qrCtx.restore();
-
-          if (badge === 'logo') {
-            await new Promise((resolve) => {
-              const logoImg = new Image();
-              logoImg.crossOrigin = 'anonymous';
-              const timer = setTimeout(() => resolve(), 600);
-              logoImg.onload = () => {
-                clearTimeout(timer);
-                try {
-                  qrCtx.save();
-                  qrCtx.beginPath();
-                  qrCtx.arc(center, center, badgeSize / 2 - 1, 0, Math.PI * 2);
-                  qrCtx.clip();
-                  qrCtx.drawImage(logoImg, center - badgeSize / 2, center - badgeSize / 2, badgeSize, badgeSize);
-                  qrCtx.restore();
-                } catch (err) {}
-                resolve();
-              };
-              logoImg.onerror = () => {
-                clearTimeout(timer);
-                resolve();
-              };
-              logoImg.src = '/assets/ManitaLogo.png';
-            });
-          } else {
-            qrCtx.font = `${Math.floor(badgeSize * 0.65)}px sans-serif`;
-            qrCtx.textAlign = 'center';
-            qrCtx.textBaseline = 'middle';
-            qrCtx.fillText(badge === 'heart' ? '💖' : '🎁', center, center + 1);
-          }
-        }
-
-        // Layer 2 Overlay: Blend QR Code directly onto the character using multiply/source-atop & alpha
-        ctx.save();
-        ctx.globalCompositeOperation = cfg.blendMode || 'multiply';
-        ctx.globalAlpha = cfg.opacity ?? 0.85;
-        ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
-        ctx.restore();
-
-        // Result: Transparent PNG sticker with embedded scannable QR Code
-        setQrDataUrl(charCanvas.toDataURL('image/png'));
-        return;
-      }
-    }
-
     setQrDataUrl(canvas.toDataURL('image/png'));
   };
 
@@ -326,9 +174,9 @@ export default function ShareModal({
 
   useEffect(() => {
     if (shareUrl) {
-      renderStyledQR(shareUrl, qrTheme, qrCenterBadge, qrFrameId);
+      renderStyledQR(shareUrl, qrTheme, qrCenterBadge);
     }
-  }, [qrTheme, qrCenterBadge, qrFrameId]);
+  }, [qrTheme, qrCenterBadge]);
 
   const handleCopyLink = () => {
     if (!shareUrl) return;
@@ -347,10 +195,7 @@ export default function ShareModal({
     if (!qrDataUrl) return;
     const a = document.createElement('a');
     a.href = qrDataUrl;
-    const filename = qrFrameId && qrFrameId !== 'none'
-      ? `MANITA-Character-QR-${qrFrameId}.png`
-      : `MANITA-Gift-QRCode-${qrTheme}.png`;
-    a.download = filename;
+    a.download = `MANITA-Gift-QRCode-${qrTheme}.png`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -358,15 +203,61 @@ export default function ShareModal({
 
   const handleDownloadGiftCard = () => {
     if (!qrDataUrl) return;
-    const a = document.createElement('a');
-    a.href = qrDataUrl;
-    const filename = qrFrameId && qrFrameId !== 'none'
-      ? `MANITA-Character-QR-${qrFrameId}.png`
-      : `MANITA-GiftCard-${qrTheme}.png`;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    const cardCanvas = document.createElement('canvas');
+    cardCanvas.width = 600;
+    cardCanvas.height = 800;
+    const ctx = cardCanvas.getContext('2d');
+    const theme = QR_PALETTES.find((t) => t.id === qrTheme) || QR_PALETTES[0];
+
+    // Card background
+    ctx.fillStyle = theme.light;
+    ctx.fillRect(0, 0, 600, 800);
+
+    // Decorative border
+    ctx.strokeStyle = theme.border;
+    ctx.lineWidth = 12;
+    ctx.strokeRect(20, 20, 560, 760);
+
+    ctx.strokeStyle = theme.dark;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(28, 28, 544, 744);
+
+    // Header
+    ctx.fillStyle = theme.dark;
+    ctx.font = 'bold 32px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('MANITA SPECIAL GIFT', 300, 95);
+
+    ctx.font = '16px sans-serif';
+    ctx.fillStyle = '#71717a';
+    ctx.fillText('ของขวัญและความทรงจำสำหรับคนพิเศษ 🎁', 300, 130);
+
+    // QR Image (Large & Crisp)
+    const qrImg = new Image();
+    qrImg.src = qrDataUrl;
+    qrImg.onload = () => {
+      ctx.drawImage(qrImg, 125, 170, 350, 350);
+
+      // Bottom Message
+      ctx.fillStyle = theme.dark;
+      ctx.font = 'bold 20px sans-serif';
+      ctx.fillText('สแกน QR Code ด้วยกล้องมือถือเพื่อเปิดดู', 300, 580);
+
+      ctx.fillStyle = '#a1a1aa';
+      ctx.font = '14px monospace';
+      ctx.fillText(shareUrl.substring(0, 48) + (shareUrl.length > 48 ? '...' : ''), 300, 620);
+
+      ctx.fillStyle = theme.accent;
+      ctx.font = 'bold 15px sans-serif';
+      ctx.fillText('✨ สแกนติดง่าย 100% • เปิดดูได้ทันทีไม่ต้องลงแอป ✨', 300, 690);
+
+      const a = document.createElement('a');
+      a.href = cardCanvas.toDataURL('image/png');
+      a.download = `MANITA-GiftCard-${qrTheme}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    };
   };
 
   if (!isOpen) return null;
@@ -395,27 +286,23 @@ export default function ShareModal({
           ส่ง QR Code หรือส่งลิงก์ให้คนพิเศษเปิดดูของขวัญที่ตกแต่งไว้ได้ทันที
         </p>
 
-        {/* QR Code Container */}
+        {/* QR Code Container (Large & Crisp like before) */}
         <div className="bg-stone-50 dark:bg-stone-800/50 p-4 rounded-2xl border border-stone-200 dark:border-stone-700 flex flex-col items-center justify-center min-h-[250px]">
           {isGenerating ? (
             <div className="text-xs text-stone-500 dark:text-stone-400 animate-pulse flex flex-col items-center gap-2">
               <Sparkles className="w-6 h-6 text-rose-500 animate-spin" />
-              <span>กำลังสร้าง QR Code ฝังลงบนตัวการ์ตูน...</span>
+              <span>กำลังบันทึกของขวัญและสร้าง QR Code คมชัด...</span>
             </div>
           ) : qrDataUrl ? (
             <div className="relative group flex flex-col items-center">
               <img
                 src={qrDataUrl}
-                alt="MANITA Character QR Code"
-                className="max-w-[240px] max-h-[270px] w-auto h-auto drop-shadow-xl p-1 mx-auto object-contain transition-all duration-200 hover:scale-[1.03]"
+                alt="MANITA Gift QR Code"
+                className="w-52 h-52 sm:w-56 sm:h-56 rounded-2xl shadow-md border-2 border-stone-200 dark:border-stone-600 bg-white p-2.5 mx-auto transition-transform hover:scale-[1.02]"
               />
-              <div className="text-[11px] text-stone-600 dark:text-stone-300 mt-3 font-medium flex items-center justify-center gap-1.5">
+              <div className="text-[11px] text-stone-600 dark:text-stone-300 mt-2.5 font-medium flex items-center justify-center gap-1">
                 <span>📱</span>
-                <span>
-                  {qrFrameId !== 'none'
-                    ? 'ยกกล้องมือถือสแกนที่ตัวการ์ตูนได้โดยตรง (สแกนติด 100%)'
-                    : 'สแกนด้วยกล้องมือถือได้ทันที (สแกนติดง่าย 100%)'}
-                </span>
+                <span>สแกนด้วยกล้องมือถือได้ทันที (สแกนติดง่าย 100%)</span>
               </div>
             </div>
           ) : (
@@ -433,8 +320,8 @@ export default function ShareModal({
         </div>
 
         {/* QR Customization Options */}
-        <div className="mt-2.5 p-3 bg-stone-50 dark:bg-stone-800/50 rounded-2xl border border-stone-200/80 dark:border-stone-700/80 text-left">
-          <div className="flex items-center justify-between mb-2">
+        <div className="mt-2.5 p-3 bg-stone-50 dark:bg-stone-800/50 rounded-2xl border border-stone-200/80 dark:border-stone-700/80 text-left space-y-2.5">
+          <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-stone-700 dark:text-stone-300 flex items-center gap-1">
               <Palette className="w-3.5 h-3.5 text-rose-500" />
               <span>ปรับแต่งความสวยงาม QR Code (ไม่ทำให้เสีย)</span>
@@ -447,7 +334,7 @@ export default function ShareModal({
               <button
                 key={pal.id}
                 onClick={() => setQrTheme(pal.id)}
-                className={`px-2 py-1 rounded-xl text-[10px] font-bold flex items-center gap-1 transition shrink-0 border ${
+                className={`px-2.5 py-1 rounded-xl text-[10px] font-bold flex items-center gap-1.5 transition shrink-0 border ${
                   qrTheme === pal.id
                     ? 'border-rose-500 bg-white dark:bg-stone-900 text-stone-900 dark:text-white shadow-xs'
                     : 'border-transparent bg-stone-200/70 dark:bg-stone-700/60 text-stone-600 dark:text-stone-400'
@@ -459,131 +346,26 @@ export default function ShareModal({
             ))}
           </div>
 
-          {/* Center Badge Chooser */}
-          <div className="mt-2 pt-2 border-t border-stone-200/60 dark:border-stone-700/60 flex items-center justify-between text-[10px]">
+          {/* Center Badge Chooser (Default: none) */}
+          <div className="pt-2 border-t border-stone-200/60 dark:border-stone-700/60 flex items-center justify-between text-[10px]">
             <span className="text-stone-500 dark:text-stone-400 font-medium">ตราสัญลักษณ์ตรงกลาง:</span>
             <div className="flex items-center gap-1">
               {[
+                { id: 'none', label: 'เรียบ (ไม่ใส่)' },
                 { id: 'logo', label: 'โลโก้' },
                 { id: 'heart', label: '💖 หัวใจ' },
-                { id: 'gift', label: '🎁 ของขวัญ' },
-                { id: 'none', label: 'เรียบ' }
+                { id: 'gift', label: '🎁 ของขวัญ' }
               ].map((badge) => (
                 <button
                   key={badge.id}
                   onClick={() => setQrCenterBadge(badge.id)}
-                  className={`px-2 py-0.5 rounded-lg font-semibold transition ${
+                  className={`px-2.5 py-1 rounded-lg font-semibold transition ${
                     qrCenterBadge === badge.id
-                      ? 'bg-rose-500 text-white shadow-xs'
-                      : 'bg-stone-200 dark:bg-stone-700 text-stone-600 dark:text-stone-400'
+                      ? 'bg-rose-500 text-white shadow-xs font-bold'
+                      : 'bg-stone-200 dark:bg-stone-700 text-stone-600 dark:text-stone-400 hover:bg-stone-300 dark:hover:bg-stone-600'
                   }`}
                 >
                   {badge.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* QR Character Sticker Selector */}
-          <div className="mt-2 pt-2 border-t border-stone-200/60 dark:border-stone-700/60">
-            <div className="flex items-center justify-between text-[10px] mb-1.5">
-              <span className="text-stone-500 dark:text-stone-400 font-medium flex items-center gap-1">
-                <LayoutTemplate className="w-3 h-3 text-rose-500" />
-                <span>ตัวการ์ตูนฝัง QR Code (สแกนที่ตัวการ์ตูนได้โดยตรง):</span>
-              </span>
-              <div className="flex items-center gap-1.5">
-                <span className="text-[9px] text-stone-400">{QR_FRAME_ASSETS.length} ลาย</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (qrFrameScrollRef.current) qrFrameScrollRef.current.scrollBy({ left: -200, behavior: 'smooth' });
-                  }}
-                  className="w-5 h-5 rounded-md bg-stone-200 dark:bg-stone-700 flex items-center justify-center text-stone-700 dark:text-stone-300 hover:bg-stone-300"
-                  title="เลื่อนซ้าย"
-                >
-                  <ChevronLeft className="w-3 h-3" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (qrFrameScrollRef.current) qrFrameScrollRef.current.scrollBy({ left: 200, behavior: 'smooth' });
-                  }}
-                  className="w-5 h-5 rounded-md bg-stone-200 dark:bg-stone-700 flex items-center justify-center text-stone-700 dark:text-stone-300 hover:bg-stone-300"
-                  title="เลื่อนขวา"
-                >
-                  <ChevronRight className="w-3 h-3" />
-                </button>
-              </div>
-            </div>
-            <div
-              ref={qrFrameScrollRef}
-              onMouseDown={(e) => {
-                if (e.button !== 0 || !qrFrameScrollRef.current) return;
-                qrFrameScrollRef.current.isMouseDown = true;
-                qrFrameScrollRef.current.startX = e.pageX - qrFrameScrollRef.current.offsetLeft;
-                qrFrameScrollRef.current.scrollStart = qrFrameScrollRef.current.scrollLeft;
-                qrMovedRef.current = false;
-              }}
-              onMouseMove={(e) => {
-                if (!qrFrameScrollRef.current?.isMouseDown) return;
-                e.preventDefault();
-                const x = e.pageX - qrFrameScrollRef.current.offsetLeft;
-                const walk = (x - qrFrameScrollRef.current.startX) * 1.5;
-                if (Math.abs(walk) > 4) qrMovedRef.current = true;
-                qrFrameScrollRef.current.scrollLeft = qrFrameScrollRef.current.scrollStart - walk;
-              }}
-              onMouseUp={() => {
-                if (qrFrameScrollRef.current) qrFrameScrollRef.current.isMouseDown = false;
-                setTimeout(() => { qrMovedRef.current = false; }, 80);
-              }}
-              onMouseLeave={() => {
-                if (qrFrameScrollRef.current) qrFrameScrollRef.current.isMouseDown = false;
-                setTimeout(() => { qrMovedRef.current = false; }, 80);
-              }}
-              onWheel={(e) => {
-                if (e.deltaY !== 0) {
-                  e.currentTarget.scrollLeft += e.deltaY;
-                }
-              }}
-              className="flex items-center gap-1.5 overflow-x-auto pb-1.5 scrollbar-thin scrollbar-thumb-stone-300 dark:scrollbar-thumb-stone-600 max-w-full cursor-grab active:cursor-grabbing select-none"
-            >
-              <button
-                type="button"
-                onClick={() => {
-                  if (qrMovedRef.current) return;
-                  setQrFrameId('none');
-                }}
-                className={`px-2.5 py-1.5 rounded-xl text-[10px] font-bold shrink-0 border transition flex items-center gap-1 select-none ${
-                  qrFrameId === 'none'
-                    ? 'border-rose-500 bg-rose-500/10 text-rose-600 dark:text-rose-400'
-                    : 'border-stone-200 dark:border-stone-700 bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400'
-                }`}
-              >
-                <span>ไม่มีกรอบ</span>
-              </button>
-              {QR_FRAME_ASSETS.map((frame, idx) => (
-                <button
-                  key={frame.id}
-                  type="button"
-                  onClick={() => {
-                    if (qrMovedRef.current) return;
-                    setQrFrameId(frame.id);
-                  }}
-                  title={`กรอบแบบที่ ${idx + 1}`}
-                  className={`w-9 h-9 rounded-xl border p-0.5 shrink-0 transition relative overflow-hidden flex items-center justify-center bg-white select-none ${
-                    qrFrameId === frame.id
-                      ? 'border-rose-500 ring-2 ring-rose-500/40 shadow-xs'
-                      : 'border-stone-200 dark:border-stone-700 hover:border-rose-300'
-                  }`}
-                >
-                  <img
-                    src={frame.src}
-                    alt={`Frame ${idx + 1}`}
-                    draggable={false}
-                    onDragStart={(e) => e.preventDefault()}
-                    className="w-full h-full object-contain pointer-events-none select-none"
-                    loading="lazy"
-                  />
                 </button>
               ))}
             </div>
@@ -650,63 +432,48 @@ export default function ShareModal({
               <span>✓ บันทึกลง Cloud สำเร็จ (รูปภาพ & ข้อมูลครบ 100%)</span>
             </div>
           ) : (
-            <div className="flex items-center justify-center gap-1 text-stone-500">
-              <CheckCircle className="w-3.5 h-3.5" />
-              <span>บันทึกในเครื่องเรียบร้อยแล้ว</span>
+            <div className="space-y-1">
+              <div className="flex items-center justify-center gap-1 text-stone-500 dark:text-stone-400">
+                <Database className="w-3.5 h-3.5 text-amber-500" />
+                <span>บันทึกแบบ Local URL (เปิดได้บนเครื่องนี้)</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSqlGuide(!showSqlGuide)}
+                className="text-[10px] text-rose-500 dark:text-rose-400 hover:underline flex items-center justify-center gap-1 mx-auto"
+              >
+                <span>เปิดวิธีต่อ Supabase ฟรี (เพื่อให้ส่งให้เพื่อนเปิดได้ทุกเครื่อง)</span>
+              </button>
             </div>
           )}
 
-          {/* Supabase Personal Setup Assistant */}
-          <div className="mt-2 text-left">
-            <button
-              onClick={() => setShowSqlGuide(!showSqlGuide)}
-              className="text-[10px] text-stone-500 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-200 font-medium flex items-center justify-center gap-1 mx-auto transition"
-            >
-              <Database className="w-3 h-3 text-rose-500" />
-              <span>{showSqlGuide ? 'ซ่อนคำแนะนำ Supabase' : 'วิธีเปิดใช้ตารางใน Supabase ส่วนตัวของคุณ'}</span>
-            </button>
+          {/* Collapsible Supabase SQL Guide */}
+          {showSqlGuide && (
+            <div className="mt-2 p-2.5 bg-stone-100 dark:bg-stone-800 rounded-xl text-left border border-stone-200 dark:border-stone-700 text-[10px] space-y-2 animate-in fade-in duration-200">
+              <p className="font-bold text-stone-700 dark:text-stone-300">
+                ⚡ วิธีเปิดให้แชร์ข้ามเครื่องได้ 100% ฟรี:
+              </p>
+              <ol className="list-decimal list-inside space-y-1 text-stone-600 dark:text-stone-400">
+                <li>ไปที่ Supabase Dashboard โครงการของคุณ</li>
+                <li>ไปที่เมนู <strong>SQL Editor</strong></li>
+                <li>กดคัดลอกโค้ด SQL ด้านล่างนี้ไปวางแล้วกด <strong>Run</strong></li>
+              </ol>
 
-            {showSqlGuide && (
-              <div className="mt-2 p-3 bg-stone-50 dark:bg-stone-800/80 rounded-2xl border border-stone-200 dark:border-stone-700 text-[10px] text-stone-600 dark:text-stone-300 space-y-2">
-                <div className="flex items-start gap-1.5 font-bold text-stone-800 dark:text-stone-200">
-                  <Terminal className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" />
-                  <span>วิธีสร้างตาราง manita_gifts ใน Supabase ส่วนตัว (3 ขั้นตอน):</span>
-                </div>
-                <ol className="list-decimal list-inside space-y-1 text-[10px] text-stone-600 dark:text-stone-400 pl-1">
-                  <li>กดปุ่ม <b>"คัดลอกคำสั่ง SQL"</b> ด้านล่างนี้</li>
-                  <li>กดปุ่ม <b>"เปิด Supabase SQL Editor"</b> เพื่อไปที่หน้าแดชบอร์ดของคุณ</li>
-                  <li>วางโค้ดลงในช่องแล้วกดปุ่มสีเขียว <b>Run</b> เป็นอันเสร็จสิ้น!</li>
-                </ol>
-
-                <div className="flex items-center gap-1.5 pt-1">
-                  <button
-                    onClick={handleCopySql}
-                    className={`flex-1 py-1.5 px-2 rounded-xl text-[10px] font-bold flex items-center justify-center gap-1 transition ${
-                      copiedSql
-                        ? 'bg-emerald-600 text-white'
-                        : 'bg-stone-900 dark:bg-stone-700 text-white hover:bg-stone-800'
-                    }`}
-                  >
-                    {copiedSql ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                    <span>{copiedSql ? 'คัดลอก SQL แล้ว!' : 'คัดลอกคำสั่ง SQL'}</span>
-                  </button>
-                  <a
-                    href="https://supabase.com/dashboard/project/xaazsuwbkzplovdwanmm/sql/new"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-1 py-1.5 px-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold flex items-center justify-center gap-1 transition"
-                  >
-                    <ExternalLink className="w-3 h-3" />
-                    <span>เปิด SQL Editor</span>
-                  </a>
-                </div>
-
-                <p className="text-[9px] text-stone-400 dark:text-stone-500 text-center">
-                  * ตอนนี้ระบบมี Cloud สำรองให้แล้ว ของขวัญสามารถส่งและสแกนใช้งานได้ทันที แม้ยังไม่ได้รัน SQL
-                </p>
+              <div className="relative">
+                <pre className="p-2 bg-stone-900 text-stone-200 rounded-lg text-[9px] overflow-x-auto font-mono max-h-24">
+                  {MANITA_SQL_SETUP}
+                </pre>
+                <button
+                  type="button"
+                  onClick={handleCopySql}
+                  className="absolute top-1.5 right-1.5 px-2 py-0.5 rounded bg-rose-500 text-white text-[9px] font-bold flex items-center gap-1"
+                >
+                  {copiedSql ? <Check className="w-2.5 h-2.5" /> : <Copy className="w-2.5 h-2.5" />}
+                  <span>{copiedSql ? 'คัดลอกแล้ว' : 'คัดลอก SQL'}</span>
+                </button>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
