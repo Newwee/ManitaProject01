@@ -19,8 +19,13 @@ export function stopChristmasAudio() {
   }
 }
 
-export default function ChristmasMusicPlayer() {
-  const [isOpen, setIsOpen] = useState(true);
+export default function ChristmasMusicPlayer({ showUI = true }) {
+  const [isOpen, setIsOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth >= 640;
+    }
+    return true;
+  });
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(50);
   const [currentTime, setCurrentTime] = useState(0);
@@ -237,6 +242,9 @@ export default function ChristmasMusicPlayer() {
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
+  // Keep audio playing in background, but hide visual UI until intro animation completes
+  if (!showUI) return null;
+
   // If minimized, display sleek floating draggable music pill
   if (!isOpen) {
     return (
@@ -244,8 +252,8 @@ export default function ChristmasMusicPlayer() {
         ref={cardRef}
         style={position ? { left: `${position.x}px`, top: `${position.y}px` } : undefined}
         className={`fixed z-40 select-none touch-none ${
-          !position ? 'top-16 sm:top-28 right-3 sm:right-6' : ''
-        } animate-in fade-in zoom-in-95 duration-200`}
+          !position ? 'top-16 sm:top-20 right-3 sm:right-6' : ''
+        } animate-in fade-in zoom-in-95 duration-500`}
       >
         <div
           onPointerDown={handlePointerDown}
@@ -297,8 +305,8 @@ export default function ChristmasMusicPlayer() {
       ref={cardRef}
       style={position ? { left: `${position.x}px`, top: `${position.y}px` } : undefined}
       className={`fixed z-40 select-none ${
-        !position ? 'top-16 sm:top-28 right-3 sm:right-6' : ''
-      } animate-in fade-in slide-in-from-top-3 duration-300 will-change-transform`}
+        !position ? 'top-16 sm:top-20 right-3 sm:right-6' : ''
+      } animate-in fade-in slide-in-from-top-3 duration-500 will-change-transform`}
     >
       <div className="w-[calc(100vw-24px)] max-w-[340px] sm:max-w-[370px] bg-[#14121cf0] backdrop-blur-xl text-white rounded-3xl p-3.5 sm:p-5 shadow-2xl border border-white/15 relative">
         {/* Top Drag Handle Bar */}

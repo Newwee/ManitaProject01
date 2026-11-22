@@ -3149,6 +3149,11 @@
           sfxManager.introTime5Played = true;
           sfxManager.play('introTime5');
         }
+        try {
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: 'MANITA_TREE_ANIMATION_COMPLETE' }, '*');
+          }
+        } catch (e) {}
       }
 
       // 5. โหมด Additive Glow สำหรับต้นคริสต์มาส ลำแสง และออร่ากล่องของขวัญ
@@ -4243,6 +4248,11 @@
     }
 
     function replayIntro() {
+      try {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'MANITA_TREE_ANIMATION_RESET' }, '*');
+        }
+      } catch (e) {}
       sfxManager.stopAll();
       sfxManager.resetRound();
       playTreeOpenSFX();

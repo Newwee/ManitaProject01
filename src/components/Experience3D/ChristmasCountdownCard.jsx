@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Counter from '../UI/Counter';
-import { Clock, Sparkles } from 'lucide-react';
+import { Clock, Sparkles, ChevronDown, ChevronUp, X } from 'lucide-react';
 
 export default function ChristmasCountdownCard({
   unlockDate = '2026-12-25T00:00',
@@ -8,19 +8,121 @@ export default function ChristmasCountdownCard({
   lockMode = 'christmas'
 }) {
   const [timeLeft, setTimeLeft] = useState(null);
-  const [isMobile, setIsMobile] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false); // Collapsed by default to avoid screen clutter
+  const [position, setPosition] = useState(null); // null = responsive default positioning
 
+  // Drag state
+  const isDraggingRef = useRef(false);
+  const dragRef = useRef({
+    startX: 0,
+    startY: 0,
+    initialLeft: 0,
+    initialTop: 0,
+    currentDx: 0,
+    currentDy: 0,
+    rafId: null
+  });
+  const hasMovedRef = useRef(false);
+  const cardRef = useRef(null);
+
+  // Keep inside screen on window resize
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 640);
+    const handleResize = () => {
+      setPosition(prev => {
+        if (!prev || !cardRef.current) return prev;
+        const rect = cardRef.current.getBoundingClientRect();
+        const maxX = Math.max(8, window.innerWidth - rect.width - 8);
+        const maxY = Math.max(8, window.innerHeight - rect.height - 8);
+        return {
+          x: Math.max(8, Math.min(maxX, prev.x)),
+          y: Math.max(8, Math.min(maxY, prev.y))
+        };
+      });
     };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  const handlePointerDown = (e) => {
+    if (e.button !== undefined && e.button !== 0) return;
+    if (!cardRef.current) return;
+
+    isDraggingRef.current = true;
+    hasMovedRef.current = false;
+
+    const rect = cardRef.current.getBoundingClientRect();
+    dragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      initialLeft: rect.left,
+      initialTop: rect.top,
+      currentDx: 0,
+      currentDy: 0,
+      rafId: null
+    };
+
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch (err) {}
+  };
+
+  const handlePointerMove = (e) => {
+    if (!isDraggingRef.current) return;
+    const dx = e.clientX - dragRef.current.startX;
+    const dy = e.clientY - dragRef.current.startY;
+
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+      hasMovedRef.current = true;
+    }
+
+    dragRef.current.currentDx = dx;
+    dragRef.current.currentDy = dy;
+
+    if (!dragRef.current.rafId) {
+      dragRef.current.rafId = requestAnimationFrame(() => {
+        if (cardRef.current && isDraggingRef.current) {
+          cardRef.current.style.transform = `translate3d(${dragRef.current.currentDx}px, ${dragRef.current.currentDy}px, 0)`;
+        }
+        dragRef.current.rafId = null;
+      });
+    }
+  };
+
+  const handlePointerUp = (e) => {
+    if (!isDraggingRef.current) return;
+    isDraggingRef.current = false;
+
+    if (dragRef.current.rafId) {
+      cancelAnimationFrame(dragRef.current.rafId);
+      dragRef.current.rafId = null;
+    }
+
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch (err) {}
+
+    if (cardRef.current) {
+      cardRef.current.style.transform = '';
+      if (hasMovedRef.current) {
+        const card = cardRef.current;
+        const width = card.offsetWidth;
+        const height = card.offsetHeight;
+
+        const rawX = dragRef.current.initialLeft + dragRef.current.currentDx;
+        const rawY = dragRef.current.initialTop + dragRef.current.currentDy;
+
+        const maxX = Math.max(8, window.innerWidth - width - 8);
+        const maxY = Math.max(8, window.innerHeight - height - 8);
+
+        const finalX = Math.min(maxX, Math.max(8, rawX));
+        const finalY = Math.min(maxY, Math.max(8, rawY));
+
+        setPosition({ x: finalX, y: finalY });
+      }
+    }
+  };
+
   useEffect(() => {
-    // If immediate mode, no countdown needed
     if (lockMode === 'immediate') {
       setTimeLeft(null);
       return;
@@ -38,12 +140,10 @@ export default function ChristmasCountdownCard({
         let xYear = year;
         const xDate = new Date(`${xYear}-12-25T00:00:00+07:00`);
         if (nowBkk.getTime() >= xDate.getTime()) {
-          // If past Christmas this year, target next Christmas
           xDate.setFullYear(year + 1);
         }
         targetTime = xDate.getTime();
       } else if (unlockDate) {
-        // Custom unlock date
         const cleanIso = unlockDate.length === 16 ? `${unlockDate}:00+07:00` : unlockDate;
         const parsed = new Date(cleanIso);
         targetTime = isNaN(parsed.getTime()) ? (nowBkk.getTime() + 86400000) : parsed.getTime();
@@ -71,47 +171,102 @@ export default function ChristmasCountdownCard({
     return () => clearInterval(interval);
   }, [unlockDate, lockMode]);
 
-  // Don't render if immediate or no time info
+  // Don't render if immediate mode or no time
   if (!timeLeft || lockMode === 'immediate') return null;
 
-  // If unlocked, show sleek celebratory banner that doesn't block the gift boxes
-  if (timeLeft.isUnlocked) {
+  // If unlocked, don't show any bulky countdown card
+  if (timeLeft.isUnlocked) return null;
+
+  const { days, hours, minutes, seconds } = timeLeft;
+  const pad2 = (n) => String(n).padStart(2, '0');
+  const title = countdownTitle || (lockMode === 'christmas' ? '🎄 นับถอยหลังสู่คืนคริสต์มาส' : '⏳ นับถอยหลังเปิดกล่องของขวัญ');
+
+  // Option 1: Sleek Mini Pill (Default - completely non-intrusive)
+  if (!isExpanded) {
     return (
-      <div className="fixed top-16 sm:top-6 left-1/2 -translate-x-1/2 z-20 pointer-events-none animate-in fade-in duration-500">
-        <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-amber-300/40 text-amber-200 shadow-xl text-xs sm:text-sm font-medium">
-          <Sparkles className="w-4 h-4 text-amber-400 animate-spin" style={{ animationDuration: '3s' }} />
-          <span>ปลดล็อกของขวัญแล้ว! Merry Christmas! 🎁</span>
+      <div
+        ref={cardRef}
+        style={position ? { left: `${position.x}px`, top: `${position.y}px` } : undefined}
+        className={`fixed z-30 select-none touch-none ${
+          !position ? 'top-16 sm:top-20 left-3 sm:left-6' : ''
+        } animate-in fade-in zoom-in-95 duration-300 will-change-transform`}
+      >
+        <div
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onClick={() => {
+            if (!hasMovedRef.current) {
+              setIsExpanded(true);
+            }
+          }}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#121624d9] hover:bg-[#121624fa] backdrop-blur-xl border border-amber-300/30 text-white shadow-xl cursor-grab active:cursor-grabbing transition-all hover:scale-105 active:scale-95 group"
+          title="คลิกเพื่อขยายดูตัวเลขนับถอยหลัง หรือลากเพื่อเปลี่ยนตำแหน่ง"
+        >
+          <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0 animate-pulse pointer-events-none" />
+          <div className="flex items-center gap-1 text-xs font-bold text-amber-100 pointer-events-none font-mono">
+            {days > 0 && <span>{days}ว </span>}
+            <span>{pad2(hours)}:{pad2(minutes)}:{pad2(seconds)}</span>
+          </div>
+          <button
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsExpanded(true);
+            }}
+            className="p-0.5 rounded-full hover:bg-white/10 text-amber-300/80 hover:text-amber-200 transition"
+            title="ขยายดูรายละเอียด"
+          >
+            <ChevronDown className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
     );
   }
 
-  const { days, hours, minutes, seconds } = timeLeft;
-  const title = countdownTitle || (lockMode === 'christmas' ? '🎄 นับถอยหลังสู่คืนคริสต์มาส' : '⏳ นับถอยหลังถึงเวลาเปิดกล่องของขวัญ');
-
+  // Option 2: Full Odometer Counter Card (when user clicks to expand, also fully draggable)
   return (
     <div
-      className={`fixed z-20 pointer-events-none animate-in fade-in zoom-in-95 duration-500 ${
-        isMobile
-          ? 'top-16 left-1/2 -translate-x-1/2 max-w-[calc(100vw-28px)]'
-          : 'top-6 left-6 max-w-sm'
-      }`}
+      ref={cardRef}
+      style={position ? { left: `${position.x}px`, top: `${position.y}px` } : undefined}
+      className={`fixed z-30 select-none ${
+        !position ? 'top-16 sm:top-20 left-3 sm:left-6' : ''
+      } animate-in fade-in zoom-in-95 duration-300 will-change-transform`}
     >
-      <div className="bg-[#121624c9] hover:bg-[#121624f0] backdrop-blur-xl border border-amber-200/25 rounded-2xl sm:rounded-3xl p-2.5 sm:p-4 shadow-2xl shadow-black/50 text-white pointer-events-auto transition-all">
-        {/* Title */}
-        <div className="flex items-center justify-center gap-1.5 text-[11px] sm:text-xs font-semibold text-amber-200/90 mb-2 truncate">
-          <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0 animate-pulse" />
-          <span className="truncate">{title}</span>
+      <div className="w-[min(310px,calc(100vw-24px))] bg-[#121624f2] backdrop-blur-xl border border-amber-200/30 rounded-2xl sm:rounded-3xl p-3 sm:p-4 shadow-2xl shadow-black/60 text-white relative">
+        {/* Top Handle / Header */}
+        <div
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          className="w-full flex items-center justify-between pb-2 cursor-grab active:cursor-grabbing touch-none select-none border-b border-white/10 mb-2.5"
+          title="คลิกค้างแล้วลากเพื่อย้ายตำแหน่ง"
+        >
+          <div className="flex items-center gap-1.5 text-[11px] font-semibold text-amber-200/90 truncate pointer-events-none">
+            <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0 animate-pulse" />
+            <span className="truncate">{title}</span>
+          </div>
+          <button
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsExpanded(false);
+            }}
+            className="p-1 rounded-full text-white/50 hover:text-white hover:bg-white/10 transition shrink-0 ml-1"
+            title="ย่อกลับเป็นปุ่มเล็ก"
+          >
+            <ChevronUp className="w-4 h-4" />
+          </button>
         </div>
 
         {/* Counter Flip Display Tiles */}
-        <div className="flex items-center justify-center gap-1 sm:gap-2">
+        <div className="flex items-center justify-center gap-1 sm:gap-1.5">
           {/* Days */}
           <div className="flex flex-col items-center">
-            <div className="min-w-[42px] sm:min-w-[56px] h-9 sm:h-12 bg-white/10 border border-white/15 rounded-xl flex items-center justify-center px-1.5 shadow-inner">
+            <div className="min-w-[42px] sm:min-w-[50px] h-8 sm:h-10 bg-white/10 border border-white/15 rounded-xl flex items-center justify-center px-1 shadow-inner">
               <Counter
                 value={days}
-                fontSize={isMobile ? 18 : 26}
+                fontSize={18}
                 fontWeight={700}
                 textColor="#fff8e7"
                 minDigits={2}
@@ -121,17 +276,17 @@ export default function ChristmasCountdownCard({
                 tabular
               />
             </div>
-            <span className="text-[9px] sm:text-[10px] text-white/50 mt-1 uppercase tracking-wider">วัน</span>
+            <span className="text-[9px] text-white/50 mt-1 uppercase tracking-wider">วัน</span>
           </div>
 
-          <span className="text-amber-300 font-bold text-sm sm:text-base -mt-4">:</span>
+          <span className="text-amber-300 font-bold text-xs sm:text-sm -mt-3.5">:</span>
 
           {/* Hours */}
           <div className="flex flex-col items-center">
-            <div className="min-w-[42px] sm:min-w-[56px] h-9 sm:h-12 bg-white/10 border border-white/15 rounded-xl flex items-center justify-center px-1.5 shadow-inner">
+            <div className="min-w-[42px] sm:min-w-[50px] h-8 sm:h-10 bg-white/10 border border-white/15 rounded-xl flex items-center justify-center px-1 shadow-inner">
               <Counter
                 value={hours}
-                fontSize={isMobile ? 18 : 26}
+                fontSize={18}
                 fontWeight={700}
                 textColor="#fff8e7"
                 minDigits={2}
@@ -141,17 +296,17 @@ export default function ChristmasCountdownCard({
                 tabular
               />
             </div>
-            <span className="text-[9px] sm:text-[10px] text-white/50 mt-1 uppercase tracking-wider">ชม.</span>
+            <span className="text-[9px] text-white/50 mt-1 uppercase tracking-wider">ชม.</span>
           </div>
 
-          <span className="text-amber-300 font-bold text-sm sm:text-base -mt-4">:</span>
+          <span className="text-amber-300 font-bold text-xs sm:text-sm -mt-3.5">:</span>
 
           {/* Minutes */}
           <div className="flex flex-col items-center">
-            <div className="min-w-[42px] sm:min-w-[56px] h-9 sm:h-12 bg-white/10 border border-white/15 rounded-xl flex items-center justify-center px-1.5 shadow-inner">
+            <div className="min-w-[42px] sm:min-w-[50px] h-8 sm:h-10 bg-white/10 border border-white/15 rounded-xl flex items-center justify-center px-1 shadow-inner">
               <Counter
                 value={minutes}
-                fontSize={isMobile ? 18 : 26}
+                fontSize={18}
                 fontWeight={700}
                 textColor="#fff8e7"
                 minDigits={2}
@@ -161,17 +316,17 @@ export default function ChristmasCountdownCard({
                 tabular
               />
             </div>
-            <span className="text-[9px] sm:text-[10px] text-white/50 mt-1 uppercase tracking-wider">นาที</span>
+            <span className="text-[9px] text-white/50 mt-1 uppercase tracking-wider">นาที</span>
           </div>
 
-          <span className="text-amber-300 font-bold text-sm sm:text-base -mt-4">:</span>
+          <span className="text-amber-300 font-bold text-xs sm:text-sm -mt-3.5">:</span>
 
           {/* Seconds */}
           <div className="flex flex-col items-center">
-            <div className="min-w-[42px] sm:min-w-[56px] h-9 sm:h-12 bg-white/10 border border-white/15 rounded-xl flex items-center justify-center px-1.5 shadow-inner">
+            <div className="min-w-[42px] sm:min-w-[50px] h-8 sm:h-10 bg-white/10 border border-white/15 rounded-xl flex items-center justify-center px-1 shadow-inner">
               <Counter
                 value={seconds}
-                fontSize={isMobile ? 18 : 26}
+                fontSize={18}
                 fontWeight={700}
                 textColor="#fff8e7"
                 minDigits={2}
@@ -181,7 +336,7 @@ export default function ChristmasCountdownCard({
                 tabular
               />
             </div>
-            <span className="text-[9px] sm:text-[10px] text-white/50 mt-1 uppercase tracking-wider">วินาที</span>
+            <span className="text-[9px] text-white/50 mt-1 uppercase tracking-wider">วินาที</span>
           </div>
         </div>
       </div>
