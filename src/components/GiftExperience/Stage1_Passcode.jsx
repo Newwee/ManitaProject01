@@ -16,39 +16,62 @@ export default function Stage1_Passcode({
   const [isSuccess, setIsSuccess] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState('');
   const containerRef = useRef(null);
+  const notesRef = useRef(postItNotes);
+  useEffect(() => {
+    notesRef.current = postItNotes;
+  }, [postItNotes]);
 
-  // Dragging handler for Post-it notes
+  // Dragging handler for Post-it notes (Saved & Remembered)
   const handleNotePointerDown = (e, noteId) => {
     e.stopPropagation();
+    e.preventDefault();
     if (!onUpdatePostItNotes || !containerRef.current) return;
 
     const startX = e.clientX;
     const startY = e.clientY;
-    const targetNote = postItNotes.find(n => n.id === noteId);
+    const currentNotes = [...(notesRef.current || [])];
+    const targetNote = currentNotes.find((n) => n.id === noteId);
     if (!targetNote) return;
 
-    const initX = targetNote.x || 50;
-    const initY = targetNote.y || 20;
+    const initX = targetNote.x !== undefined ? targetNote.x : 50;
+    const initY = targetNote.y !== undefined ? targetNote.y : 20;
     const rect = containerRef.current.getBoundingClientRect();
 
+    let lastX = initX;
+    let lastY = initY;
+
     const handlePointerMove = (me) => {
+      me.preventDefault();
       const dx = ((me.clientX - startX) / rect.width) * 100;
       const dy = ((me.clientY - startY) / rect.height) * 100;
-      const newX = Math.max(5, Math.min(95, initX + dx));
-      const newY = Math.max(5, Math.min(95, initY + dy));
+      const newX = Math.round(Math.max(5, Math.min(95, initX + dx)));
+      const newY = Math.round(Math.max(5, Math.min(95, initY + dy)));
 
-      onUpdatePostItNotes(postItNotes.map(n => 
-        n.id === noteId ? { ...n, x: Math.round(newX), y: Math.round(newY) } : n
-      ));
+      lastX = newX;
+      lastY = newY;
+
+      const nextNotes = (notesRef.current || []).map((n) =>
+        n.id === noteId ? { ...n, x: newX, y: newY } : n
+      );
+      notesRef.current = nextNotes;
+      onUpdatePostItNotes(nextNotes);
     };
 
     const handlePointerUp = () => {
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerUp);
+
+      const finalNotes = (notesRef.current || []).map((n) =>
+        n.id === noteId ? { ...n, x: lastX, y: lastY } : n
+      );
+      notesRef.current = finalNotes;
+      onUpdatePostItNotes(finalNotes);
     };
 
-    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointermove', handlePointerMove, { passive: false });
     window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('pointercancel', handlePointerUp);
   };
 
   const handleRemoveNote = (e, noteId) => {

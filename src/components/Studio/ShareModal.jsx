@@ -16,7 +16,9 @@ import {
   Heart,
   Gift,
   Image as ImageIcon,
-  LayoutTemplate
+  LayoutTemplate,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { createShareableGift } from '../../lib/giftStorage';
 import { QR_FRAME_ASSETS } from '../../types/assetManifests';
@@ -54,6 +56,7 @@ export default function ShareModal({
   const [qrCenterBadge, setQrCenterBadge] = useState('none'); // Default to 'none' (no logo) as requested
   const [qrFrameId, setQrFrameId] = useState('none');
   const canvasRef = useRef(null);
+  const qrFrameScrollRef = useRef(null);
 
   const generateLinkAndQR = async (chosenUrl) => {
     setIsGenerating(true);
@@ -432,9 +435,39 @@ export default function ShareModal({
                 <LayoutTemplate className="w-3 h-3 text-rose-500" />
                 <span>กรอบการ์ด QR Code (สแกนติดง่าย 100%):</span>
               </span>
-              <span className="text-[9px] text-stone-400">{QR_FRAME_ASSETS.length} ลาย</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[9px] text-stone-400">{QR_FRAME_ASSETS.length} ลาย</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (qrFrameScrollRef.current) qrFrameScrollRef.current.scrollBy({ left: -200, behavior: 'smooth' });
+                  }}
+                  className="w-5 h-5 rounded-md bg-stone-200 dark:bg-stone-700 flex items-center justify-center text-stone-700 dark:text-stone-300 hover:bg-stone-300"
+                  title="เลื่อนซ้าย"
+                >
+                  <ChevronLeft className="w-3 h-3" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (qrFrameScrollRef.current) qrFrameScrollRef.current.scrollBy({ left: 200, behavior: 'smooth' });
+                  }}
+                  className="w-5 h-5 rounded-md bg-stone-200 dark:bg-stone-700 flex items-center justify-center text-stone-700 dark:text-stone-300 hover:bg-stone-300"
+                  title="เลื่อนขวา"
+                >
+                  <ChevronRight className="w-3 h-3" />
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar max-w-full">
+            <div
+              ref={qrFrameScrollRef}
+              onWheel={(e) => {
+                if (e.deltaY !== 0) {
+                  e.currentTarget.scrollLeft += e.deltaY;
+                }
+              }}
+              className="flex items-center gap-1.5 overflow-x-auto pb-1.5 scrollbar-thin scrollbar-thumb-stone-300 dark:scrollbar-thumb-stone-600 max-w-full"
+            >
               <button
                 type="button"
                 onClick={() => setQrFrameId('none')}
@@ -446,7 +479,7 @@ export default function ShareModal({
               >
                 <span>ไม่มีกรอบ</span>
               </button>
-              {QR_FRAME_ASSETS.slice(0, 40).map((frame, idx) => (
+              {QR_FRAME_ASSETS.map((frame, idx) => (
                 <button
                   key={frame.id}
                   type="button"

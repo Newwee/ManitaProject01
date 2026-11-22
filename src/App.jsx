@@ -48,6 +48,16 @@ export default function App() {
     quizzes: [...DEFAULT_QUIZZES],
     photos: [], // Empty initially so placeholder shows instead of background textures!
     selectedSticker: '💖',
+    decorations: [],
+    envelopeStyle: '',
+    passcodeBackground: '',
+    passcodeNotes: [],
+    badgeText: 'วันครบรอบ ♡',
+    promptText: 'แตะที่ของขวัญเพื่อเปิดดูด่านต่อไป',
+    introTitlePos: { x: 0, y: 0 },
+    introSubPos: { x: 0, y: 0 },
+    badgePos: { x: 0, y: 0 },
+    promptPos: { x: 0, y: 0 },
     // 3D Christmas Tree settings
     treeTheme: 'classic', // 'classic' | 'gold' | 'pink' | 'blue'
     treeTitle: 'Merry Christmas',
@@ -394,7 +404,30 @@ export default function App() {
               onPrevStage={handlePrevStage}
               onSelectStage={(idx) => setCurrentStage(idx)}
               decorations={config.decorations || []}
-              onUpdateDecorations={(decs) => setConfig({ ...config, decorations: decs })}
+              onUpdateDecorations={(decs) => {
+                setConfig((prev) => {
+                  const updated = { ...prev, decorations: decs };
+                  if (!isRecipientOnly) saveLocalDraft(updated);
+                  return updated;
+                });
+              }}
+              onAddDecoration={(dec) => {
+                setConfig((prev) => {
+                  const currentDecs = prev.decorations || [];
+                  const newDec = {
+                    id: 'dec_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+                    src: dec.src,
+                    x: 50,
+                    y: 50,
+                    scale: 1,
+                    rotation: 0
+                  };
+                  const updated = { ...prev, decorations: [...currentDecs, newDec] };
+                  if (!isRecipientOnly) saveLocalDraft(updated);
+                  return updated;
+                });
+              }}
+              isEditable={!isRecipientOnly}
             >
               {/* Stage 0: 3D Envelope & Wax Seal / Gift Entry / Time Capsule */}
               {currentStage === 0 && (
@@ -410,8 +443,14 @@ export default function App() {
                   promptPos={config.promptPos}
                   badgeText={config.badgeText || 'วันครบรอบ ♡'}
                   promptText={config.promptText || 'แตะที่ของขวัญเพื่อเปิดดูด่านต่อไป'}
-                  onChangeConfig={(updates) => setConfig({ ...config, ...updates })}
-                  isEditable={appMode === 'builder'}
+                  onChangeConfig={(updates) => {
+                    setConfig((prev) => {
+                      const updated = { ...prev, ...updates };
+                      if (!isRecipientOnly) saveLocalDraft(updated);
+                      return updated;
+                    });
+                  }}
+                  isEditable={!isRecipientOnly}
                   timeLockEnabled={config.timeLockEnabled}
                   timeLockDate={config.timeLockDate}
                   onNextStage={handleNextStage}
@@ -424,7 +463,13 @@ export default function App() {
                   expectedPasscode={config.passcode || '231069'}
                   passcodeHint={config.passcodeHint}
                   postItNotes={config.passcodeNotes || []}
-                  onUpdatePostItNotes={(notes) => setConfig({ ...config, passcodeNotes: notes })}
+                  onUpdatePostItNotes={(notes) => {
+                    setConfig((prev) => {
+                      const updated = { ...prev, passcodeNotes: notes };
+                      if (!isRecipientOnly) saveLocalDraft(updated);
+                      return updated;
+                    });
+                  }}
                   onNextStage={handleNextStage}
                 />
               )}

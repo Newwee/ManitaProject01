@@ -28,28 +28,38 @@ export default function Stage0_Entry({
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, mins: 0, secs: 0 });
   const [isBypassed, setIsBypassed] = useState(false);
 
-  // Helper to drag text elements interactively (Requirement 8)
+  // Helper to drag text elements interactively (Requirement 8 - Position Saved & Remembered)
   const handleDragText = (e, key, currentPos) => {
-    if (!onChangeConfig) return;
+    if (!onChangeConfig || !isEditable) return;
     e.stopPropagation();
+    e.preventDefault();
     const startX = e.clientX;
     const startY = e.clientY;
     const initX = currentPos?.x || 0;
     const initY = currentPos?.y || 0;
 
+    let lastX = initX;
+    let lastY = initY;
+
     const handleMove = (me) => {
+      me.preventDefault();
       const dx = me.clientX - startX;
       const dy = me.clientY - startY;
-      onChangeConfig({ [key]: { x: Math.round(initX + dx), y: Math.round(initY + dy) } });
+      lastX = Math.round(initX + dx);
+      lastY = Math.round(initY + dy);
+      onChangeConfig({ [key]: { x: lastX, y: lastY } });
     };
 
     const handleUp = () => {
       window.removeEventListener('pointermove', handleMove);
       window.removeEventListener('pointerup', handleUp);
+      window.removeEventListener('pointercancel', handleUp);
+      onChangeConfig({ [key]: { x: lastX, y: lastY } });
     };
 
-    window.addEventListener('pointermove', handleMove);
+    window.addEventListener('pointermove', handleMove, { passive: false });
     window.addEventListener('pointerup', handleUp);
+    window.addEventListener('pointercancel', handleUp);
   };
 
   // Time capsule calculation
