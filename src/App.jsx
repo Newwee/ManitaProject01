@@ -222,6 +222,10 @@ export default function App() {
     setCurrentStage((s) => Math.min(s + 1, 5));
   };
 
+  const handlePrevStage = () => {
+    setCurrentStage((s) => Math.max(s - 1, 0));
+  };
+
   const handleResetExperience = () => {
     setCurrentStage(0);
   };
@@ -383,9 +387,14 @@ export default function App() {
             <PhoneFrame
               theme={config.theme}
               phoneBackground={config.phoneBackground}
+              passcodeBackground={config.passcodeBackground}
               currentStage={currentStage}
               totalStages={6}
               onResetExperience={handleResetExperience}
+              onPrevStage={handlePrevStage}
+              onSelectStage={(idx) => setCurrentStage(idx)}
+              decorations={config.decorations || []}
+              onUpdateDecorations={(decs) => setConfig({ ...config, decorations: decs })}
             >
               {/* Stage 0: 3D Envelope & Wax Seal / Gift Entry / Time Capsule */}
               {currentStage === 0 && (
@@ -394,6 +403,15 @@ export default function App() {
                   introTitle={config.introTitle}
                   introSub={config.introSub}
                   letterText={config.letterText}
+                  envelopeStyle={config.envelopeStyle}
+                  introTitlePos={config.introTitlePos}
+                  introSubPos={config.introSubPos}
+                  badgePos={config.badgePos}
+                  promptPos={config.promptPos}
+                  badgeText={config.badgeText || 'วันครบรอบ ♡'}
+                  promptText={config.promptText || 'แตะที่ของขวัญเพื่อเปิดดูด่านต่อไป'}
+                  onChangeConfig={(updates) => setConfig({ ...config, ...updates })}
+                  isEditable={appMode === 'builder'}
                   timeLockEnabled={config.timeLockEnabled}
                   timeLockDate={config.timeLockDate}
                   onNextStage={handleNextStage}
@@ -405,6 +423,8 @@ export default function App() {
                 <Stage1_Passcode
                   expectedPasscode={config.passcode || '231069'}
                   passcodeHint={config.passcodeHint}
+                  postItNotes={config.passcodeNotes || []}
+                  onUpdatePostItNotes={(notes) => setConfig({ ...config, passcodeNotes: notes })}
                   onNextStage={handleNextStage}
                 />
               )}

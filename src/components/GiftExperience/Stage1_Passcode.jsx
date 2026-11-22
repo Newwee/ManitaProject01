@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Delete, KeyRound } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Delete, KeyRound, X } from 'lucide-react';
 import { playKeyClick, playUnlockSuccess, playErrorBeep } from '../../lib/soundEngine';
 import confetti from 'canvas-confetti';
 import BlurText from '../UI/BlurText';
@@ -7,12 +7,56 @@ import BlurText from '../UI/BlurText';
 export default function Stage1_Passcode({
   expectedPasscode = '231069',
   passcodeHint = 'วันครบรอบของเรา (ลองกด 231069)',
+  postItNotes = [],
+  onUpdatePostItNotes,
   onNextStage
 }) {
   const [digits, setDigits] = useState([]);
   const [isError, setIsError] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState('');
+  const containerRef = useRef(null);
+
+  // Dragging handler for Post-it notes
+  const handleNotePointerDown = (e, noteId) => {
+    e.stopPropagation();
+    if (!onUpdatePostItNotes || !containerRef.current) return;
+
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const targetNote = postItNotes.find(n => n.id === noteId);
+    if (!targetNote) return;
+
+    const initX = targetNote.x || 50;
+    const initY = targetNote.y || 20;
+    const rect = containerRef.current.getBoundingClientRect();
+
+    const handlePointerMove = (me) => {
+      const dx = ((me.clientX - startX) / rect.width) * 100;
+      const dy = ((me.clientY - startY) / rect.height) * 100;
+      const newX = Math.max(5, Math.min(95, initX + dx));
+      const newY = Math.max(5, Math.min(95, initY + dy));
+
+      onUpdatePostItNotes(postItNotes.map(n => 
+        n.id === noteId ? { ...n, x: Math.round(newX), y: Math.round(newY) } : n
+      ));
+    };
+
+    const handlePointerUp = () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+  };
+
+  const handleRemoveNote = (e, noteId) => {
+    e.stopPropagation();
+    if (onUpdatePostItNotes) {
+      onUpdatePostItNotes(postItNotes.filter(n => n.id !== noteId));
+    }
+  };
 
   const handleDigit = (d) => {
     if (digits.length >= 6 || isSuccess) return;
@@ -92,7 +136,39 @@ export default function Stage1_Passcode({
   }, [digits, isSuccess, isError, expectedPasscode]);
 
   return (
-    <div className="flex-1 flex flex-col justify-between px-3 py-3 select-none">
+    <div ref={containerRef} className="flex-1 flex flex-col justify-between px-3 py-3 select-none relative">
+      {/* Draggable Post-it Notes on Passcode Screen (Requirement 9) */}
+      {postItNotes && postItNotes.map((note) => (
+        <div
+          key={note.id}
+          onPointerDown={(e) => handleNotePointerDown(e, note.id)}
+          style={{
+            left: `${note.x || 50}%`,
+            top: `${note.y || 25}%`,
+            transform: `translate(-50%, -50%) rotate(${note.rotation || -2}deg)`,
+            backgroundColor: note.color || '#FEF08A',
+            touchAction: 'none'
+          }}
+          className="absolute z-20 cursor-grab active:cursor-grabbing p-3 rounded-xl shadow-lg border border-black/10 max-w-[170px] select-none group transition-transform hover:scale-105"
+          title="คลิกค้างแล้วลากเพื่อย้าย Post-it โน้ต"
+        >
+          {/* Tape clip on top of note */}
+          <div className="w-8 h-2.5 bg-white/60 backdrop-blur-xs rounded-xs mx-auto -mt-4 mb-1 border border-white/40 shadow-xs" />
+          <p className="font-theme-display text-xs font-bold text-stone-800 leading-snug whitespace-pre-wrap pointer-events-none">
+            {note.text}
+          </p>
+          {onUpdatePostItNotes && (
+            <button
+              onClick={(e) => handleRemoveNote(e, note.id)}
+              className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-stone-800 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition shadow"
+              title="ลบโน้ตนี้"
+            >
+              <X className="w-2.5 h-2.5" />
+            </button>
+          )}
+        </div>
+      ))}
+
       {/* Top Header & Hint Card */}
       <div className="text-center pt-2 bg-white/70 backdrop-blur-md rounded-3xl p-4 border border-white/60 shadow-md">
         <div className="w-12 h-12 mx-auto rounded-2xl bg-rose-100/90 text-rose-600 flex items-center justify-center mb-1.5 shadow-xs">

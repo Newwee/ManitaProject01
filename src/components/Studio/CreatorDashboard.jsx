@@ -29,6 +29,7 @@ import {
 import { PRESET_CATEGORIES, THEME_PRESETS, AVAILABLE_STICKERS } from '../../types/themePresets';
 import { FRAME_STYLES } from '../GiftExperience/Stage_Camera';
 import { compressImageFile } from '../../lib/imageCompressor';
+import { ENVELOPE_ASSETS, DECORATION_ASSETS } from '../../types/assetManifests';
 
 export default function CreatorDashboard({
   config,
@@ -135,6 +136,86 @@ export default function CreatorDashboard({
       updated[idx].caption = caption;
       onChangeConfig({ ...config, photos: updated });
     }
+  };
+
+  // Custom Background Uploader
+  const handleCustomBgUpload = async (e, field = 'phoneBackground') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setCompressing(true);
+    setCompressMsg('กำลังประมวลผลรูปภาพพื้นหลัง...');
+
+    try {
+      const res = await compressImageFile(file);
+      onChangeConfig({ ...config, [field]: res.dataUrl });
+      setCompressMsg('✅ อัปโหลดภาพพื้นหลังสำเร็จ');
+      setTimeout(() => setCompressMsg(''), 3000);
+    } catch (err) {
+      console.error(err);
+      setCompressMsg('❌ เกิดข้อผิดพลาดในการโหลดรูปภาพ');
+    } finally {
+      setCompressing(false);
+      if (e.target) e.target.value = '';
+    }
+  };
+
+  // Stickers & Decorations Handlers (Draggable across phone)
+  const handleAddDecoration = (item) => {
+    const currentDecs = config.decorations || [];
+    const newDec = {
+      id: 'dec_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      src: item.src,
+      x: 45 + Math.floor(Math.random() * 10),
+      y: 45 + Math.floor(Math.random() * 10),
+      scale: 1
+    };
+    onChangeConfig({
+      ...config,
+      decorations: [...currentDecs, newDec]
+    });
+  };
+
+  const handleRemoveDecoration = (id) => {
+    const currentDecs = config.decorations || [];
+    onChangeConfig({
+      ...config,
+      decorations: currentDecs.filter(d => d.id !== id)
+    });
+  };
+
+  // Post-it Sticky Notes Handlers for Passcode Screen
+  const handleAddPostItNote = () => {
+    const currentNotes = config.passcodeNotes || [];
+    const colors = ['#FEF08A', '#FBCFE8', '#BAE6FD', '#BBF7D0'];
+    const newNote = {
+      id: 'note_' + Date.now() + '_' + Math.random().toString(36).substring(2, 5),
+      text: 'ข้อความใบ้ 💡',
+      color: colors[currentNotes.length % colors.length],
+      x: 20 + (currentNotes.length * 15) % 55,
+      y: 20 + (currentNotes.length * 8) % 30,
+      rotation: ((currentNotes.length % 2 === 0 ? 1 : -1) * (2 + (currentNotes.length * 1.5) % 5)).toFixed(1)
+    };
+    onChangeConfig({
+      ...config,
+      passcodeNotes: [...currentNotes, newNote]
+    });
+  };
+
+  const handleUpdatePostItNote = (id, updates) => {
+    const currentNotes = config.passcodeNotes || [];
+    onChangeConfig({
+      ...config,
+      passcodeNotes: currentNotes.map(n => (n.id === id ? { ...n, ...updates } : n))
+    });
+  };
+
+  const handleRemovePostItNote = (id) => {
+    const currentNotes = config.passcodeNotes || [];
+    onChangeConfig({
+      ...config,
+      passcodeNotes: currentNotes.filter(n => n.id !== id)
+    });
   };
 
   // Coupons Customization Handlers (Image 2)
@@ -613,6 +694,115 @@ export default function CreatorDashboard({
                       );
                     })}
                   </div>
+
+                  {/* Custom Background Upload */}
+                  <div className="mt-3 p-3 rounded-2xl border border-dashed border-stone-300 dark:border-stone-700 bg-stone-50/70 dark:bg-stone-850 flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-xl bg-rose-100 dark:bg-rose-950/50 text-rose-500 flex items-center justify-center shrink-0">
+                        <Upload className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-stone-800 dark:text-stone-200">
+                          อัปโหลดภาพพื้นหลังของคุณเอง
+                        </div>
+                        <div className="text-[10px] text-stone-500 dark:text-stone-400">
+                          รองรับไฟล์ JPG, PNG, GIF (ปรับสเกลพอดีหน้าจอโทรศัพท์อัตโนมัติ)
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {config.phoneBackground && config.phoneBackground.startsWith('data:') && (
+                        <button
+                          type="button"
+                          onClick={() => onChangeConfig({ ...config, phoneBackground: '/assets/Background.jpg' })}
+                          className="px-2.5 py-1.5 rounded-xl text-[11px] font-bold text-stone-600 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-700 transition"
+                        >
+                          คืนค่าเริ่มต้น
+                        </button>
+                      )}
+                      <label className="cursor-pointer px-3 py-1.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs">
+                        <span>เลือกไฟล์รูปภาพ</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => handleCustomBgUpload(e, 'phoneBackground')}
+                        />
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Stickers & Screen Decorations (Draggable) */}
+                <div className="pt-4 border-t border-stone-200 dark:border-stone-700 mt-4">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <h4 className="text-xs font-bold text-stone-800 dark:text-stone-200 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                      <span>คลังของตกแต่ง (Stickers & Decorations จาก Assets)</span>
+                    </h4>
+                    <span className="text-[10px] text-stone-400">
+                      {DECORATION_ASSETS.length} ลายให้เลือก
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-stone-500 dark:text-stone-400 mb-3">
+                    แตะที่สติกเกอร์เพื่อเพิ่มลงบนหน้าจอโทรศัพท์ — สามารถใช้นิ้วหรือเมาส์ลากย้ายตำแหน่งได้อิสระทุกจุด!
+                  </p>
+
+                  {/* Sliced Decoration Gallery Picker */}
+                  <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar border border-stone-200 dark:border-stone-700/60 p-2.5 rounded-2xl bg-stone-50/50 dark:bg-stone-850">
+                    {DECORATION_ASSETS.slice(0, 48).map((dec, idx) => (
+                      <button
+                        key={dec.id}
+                        type="button"
+                        onClick={() => handleAddDecoration(dec)}
+                        title={`สติกเกอร์ชิ้นที่ ${idx + 1}`}
+                        className="w-11 h-11 rounded-xl border border-stone-200 dark:border-stone-700 bg-white hover:border-rose-400 hover:scale-105 active:scale-95 transition shrink-0 p-1 flex items-center justify-center relative group shadow-2xs"
+                      >
+                        <img
+                          src={dec.src}
+                          alt={`Dec ${idx + 1}`}
+                          className="w-full h-full object-contain pointer-events-none"
+                          loading="lazy"
+                        />
+                        <span className="absolute inset-0 bg-rose-500/10 opacity-0 group-hover:opacity-100 rounded-xl transition flex items-center justify-center">
+                          <Plus className="w-3.5 h-3.5 text-rose-600" />
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Active Decorations Placed on Phone */}
+                  {(config.decorations && config.decorations.length > 0) && (
+                    <div className="mt-3 p-3 rounded-2xl bg-rose-50/40 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/40">
+                      <div className="flex items-center justify-between text-xs font-bold text-rose-800 dark:text-rose-300 mb-2">
+                        <span>ของตกแต่งบนหน้าจอ ({config.decorations.length} ชิ้น)</span>
+                        <button
+                          type="button"
+                          onClick={() => onChangeConfig({ ...config, decorations: [] })}
+                          className="text-[10px] text-rose-600 hover:underline font-semibold"
+                        >
+                          ล้างทั้งหมด
+                        </button>
+                      </div>
+                      <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+                        {config.decorations.map((d, i) => (
+                          <div
+                            key={d.id}
+                            className="relative w-10 h-10 rounded-xl bg-white dark:bg-stone-800 border border-rose-200 p-1 flex items-center justify-center shrink-0 group"
+                          >
+                            <img src={d.src} alt="Placed dec" className="w-full h-full object-contain" />
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveDecoration(d.id)}
+                              className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center text-[9px] shadow-xs"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -1307,17 +1497,98 @@ export default function CreatorDashboard({
               </div>
             )}
 
-            {/* TAB: ENTRY & PASSCODE */}
+            {/* TAB: ENTRY & ENVELOPE STYLES */}
             {activeTab === 'entry' && (
               <div className="space-y-4">
-                <h3 className="text-sm font-bold text-stone-800 dark:text-stone-100 flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-rose-500" />
-                  <span>หน้าแรก & ข้อความซองจดหมาย</span>
-                </h3>
-                <div className="space-y-3 pt-1">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-bold text-stone-800 dark:text-stone-100 flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-rose-500" />
+                    <span>หน้าแรก & ซองจดหมาย (Envelope & Entry)</span>
+                  </h3>
+                  <span className="text-[10px] text-stone-400">
+                    {ENVELOPE_ASSETS.length} ลายซอง
+                  </span>
+                </div>
+
+                {/* Sliced Envelope Style Picker */}
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1.5">
+                    เลือกลวดลายซองจดหมาย (Envelope Styles)
+                  </label>
+                  <p className="text-[11px] text-stone-500 dark:text-stone-400 mb-2.5">
+                    เลือกสไตล์ซองจดหมายที่ถูกใจ (กดตราประทับหัวใจเพื่อเปิดอ่านจดหมายด้านใน)
+                  </p>
+                  <div className="flex items-center gap-2.5 overflow-x-auto pb-2 no-scrollbar border border-stone-200 dark:border-stone-700 p-2.5 rounded-2xl bg-stone-50/50 dark:bg-stone-850">
+                    {/* Classic Paper Envelope */}
+                    <button
+                      type="button"
+                      onClick={() => onChangeConfig({ ...config, envelopeStyle: '' })}
+                      className={`h-20 w-28 rounded-xl border-2 p-2 shrink-0 transition flex flex-col items-center justify-center text-center ${
+                        !config.envelopeStyle
+                          ? 'border-rose-500 bg-rose-50/70 dark:bg-rose-950/40 text-rose-600 font-bold shadow-xs'
+                          : 'border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-600 dark:text-stone-300'
+                      }`}
+                    >
+                      <span className="text-xl mb-1">✉️</span>
+                      <span className="text-[11px] font-semibold">กระดาษคลาสสิก</span>
+                    </button>
+
+                    {/* Sliced Envelope Assets */}
+                    {ENVELOPE_ASSETS.slice(0, 36).map((env, idx) => (
+                      <button
+                        key={env.id}
+                        type="button"
+                        onClick={() => onChangeConfig({ ...config, envelopeStyle: env.src })}
+                        title={`ซองจดหมายแบบที่ ${idx + 1}`}
+                        className={`h-20 w-28 rounded-xl border-2 p-1.5 shrink-0 transition flex items-center justify-center relative bg-white dark:bg-stone-800 ${
+                          config.envelopeStyle === env.src
+                            ? 'border-rose-500 ring-2 ring-rose-500/30 shadow-xs'
+                            : 'border-stone-200 dark:border-stone-700 hover:border-rose-300'
+                        }`}
+                      >
+                        <img
+                          src={env.src}
+                          alt={`Envelope ${idx + 1}`}
+                          className="w-full h-full object-contain"
+                          loading="lazy"
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Text Customization Inputs */}
+                <div className="space-y-3 pt-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                        ข้อความป้ายหัวบน (Top Badge)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="วันครบรอบ ♡"
+                        value={config.badgeText || ''}
+                        onChange={(e) => onChangeConfig({ ...config, badgeText: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-stone-800 dark:text-stone-100 bg-white dark:bg-stone-800"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                        คำแนะนำด้านล่าง (Bottom Prompt)
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="แตะที่ของขวัญเพื่อเปิดดูด่านต่อไป"
+                        value={config.promptText || ''}
+                        onChange={(e) => onChangeConfig({ ...config, promptText: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-stone-800 dark:text-stone-100 bg-white dark:bg-stone-800"
+                      />
+                    </div>
+                  </div>
+
                   <div>
                     <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
-                      หัวข้อหน้าแรก
+                      หัวข้อหลักหน้าแรก (Main Title)
                     </label>
                     <input
                       type="text"
@@ -1326,9 +1597,10 @@ export default function CreatorDashboard({
                       className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-stone-800 dark:text-stone-100 bg-white dark:bg-stone-800"
                     />
                   </div>
+
                   <div>
                     <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
-                      ข้อความในซองจดหมาย
+                      ข้อความในซองจดหมาย (เมื่อเปิดออก)
                     </label>
                     <textarea
                       rows={3}
@@ -1338,16 +1610,84 @@ export default function CreatorDashboard({
                     />
                   </div>
                 </div>
+
+                {/* Draggable Note */}
+                <div className="p-3 rounded-2xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/80 dark:border-amber-800/40 text-xs text-amber-800 dark:text-amber-300 flex items-start gap-2">
+                  <span className="text-base shrink-0">💡</span>
+                  <div>
+                    <strong>ฟังก์ชันลากตำแหน่ง (Draggable Text):</strong> ป้ายหัวบน, หัวข้อหลัก และคำแนะนำด้านล่าง สามารถใช้นิ้วหรือเมาส์แตะลากย้ายตำแหน่งบนหน้าจอโทรศัพท์ได้โดยตรง
+                  </div>
+                </div>
               </div>
             )}
 
+            {/* TAB: PASSCODE & STICKY NOTES */}
             {activeTab === 'passcode' && (
               <div className="space-y-4">
                 <h3 className="text-sm font-bold text-stone-800 dark:text-stone-100 flex items-center gap-2">
                   <Lock className="w-4 h-4 text-rose-500" />
-                  <span>รหัสผ่าน 6 หลัก & คำใบ้</span>
+                  <span>หน้ารหัสผ่าน & โน้ตคำใบ้ Post-it</span>
                 </h3>
-                <div className="space-y-3 pt-1">
+
+                {/* Passcode Specific Background */}
+                <div className="pt-1">
+                  <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1.5">
+                    เลือกพื้นหลังเฉพาะสำหรับหน้ารหัสผ่าน (Passcode Background)
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
+                    {[
+                      { id: '', name: 'เหมือนพื้นหลังหลัก', desc: 'ตามหน้าจอโทรศัพท์' },
+                      { id: '/assets/ChatBG.jpg', name: 'ChatBG.jpg', desc: 'ลายลูกไม้เขียวพาสเทล' },
+                      { id: '/assets/Background.jpg', name: 'Background.jpg', desc: 'อบอุ่นลายสก๊อต' },
+                      { id: '/assets/PhotoBG.jpg', name: 'PhotoBG.jpg', desc: 'โพลารอยด์โบว์ฟ้า' }
+                    ].map((bg) => {
+                      const isSelected = (config.passcodeBackground || '') === bg.id;
+                      return (
+                        <div
+                          key={bg.id}
+                          onClick={() => onChangeConfig({ ...config, passcodeBackground: bg.id })}
+                          className={`p-2 rounded-xl border-2 cursor-pointer transition text-left ${
+                            isSelected
+                              ? 'border-rose-500 bg-rose-50/60 dark:bg-rose-950/30 ring-2 ring-rose-200'
+                              : 'border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/40'
+                          }`}
+                        >
+                          <div className="w-full h-12 rounded-lg overflow-hidden bg-stone-200 dark:bg-stone-700 mb-1 border border-stone-300 dark:border-stone-600">
+                            {bg.id ? (
+                              <img src={bg.id} alt={bg.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-[10px] text-stone-500">
+                                ค่าเริ่มต้น
+                              </div>
+                            )}
+                          </div>
+                          <span className="text-xs font-bold text-stone-800 dark:text-stone-200 block truncate">{bg.name}</span>
+                          <span className="text-[10px] text-stone-400 block truncate">{bg.desc}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Custom upload for passcode bg */}
+                  <div className="flex items-center justify-between p-2 rounded-xl border border-dashed border-stone-300 dark:border-stone-700 bg-stone-50/50 dark:bg-stone-850">
+                    <span className="text-[11px] text-stone-600 dark:text-stone-300">
+                      หรืออัปโหลดภาพพื้นหลังหน้ารหัสผ่านของคุณเอง:
+                    </span>
+                    <label className="cursor-pointer px-2.5 py-1 rounded-lg bg-stone-200 hover:bg-stone-300 dark:bg-stone-700 text-stone-800 dark:text-stone-200 text-xs font-bold transition flex items-center gap-1">
+                      <Upload className="w-3 h-3" />
+                      <span>อัปโหลดรูป</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleCustomBgUpload(e, 'passcodeBackground')}
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                {/* Passcode & Hint Form */}
+                <div className="space-y-3 pt-2 border-t border-stone-200 dark:border-stone-700">
                   <div>
                     <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
                       รหัสผ่าน (6 หลัก)
@@ -1365,7 +1705,7 @@ export default function CreatorDashboard({
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
-                      คำใบ้รหัสผ่าน
+                      คำใบ้รหัสผ่าน (จะแสดงใต้ช่องกรอก)
                     </label>
                     <input
                       type="text"
@@ -1374,6 +1714,77 @@ export default function CreatorDashboard({
                       className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-stone-800 dark:text-stone-100 bg-white dark:bg-stone-800"
                     />
                   </div>
+                </div>
+
+                {/* Draggable Post-it Sticky Notes Section */}
+                <div className="pt-3 border-t border-stone-200 dark:border-stone-700">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <h4 className="text-xs font-bold text-stone-800 dark:text-stone-200">
+                        Post-it โน้ตคำใบ้แบบติดสติกเกอร์ (Draggable Sticky Notes)
+                      </h4>
+                      <p className="text-[11px] text-stone-500 dark:text-stone-400">
+                        เพิ่มกระดาษโน้ตแปะบนหน้าจอ สามารถลากเคลื่อนย้ายตำแหน่งได้อิสระ
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleAddPostItNote}
+                      className="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold transition flex items-center gap-1 shadow-xs"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>เพิ่ม Post-it</span>
+                    </button>
+                  </div>
+
+                  {/* List of active Post-it Notes */}
+                  {(!config.passcodeNotes || config.passcodeNotes.length === 0) ? (
+                    <div className="p-3 text-center rounded-xl bg-stone-100/70 dark:bg-stone-800/40 text-[11px] text-stone-500">
+                      ยังไม่มีโน้ต Post-it (กดปุ่ม &quot;เพิ่ม Post-it&quot; เพื่อใส่คำใบ้พิเศษแปะบนหน้าจอ)
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {config.passcodeNotes.map((note, idx) => (
+                        <div
+                          key={note.id}
+                          className="p-2.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 flex items-center gap-2"
+                        >
+                          {/* Color picker circles */}
+                          <div className="flex items-center gap-1 shrink-0">
+                            {['#FEF08A', '#FBCFE8', '#BAE6FD', '#BBF7D0'].map((col) => (
+                              <button
+                                key={col}
+                                type="button"
+                                onClick={() => handleUpdatePostItNote(note.id, { color: col })}
+                                className={`w-5 h-5 rounded-full border transition ${
+                                  note.color === col ? 'ring-2 ring-offset-1 ring-stone-800 scale-110' : 'opacity-70'
+                                }`}
+                                style={{ backgroundColor: col }}
+                              />
+                            ))}
+                          </div>
+
+                          {/* Note text input */}
+                          <input
+                            type="text"
+                            value={note.text || ''}
+                            onChange={(e) => handleUpdatePostItNote(note.id, { text: e.target.value })}
+                            className="flex-1 px-2.5 py-1 rounded-lg text-xs border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-900 text-stone-800 dark:text-stone-100"
+                            placeholder="ข้อความในโน้ต..."
+                          />
+
+                          {/* Delete note */}
+                          <button
+                            type="button"
+                            onClick={() => handleRemovePostItNote(note.id)}
+                            className="p-1 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition shrink-0"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}

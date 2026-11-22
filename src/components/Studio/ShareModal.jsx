@@ -15,9 +15,11 @@ import {
   Palette,
   Heart,
   Gift,
-  Image as ImageIcon
+  Image as ImageIcon,
+  LayoutTemplate
 } from 'lucide-react';
 import { createShareableGift } from '../../lib/giftStorage';
+import { QR_FRAME_ASSETS } from '../../types/assetManifests';
 import {
   MANITA_SQL_SETUP,
   USER_PROJECT_URL
@@ -49,7 +51,8 @@ export default function ShareModal({
 
   // QR Customization States
   const [qrTheme, setQrTheme] = useState('classic');
-  const [qrCenterBadge, setQrCenterBadge] = useState('logo'); // 'logo' | 'heart' | 'gift' | 'none'
+  const [qrCenterBadge, setQrCenterBadge] = useState('none'); // Default to 'none' (no logo) as requested
+  const [qrFrameId, setQrFrameId] = useState('none');
   const canvasRef = useRef(null);
 
   const generateLinkAndQR = async (chosenUrl) => {
@@ -66,7 +69,7 @@ export default function ShareModal({
         setIsCloudSaved(result.isCloudSaved);
       }
 
-      await renderStyledQR(targetUrl, qrTheme, qrCenterBadge);
+      await renderStyledQR(targetUrl, qrTheme, qrCenterBadge, qrFrameId);
     } catch (err) {
       console.error('Failed to generate shareable gift:', err);
       setErrorMsg('เกิดข้อผิดพลาดในการสร้างลิงก์ กรุณาลองใหม่อีกครั้ง');
@@ -75,12 +78,12 @@ export default function ShareModal({
     }
   };
 
-  const renderStyledQR = async (url, themeId, badge) => {
+  const renderStyledQR = async (url, themeId, badge, frameId = qrFrameId) => {
     if (!url) return;
     const theme = QR_PALETTES.find(t => t.id === themeId) || QR_PALETTES[0];
     const size = 360;
 
-    // Use offscreen canvas to render QR Code with High Error Correction
+    // Use offscreen canvas to render QR Code with High Error Correction (Level H for maximum resilience)
     const canvas = document.createElement('canvas');
     canvas.width = size;
     canvas.height = size;
@@ -112,8 +115,8 @@ export default function ShareModal({
 
     const ctx = canvas.getContext('2d');
 
-    // Draw center badge if chosen
-    if (badge !== 'none') {
+    // Draw center badge if chosen (default is none)
+    if (badge && badge !== 'none') {
       const center = size / 2;
       const badgeSize = size * 0.2; // 20% width (safe under 30% ECC)
 
@@ -166,6 +169,55 @@ export default function ShareModal({
       }
     }
 
+    // If decorative QR frame is selected, composite onto a framed canvas while keeping QR 100% scannable
+    if (frameId && frameId !== 'none') {
+      const frameAsset = QR_FRAME_ASSETS.find(f => f.id === frameId);
+      if (frameAsset) {
+        const framedCanvas = document.createElement('canvas');
+        const frameW = 460;
+        const frameH = Math.round(frameW * (frameAsset.height / frameAsset.width));
+        framedCanvas.width = frameW;
+        framedCanvas.height = frameH;
+        const fctx = framedCanvas.getContext('2d');
+
+        // Draw soft card background
+        fctx.fillStyle = theme.light;
+        fctx.fillRect(0, 0, frameW, frameH);
+
+        // Load and draw frame image
+        await new Promise((resolve) => {
+          const fImg = new Image();
+          fImg.crossOrigin = 'anonymous';
+          fImg.onload = () => {
+            fctx.drawImage(fImg, 0, 0, frameW, frameH);
+            resolve();
+          };
+          fImg.onerror = () => resolve();
+          fImg.src = frameAsset.src;
+        });
+
+        // Center clean white plate with shadow for QR code to ensure 100% scan fidelity
+        const qrSize = Math.min(frameW * 0.58, frameH * 0.58);
+        const qrX = (frameW - qrSize) / 2;
+        const qrY = (frameH - qrSize) / 2;
+
+        fctx.save();
+        fctx.shadowColor = 'rgba(0,0,0,0.12)';
+        fctx.shadowBlur = 10;
+        fctx.fillStyle = '#ffffff';
+        fctx.beginPath();
+        fctx.roundRect(qrX - 8, qrY - 8, qrSize + 16, qrSize + 16, 12);
+        fctx.fill();
+        fctx.restore();
+
+        // Draw the crisp QR code inside the safe zone
+        fctx.drawImage(canvas, qrX, qrY, qrSize, qrSize);
+
+        setQrDataUrl(framedCanvas.toDataURL('image/png'));
+        return;
+      }
+    }
+
     setQrDataUrl(canvas.toDataURL('image/png'));
   };
 
@@ -176,9 +228,9 @@ export default function ShareModal({
 
   useEffect(() => {
     if (shareUrl) {
-      renderStyledQR(shareUrl, qrTheme, qrCenterBadge);
+      renderStyledQR(shareUrl, qrTheme, qrCenterBadge, qrFrameId);
     }
-  }, [qrTheme, qrCenterBadge]);
+  }, [qrTheme, qrCenterBadge, qrFrameId]);
 
   const handleCopyLink = () => {
     if (!shareUrl) return;
@@ -368,6 +420,50 @@ export default function ShareModal({
                   }`}
                 >
                   {badge.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* QR Frame Style Selector */}
+          <div className="mt-2 pt-2 border-t border-stone-200/60 dark:border-stone-700/60">
+            <div className="flex items-center justify-between text-[10px] mb-1.5">
+              <span className="text-stone-500 dark:text-stone-400 font-medium flex items-center gap-1">
+                <LayoutTemplate className="w-3 h-3 text-rose-500" />
+                <span>กรอบการ์ด QR Code (สแกนติดง่าย 100%):</span>
+              </span>
+              <span className="text-[9px] text-stone-400">{QR_FRAME_ASSETS.length} ลาย</span>
+            </div>
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar max-w-full">
+              <button
+                type="button"
+                onClick={() => setQrFrameId('none')}
+                className={`px-2.5 py-1.5 rounded-xl text-[10px] font-bold shrink-0 border transition flex items-center gap-1 ${
+                  qrFrameId === 'none'
+                    ? 'border-rose-500 bg-rose-500/10 text-rose-600 dark:text-rose-400'
+                    : 'border-stone-200 dark:border-stone-700 bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-400'
+                }`}
+              >
+                <span>ไม่มีกรอบ</span>
+              </button>
+              {QR_FRAME_ASSETS.slice(0, 40).map((frame, idx) => (
+                <button
+                  key={frame.id}
+                  type="button"
+                  onClick={() => setQrFrameId(frame.id)}
+                  title={`กรอบแบบที่ ${idx + 1}`}
+                  className={`w-9 h-9 rounded-xl border p-0.5 shrink-0 transition relative overflow-hidden flex items-center justify-center bg-white ${
+                    qrFrameId === frame.id
+                      ? 'border-rose-500 ring-2 ring-rose-500/40 shadow-xs'
+                      : 'border-stone-200 dark:border-stone-700 hover:border-rose-300'
+                  }`}
+                >
+                  <img
+                    src={frame.src}
+                    alt={`Frame ${idx + 1}`}
+                    className="w-full h-full object-contain"
+                    loading="lazy"
+                  />
                 </button>
               ))}
             </div>

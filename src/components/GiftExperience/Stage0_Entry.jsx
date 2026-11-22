@@ -10,6 +10,15 @@ export default function Stage0_Entry({
   introTitle = 'เรามีอะไรจะให้ดู...',
   introSub = 'แตะที่ตราประทับหัวใจเพื่อเปิดซองจดหมาย',
   letterText = 'มีอะไรจะบอกด้วยแหละ 💌',
+  envelopeStyle = 'default',
+  introTitlePos = { x: 0, y: 0 },
+  introSubPos = { x: 0, y: 0 },
+  badgePos = { x: 0, y: 0 },
+  promptPos = { x: 0, y: 0 },
+  badgeText = 'วันครบรอบ ♡',
+  promptText = 'แตะที่ของขวัญเพื่อเปิดดูด่านต่อไป',
+  onChangeConfig,
+  isEditable = false,
   timeLockEnabled = false,
   timeLockDate = '',
   onNextStage
@@ -18,6 +27,30 @@ export default function Stage0_Entry({
   const [isLocked, setIsLocked] = useState(false);
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, mins: 0, secs: 0 });
   const [isBypassed, setIsBypassed] = useState(false);
+
+  // Helper to drag text elements interactively (Requirement 8)
+  const handleDragText = (e, key, currentPos) => {
+    if (!onChangeConfig) return;
+    e.stopPropagation();
+    const startX = e.clientX;
+    const startY = e.clientY;
+    const initX = currentPos?.x || 0;
+    const initY = currentPos?.y || 0;
+
+    const handleMove = (me) => {
+      const dx = me.clientX - startX;
+      const dy = me.clientY - startY;
+      onChangeConfig({ [key]: { x: Math.round(initX + dx), y: Math.round(initY + dy) } });
+    };
+
+    const handleUp = () => {
+      window.removeEventListener('pointermove', handleMove);
+      window.removeEventListener('pointerup', handleUp);
+    };
+
+    window.addEventListener('pointermove', handleMove);
+    window.addEventListener('pointerup', handleUp);
+  };
 
   // Time capsule calculation
   useEffect(() => {
@@ -112,22 +145,81 @@ export default function Stage0_Entry({
   }
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center px-4 text-center select-none py-6">
-      {/* Headings */}
-      <div className="mb-6">
+    <div className="flex-1 flex flex-col items-center justify-center px-4 text-center select-none py-6 relative">
+      {/* Movable Top Badge (วันครบรอบ ♡) - Requirement 8 */}
+      {badgeText && (
+        <div
+          onPointerDown={(e) => handleDragText(e, 'badgePos', badgePos)}
+          style={{
+            transform: `translate(${badgePos?.x || 0}px, ${badgePos?.y || 0}px)`,
+            touchAction: 'none'
+          }}
+          className="absolute top-1 right-2 z-20 cursor-grab active:cursor-grabbing px-2.5 py-0.5 rounded-full bg-black/15 backdrop-blur-sm text-[11px] font-bold text-stone-700 hover:ring-1 hover:ring-rose-400 select-none transition-shadow"
+          title="คลิกค้างแล้วลากเพื่อปรับตำแหน่งป้าย"
+        >
+          <span>{badgeText}</span>
+        </div>
+      )}
+
+      {/* Headings: Title & Subtitle (Draggable / Movable) - Requirement 8 */}
+      <div
+        onPointerDown={(e) => handleDragText(e, 'introTitlePos', introTitlePos)}
+        style={{
+          transform: `translate(${introTitlePos?.x || 0}px, ${introTitlePos?.y || 0}px)`,
+          touchAction: 'none'
+        }}
+        className="mb-5 cursor-grab active:cursor-grabbing relative select-none hover:ring-1 hover:ring-rose-400/40 rounded-xl px-2 py-1 transition-shadow"
+        title="คลิกค้างแล้วลากเพื่อปรับตำแหน่งหัวข้อ"
+      >
         <BlurText
           text={introTitle}
           delay={40}
           animateBy="words"
-          className="font-theme-display text-2xl sm:text-3xl font-extrabold mb-1.5 leading-snug"
+          className="font-theme-display text-2xl sm:text-3xl font-extrabold mb-1.5 leading-snug pointer-events-none"
         />
-        <p className="text-xs opacity-75 max-w-xs mx-auto mt-1">
+        <p className="text-xs opacity-75 max-w-xs mx-auto mt-1 pointer-events-none">
           {introSub}
         </p>
       </div>
 
-      {/* THEME 1: Warm Scrapbook Envelope */}
-      {theme === 'scrapbook' && (
+      {/* CUSTOM SLICED ENVELOPE (Requirement 4) */}
+      {envelopeStyle && envelopeStyle !== 'default' ? (
+        <GlareHover maxTilt={8} glareOpacity={0.25} borderRadius="20px" className="mt-1">
+          <div
+            onClick={handleOpen}
+            className={`envelope-wrapper relative w-72 h-52 sm:w-80 sm:h-56 cursor-pointer select-none transition-transform duration-200 hover:scale-[1.02] active:scale-95 ${
+              isOpen ? 'envelope-open' : ''
+            }`}
+          >
+            {/* Letter inside that slides up */}
+            <div className="envelope-letter absolute inset-x-6 top-6 bottom-4 bg-[#FFFDF9] rounded-2xl border border-[#D5C2B0] shadow-md p-4 flex flex-col items-center justify-center text-center z-10">
+              <span className="text-[10px] text-rose-500 font-bold mb-1 tracking-wider uppercase">DEAR SPECIAL ONE</span>
+              <p className="font-theme-display text-sm font-bold text-stone-800 line-clamp-3">
+                {letterText}
+              </p>
+              <div className="w-12 h-0.5 bg-rose-200 mt-2 rounded-full" />
+            </div>
+
+            {/* Sliced Envelope Front Container */}
+            <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none drop-shadow-xl">
+              <img
+                src={envelopeStyle}
+                alt="Custom Envelope"
+                className="w-full h-full object-contain pointer-events-none"
+              />
+            </div>
+
+            {/* Front Wax Seal Heart Button */}
+            <div
+              className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-40 w-12 h-12 rounded-full bg-[#A8383B] border-4 border-[#8E2B2E] shadow-xl flex items-center justify-center text-white text-lg transition-transform duration-300 ${
+                isOpen ? 'scale-0 opacity-0' : 'animate-pulse hover:scale-110'
+              }`}
+            >
+              <Heart className="w-5 h-5 fill-white text-white" />
+            </div>
+          </div>
+        </GlareHover>
+      ) : theme === 'scrapbook' ? (
         <GlareHover maxTilt={7} glareOpacity={0.3} borderRadius="16px" className="mt-2">
           <div
             onClick={handleOpen}
@@ -176,10 +268,10 @@ export default function Stage0_Entry({
           </div>
         </div>
         </GlareHover>
-      )}
+      ) : null}
 
       {/* THEME 2: Y2K Cyber Pixel Box */}
-      {theme === 'y2k' && (
+      {!envelopeStyle && theme === 'y2k' && (
         <div
           onClick={handleOpen}
           className="w-full max-w-xs bg-[#E0E0E0] border-4 border-t-white border-l-white border-r-stone-800 border-b-stone-800 shadow-[6px_6px_0px_#FF3399] p-4 text-left cursor-pointer hover:translate-x-0.5 hover:translate-y-0.5 transition"
@@ -202,7 +294,7 @@ export default function Stage0_Entry({
       )}
 
       {/* THEME 3: Midnight Cinema Ticket */}
-      {theme === 'cinema' && (
+      {!envelopeStyle && theme === 'cinema' && (
         <div
           onClick={handleOpen}
           className="w-full max-w-xs bg-[#252030] border-2 border-[#E8B86D]/60 rounded-2xl p-5 shadow-[0_12px_32px_rgba(0,0,0,0.6)] cursor-pointer text-left relative overflow-hidden group hover:border-[#E8B86D] transition"
@@ -229,7 +321,7 @@ export default function Stage0_Entry({
       )}
 
       {/* THEME 4: Festive Celebration Gift Box */}
-      {theme === 'festive' && (
+      {!envelopeStyle && theme === 'festive' && (
         <div
           onClick={handleOpen}
           className="w-full max-w-xs bg-[#FFFDF7] border-2 border-[#D4AF37] rounded-3xl p-6 shadow-2xl cursor-pointer text-center relative group hover:scale-[1.02] transition"
@@ -249,10 +341,20 @@ export default function Stage0_Entry({
         </div>
       )}
 
-      {/* Tap prompt */}
-      <p className="text-[11px] opacity-60 mt-6 animate-pulse">
-        แตะที่ของขวัญเพื่อเปิดดูด่านต่อไป
-      </p>
+      {/* Tap prompt (Draggable / Movable) - Requirement 8 */}
+      <div
+        onPointerDown={(e) => handleDragText(e, 'promptPos', promptPos)}
+        style={{
+          transform: `translate(${promptPos?.x || 0}px, ${promptPos?.y || 0}px)`,
+          touchAction: 'none'
+        }}
+        className="mt-6 cursor-grab active:cursor-grabbing select-none hover:ring-1 hover:ring-rose-400/40 rounded-lg px-2 py-0.5 transition-shadow"
+        title="คลิกค้างแล้วลากเพื่อปรับตำแหน่งข้อความ"
+      >
+        <p className="text-[11px] opacity-60 animate-pulse pointer-events-none">
+          {promptText}
+        </p>
+      </div>
     </div>
   );
 }
