@@ -508,6 +508,7 @@ export default function App() {
                 ) : (
                   <Stage4_Scratch
                     scratchSecret={config.scratchSecret}
+                    scratchColor={config.scratchColor || 'gold'}
                     onNextStage={handleNextStage}
                   />
                 )

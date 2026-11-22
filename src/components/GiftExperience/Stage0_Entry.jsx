@@ -178,11 +178,7 @@ function WaxSealButton({
     if (!isEditable) {
       onOpen && onOpen();
     } else {
-      if (isSelected) {
-        onOpen && onOpen();
-      } else {
-        setIsSelected(true);
-      }
+      setIsSelected((prev) => !prev);
     }
   };
 
@@ -224,6 +220,7 @@ function WaxSealButton({
     >
       {/* Wax Seal Circle Button */}
       <div
+        onClick={(e) => e.stopPropagation()}
         onPointerDown={handleMovePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
@@ -310,9 +307,9 @@ function WaxSealButton({
                   onOpen && onOpen();
                 }}
                 className="px-2 py-0.5 bg-rose-500 hover:bg-rose-600 rounded-full text-white text-[10px] font-bold active:scale-95 transition flex items-center gap-1"
-                title="ทดสอบเปิดซองจดหมาย"
+                title="กดไปหน้าถัดไป"
               >
-                <span>เปิดซอง 💌</span>
+                <span>กดไปหน้าถัดไป ➔</span>
               </button>
             </div>
           </>
@@ -520,7 +517,7 @@ export default function Stage0_Entry({
         <GlareHover maxTilt={8} glareOpacity={0.25} borderRadius="20px" className="mt-4 sm:mt-6">
           <div
             ref={customEnvelopeWrapperRef}
-            onClick={handleOpen}
+            onClick={isEditable ? undefined : handleOpen}
             className={`envelope-wrapper relative w-72 h-52 sm:w-80 sm:h-56 cursor-pointer select-none transition-transform duration-200 hover:scale-[1.02] active:scale-95 ${
               isOpen ? 'envelope-open' : ''
             }`}
@@ -575,7 +572,7 @@ export default function Stage0_Entry({
         <GlareHover maxTilt={7} glareOpacity={0.3} borderRadius="16px" className="mt-4 sm:mt-6">
           <div
             ref={scrapbookEnvelopeWrapperRef}
-            onClick={handleOpen}
+            onClick={isEditable ? undefined : handleOpen}
             className={`envelope-wrapper relative w-72 h-48 cursor-pointer select-none transition-transform duration-200 hover:scale-[1.02] active:scale-95 ${
               isOpen ? 'envelope-open' : ''
             }`}
@@ -604,8 +601,8 @@ export default function Stage0_Entry({
 
             {/* Letter inside that stays inside when closed and slides up when opened */}
             <div
-              className={`envelope-letter absolute inset-x-4 top-4 bottom-2 bg-[#FFFDF9] rounded-xl border-2 border-[#D5C2B0] shadow-md p-3.5 flex flex-col items-center justify-center text-center z-15 transition-all duration-700 ease-out ${
-                isOpen ? '-translate-y-26 sm:-translate-y-30 shadow-2xl z-30' : 'hover:-translate-y-0.5'
+              className={`envelope-letter absolute inset-x-4 top-4 bottom-2 bg-[#FFFDF9] rounded-xl border-2 border-[#D5C2B0] shadow-md p-3.5 flex flex-col items-center justify-center text-center transition-all duration-700 ease-out ${
+                isOpen ? '-translate-y-26 sm:-translate-y-30 shadow-2xl z-30 opacity-100 pointer-events-auto' : 'opacity-0 translate-y-4 scale-95 pointer-events-none z-10'
               }`}
               style={{
                 backgroundImage: 'repeating-linear-gradient(transparent, transparent 18px, #EFE7DE 19px)'
@@ -722,6 +719,23 @@ export default function Stage0_Entry({
           {promptText}
         </p>
       </div>
+
+      {/* Explicit Next Stage Button in Edit/Studio Mode */}
+      {isEditable && (
+        <div className="mt-5 pb-16 flex flex-col items-center gap-1.5 z-30 select-none">
+          <button
+            type="button"
+            onClick={handleOpen}
+            className="px-6 py-2.5 bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 text-white text-xs font-bold rounded-full shadow-lg hover:shadow-xl active:scale-95 transition-all flex items-center gap-2 cursor-pointer border border-white/20"
+            title="กดเพื่อไปยังด่านถัดไป"
+          >
+            <span>กดไปหน้าถัดไป ➔</span>
+          </button>
+          <span className="text-[10px] text-stone-500 dark:text-stone-400">
+            (สามารถลากจัดตำแหน่งตราประทับสีแดงได้อิสระ เมื่อพอใจแล้วกดปุ่มนี้เพื่อไปหน้าถัดไป)
+          </span>
+        </div>
+      )}
     </div>
   );
 }

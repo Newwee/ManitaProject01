@@ -185,3 +185,97 @@ export const DEFAULT_QUIZZES = [
     correctIndex: 2
   }
 ];
+
+export const SCRATCH_COLORS = [
+  {
+    id: 'gold',
+    label: 'ทองหรูหรา (Classic Gold)',
+    gradient: ['#D4AF37', '#FFF3C4', '#B8860B', '#E6C25B'],
+    textColor: '#3E2A0A',
+    subTextColor: '#5A4015',
+    cardBorder: 'border-amber-300/80',
+    cardBg: 'from-amber-50 to-rose-50',
+    iconBg: 'bg-amber-100 text-amber-600',
+    badgeBg: 'bg-amber-100 text-amber-600',
+    previewHex: '#D4AF37',
+    swatchGrad: 'linear-gradient(135deg, #D4AF37, #FFF3C4, #B8860B)'
+  },
+  {
+    id: 'rosegold',
+    label: 'โรสโกลด์ (Rose Gold)',
+    gradient: ['#E89A98', '#FFDFE0', '#C56D75', '#F5B0B0'],
+    textColor: '#4A1521',
+    subTextColor: '#6B2533',
+    cardBorder: 'border-rose-300/80',
+    cardBg: 'from-rose-50 to-pink-50',
+    iconBg: 'bg-rose-100 text-rose-600',
+    badgeBg: 'bg-rose-100 text-rose-600',
+    previewHex: '#E89A98',
+    swatchGrad: 'linear-gradient(135deg, #E89A98, #FFDFE0, #C56D75)'
+  },
+  {
+    id: 'silver',
+    label: 'เงินแพลทินัม (Silver Foil)',
+    gradient: ['#A8B0B8', '#F0F4F8', '#78828A', '#D0D8E0'],
+    textColor: '#1E252B',
+    subTextColor: '#333F48',
+    cardBorder: 'border-slate-300/80',
+    cardBg: 'from-slate-50 to-stone-50',
+    iconBg: 'bg-slate-100 text-slate-600',
+    badgeBg: 'bg-slate-100 text-slate-600',
+    previewHex: '#A8B0B8',
+    swatchGrad: 'linear-gradient(135deg, #A8B0B8, #F0F4F8, #78828A)'
+  },
+  {
+    id: 'midnight',
+    label: 'มิดไนท์โฮโล (Midnight Purple)',
+    gradient: ['#583582', '#A879FF', '#321959', '#784BB8'],
+    textColor: '#FFFFFF',
+    subTextColor: '#E0D0FF',
+    cardBorder: 'border-purple-400/80',
+    cardBg: 'from-purple-950/20 to-indigo-950/20',
+    iconBg: 'bg-purple-100 text-purple-600',
+    badgeBg: 'bg-purple-100 text-purple-600',
+    previewHex: '#583582',
+    swatchGrad: 'linear-gradient(135deg, #583582, #A879FF, #321959)'
+  },
+  {
+    id: 'ruby',
+    label: 'แดงทับทิม (Ruby Red)',
+    gradient: ['#B31221', '#FF858F', '#7A0A14', '#D12335'],
+    textColor: '#FFFFFF',
+    subTextColor: '#FFE0E3',
+    cardBorder: 'border-red-400/80',
+    cardBg: 'from-red-50 to-rose-50',
+    iconBg: 'bg-red-100 text-red-600',
+    badgeBg: 'bg-red-100 text-red-600',
+    previewHex: '#B31221',
+    swatchGrad: 'linear-gradient(135deg, #B31221, #FF858F, #7A0A14)'
+  },
+  {
+    id: 'emerald',
+    label: 'เขียวมรกต (Emerald Green)',
+    gradient: ['#1E8449', '#A2D9CE', '#145A32', '#27AE60'],
+    textColor: '#FFFFFF',
+    subTextColor: '#D4EFDF',
+    cardBorder: 'border-emerald-300/80',
+    cardBg: 'from-emerald-50 to-teal-50',
+    iconBg: 'bg-emerald-100 text-emerald-600',
+    badgeBg: 'bg-emerald-100 text-emerald-600',
+    previewHex: '#1E8449',
+    swatchGrad: 'linear-gradient(135deg, #1E8449, #A2D9CE, #145A32)'
+  },
+  {
+    id: 'sky',
+    label: 'ฟ้าพาสเทล (Baby Sky Blue)',
+    gradient: ['#3498DB', '#D6EAF8', '#1B4F72', '#5DADE2'],
+    textColor: '#0A2540',
+    subTextColor: '#154360',
+    cardBorder: 'border-sky-300/80',
+    cardBg: 'from-sky-50 to-blue-50',
+    iconBg: 'bg-sky-100 text-sky-600',
+    badgeBg: 'bg-sky-100 text-sky-600',
+    previewHex: '#3498DB',
+    swatchGrad: 'linear-gradient(135deg, #3498DB, #D6EAF8, #1B4F72)'
+  }
+];

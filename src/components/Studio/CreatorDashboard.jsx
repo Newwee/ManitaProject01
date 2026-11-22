@@ -30,7 +30,7 @@ import {
   LayoutGrid,
   ListFilter
 } from 'lucide-react';
-import { PRESET_CATEGORIES, THEME_PRESETS, AVAILABLE_STICKERS } from '../../types/themePresets';
+import { PRESET_CATEGORIES, THEME_PRESETS, AVAILABLE_STICKERS, SCRATCH_COLORS } from '../../types/themePresets';
 import { FRAME_STYLES } from '../GiftExperience/Stage_Camera';
 import { compressImageFile } from '../../lib/imageCompressor';
 import { ENVELOPE_ASSETS, DECORATION_ASSETS } from '../../types/assetManifests';
@@ -1186,17 +1186,87 @@ export default function CreatorDashboard({
                 </div>
 
                 {config.revealType !== 'camera' ? (
-                  <div className="pt-2">
-                    <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
-                      ของรางวัลลับที่ซ่อนอยู่ใต้การ์ดขูด
-                    </label>
-                    <input
-                      type="text"
-                      value={config.scratchSecret || ''}
-                      onChange={(e) => onChangeConfig({ ...config, scratchSecret: e.target.value })}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-stone-800 dark:text-stone-100 bg-white dark:bg-stone-800 focus:outline-none focus:border-rose-500"
-                      placeholder="เช่น คูปองตามใจเธอ 1 วันเต็ม! 💖"
-                    />
+                  <div className="pt-2 space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                        ของรางวัลลับที่ซ่อนอยู่ใต้การ์ดขูด
+                      </label>
+                      <input
+                        type="text"
+                        value={config.scratchSecret || ''}
+                        onChange={(e) => onChangeConfig({ ...config, scratchSecret: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-stone-800 dark:text-stone-100 bg-white dark:bg-stone-800 focus:outline-none focus:border-rose-500"
+                        placeholder="เช่น คูปองตามใจเธอ 1 วันเต็ม! 💖"
+                      />
+                    </div>
+
+                    {/* Scratch Card Foil Color Selector */}
+                    <div>
+                      <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1 flex items-center justify-between">
+                        <span>เลือกสีแถบฟอยล์ขูดการ์ด (Foil Color)</span>
+                        <span className="text-[10px] text-stone-400 font-normal">7 สียอดนิยม หรือกำหนดเอง</span>
+                      </label>
+                      <p className="text-[11px] text-stone-500 dark:text-stone-400 mb-3">
+                        เลือกเฉดสีของแผ่นฟอยล์ที่ผู้รับจะต้องขูดเพื่อเปิดของขวัญ
+                      </p>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mb-3">
+                        {SCRATCH_COLORS.map((color) => {
+                          const isSelected = (config.scratchColor || 'gold') === color.id;
+                          return (
+                            <button
+                              key={color.id}
+                              type="button"
+                              onClick={() => onChangeConfig({ ...config, scratchColor: color.id })}
+                              className={`p-2.5 rounded-2xl border-2 text-left transition flex items-center gap-2.5 ${
+                                isSelected
+                                  ? 'border-rose-500 bg-rose-50/60 dark:bg-rose-950/30 ring-2 ring-rose-200 dark:ring-rose-800 shadow-sm'
+                                  : 'border-stone-200 dark:border-stone-700 hover:border-stone-300 dark:hover:border-stone-600 bg-stone-50/50 dark:bg-stone-800/40'
+                              }`}
+                            >
+                              <div
+                                className="w-7 h-7 rounded-full shadow-inner border border-white/50 shrink-0"
+                                style={{ background: color.swatchGrad }}
+                              />
+                              <div className="min-w-0 flex-1">
+                                <span className="text-xs font-bold text-stone-800 dark:text-stone-200 block truncate">
+                                  {color.label.split(' ')[0]}
+                                </span>
+                                <span className="text-[9px] text-stone-400 dark:text-stone-500 block truncate">
+                                  {color.label.split('(')[1]?.replace(')', '') || ''}
+                                </span>
+                              </div>
+                              {isSelected && <Check className="w-3.5 h-3.5 text-rose-500 shrink-0" />}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* Custom Hex Color Picker */}
+                      <div className="p-3 bg-stone-50 dark:bg-stone-800/50 rounded-2xl border border-stone-200 dark:border-stone-700 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2.5">
+                          <input
+                            type="color"
+                            value={config.scratchColor?.startsWith('#') ? config.scratchColor : '#D4AF37'}
+                            onChange={(e) => onChangeConfig({ ...config, scratchColor: e.target.value })}
+                            className="w-8 h-8 rounded-lg cursor-pointer border-0 p-0 bg-transparent"
+                          />
+                          <div>
+                            <span className="text-xs font-bold text-stone-800 dark:text-stone-200 block">
+                              กำหนดสีฟอยล์เองตามใจชอบ (Custom Color)
+                            </span>
+                            <span className="text-[10px] text-stone-400">
+                              จิ้มที่กล่องสีเพื่อเลือกสีฟอยล์แบบ Hex Color ใดๆ ก็ได้
+                            </span>
+                          </div>
+                        </div>
+                        {config.scratchColor?.startsWith('#') && (
+                          <span className="text-xs font-mono font-bold text-rose-500 bg-rose-100 dark:bg-rose-900/40 px-2.5 py-1 rounded-lg">
+                            {config.scratchColor.toUpperCase()}
+                          </span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 ) : (
                   <div className="pt-2 space-y-3">

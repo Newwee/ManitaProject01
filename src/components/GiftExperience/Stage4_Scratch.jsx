@@ -2,9 +2,11 @@ import React, { useRef, useEffect, useState } from 'react';
 import { Sparkles, Gift, ChevronRight, Eye } from 'lucide-react';
 import { playScratchSound, playSuccessFanfare } from '../../lib/soundEngine';
 import confetti from 'canvas-confetti';
+import { SCRATCH_COLORS } from '../../types/themePresets';
 
 export default function Stage4_Scratch({
   scratchSecret = 'คูปองตามใจเธอ 1 วันเต็ม! 💖',
+  scratchColor = 'gold',
   onNextStage
 }) {
   const canvasRef = useRef(null);
@@ -13,6 +15,21 @@ export default function Stage4_Scratch({
   const isDrawing = useRef(false);
   const strokeCount = useRef(0);
   const checkRafId = useRef(null);
+
+  const activeFoil =
+    SCRATCH_COLORS.find((c) => c.id === scratchColor) ||
+    (scratchColor && scratchColor.startsWith('#')
+      ? {
+          id: 'custom',
+          gradient: [scratchColor, '#FFFFFF', scratchColor, '#FFFFFF'],
+          textColor: '#1A1A1A',
+          subTextColor: '#4A4A4A',
+          cardBorder: 'border-rose-300/80',
+          cardBg: 'from-rose-50 to-amber-50',
+          iconBg: 'bg-rose-100 text-rose-600',
+          badgeBg: 'bg-rose-100 text-rose-600'
+        }
+      : SCRATCH_COLORS[0]);
 
   useEffect(() => {
     return () => {
@@ -25,15 +42,18 @@ export default function Stage4_Scratch({
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
 
+    // Reset composite operation
+    ctx.globalCompositeOperation = 'source-over';
+
     // Fill foil overlay
     const w = canvas.width;
     const h = canvas.height;
 
     const grad = ctx.createLinearGradient(0, 0, w, h);
-    grad.addColorStop(0, '#D4AF37');
-    grad.addColorStop(0.3, '#FFF3C4');
-    grad.addColorStop(0.6, '#B8860B');
-    grad.addColorStop(1, '#E6C25B');
+    grad.addColorStop(0, activeFoil.gradient[0]);
+    grad.addColorStop(0.3, activeFoil.gradient[1]);
+    grad.addColorStop(0.6, activeFoil.gradient[2]);
+    grad.addColorStop(1, activeFoil.gradient[3]);
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, w, h);
 
@@ -48,15 +68,15 @@ export default function Stage4_Scratch({
     }
 
     // Centered label text
-    ctx.fillStyle = '#3E2A0A';
+    ctx.fillStyle = activeFoil.textColor;
     ctx.font = 'bold 13px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('✨ ใช้นิ้วหรือเมาส์ขูดตรงนี้ ✨', w / 2, h / 2 - 8);
     ctx.font = '11px sans-serif';
-    ctx.fillStyle = '#5A4015';
+    ctx.fillStyle = activeFoil.subTextColor;
     ctx.fillText('เพื่อเปิดของรางวัลลับ', w / 2, h / 2 + 12);
-  }, []);
+  }, [scratchColor]);
 
   const getPosition = (e) => {
     const canvas = canvasRef.current;
@@ -135,21 +155,21 @@ export default function Stage4_Scratch({
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-4 py-3 text-center select-none">
-      <div className="w-12 h-12 mx-auto mb-2 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center shadow-sm">
+      <div className={`w-12 h-12 mx-auto mb-2 rounded-2xl ${activeFoil.iconBg} flex items-center justify-center shadow-sm`}>
         <Gift className="w-6 h-6" />
       </div>
       <h3 className="font-theme-display text-xl font-bold mb-1">
         การ์ดขูดลุ้นรางวัลพิเศษ
       </h3>
       <p className="text-xs opacity-75 mb-4 max-w-xs mx-auto">
-        ใช้นิ้วหรือเมาส์ปาดขูดแถบสีทองเพื่อเปิดเผยความลับที่ซ่อนอยู่
+        ใช้นิ้วหรือเมาส์ปาดขูดแถบฟอยล์เพื่อเปิดเผยความลับที่ซ่อนอยู่
       </p>
 
       {/* Scratch Card Canvas Container */}
-      <div className="relative w-72 h-44 rounded-2xl overflow-hidden shadow-2xl border-4 border-amber-300/80 bg-gradient-to-tr from-amber-50 to-rose-50 flex items-center justify-center p-4">
+      <div className={`relative w-72 h-44 rounded-2xl overflow-hidden shadow-2xl border-4 ${activeFoil.cardBorder} bg-gradient-to-tr ${activeFoil.cardBg} flex items-center justify-center p-4`}>
         {/* Secret Content Underneath */}
         <div className="text-center px-4">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-rose-500 bg-rose-100 px-2 py-0.5 rounded-full">
+          <span className={`text-[10px] font-bold uppercase tracking-wider ${activeFoil.badgeBg} px-2 py-0.5 rounded-full`}>
             SECRET REWARD
           </span>
           <h4 className="font-theme-display text-lg font-bold mt-2 text-stone-800 leading-snug">
