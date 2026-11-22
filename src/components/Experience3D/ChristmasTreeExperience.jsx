@@ -118,8 +118,8 @@ export default function ChristmasTreeExperience({
         allow="autoplay; fullscreen"
       />
 
-      {/* React Bits Odometer Countdown Card (revealed gently after 3D animation finishes) */}
-      {isIntroComplete && showCountdown && lockMode !== 'immediate' && (
+      {/* React Bits Odometer Countdown Card (visible immediately in sleek bottom-left mini-pill on mobile) */}
+      {showCountdown && lockMode !== 'immediate' && (
         <ChristmasCountdownCard
           unlockDate={unlockDate}
           countdownTitle={countdownTitle}
@@ -127,8 +127,8 @@ export default function ChristmasTreeExperience({
         />
       )}
 
-      {/* Modern Christmas Soundtrack Player (plays audio immediately, visual card reveals after intro) */}
-      <ChristmasMusicPlayer showUI={isIntroComplete} />
+      {/* Modern Christmas Soundtrack Player (visible immediately in sleek bottom-right mini-pill on mobile) */}
+      <ChristmasMusicPlayer showUI={true} />
     </div>
   );
 }

@@ -188,7 +188,7 @@ export default function ChristmasCountdownCard({
         ref={cardRef}
         style={position ? { left: `${position.x}px`, top: `${position.y}px` } : undefined}
         className={`fixed z-30 select-none touch-none ${
-          !position ? 'top-16 sm:top-20 left-3 sm:left-6' : ''
+          !position ? 'bottom-[max(1rem,env(safe-area-inset-bottom,1rem))] left-3 sm:top-20 sm:left-6 sm:bottom-auto' : ''
         } animate-in fade-in zoom-in-95 duration-300 will-change-transform`}
       >
         <div
@@ -230,7 +230,7 @@ export default function ChristmasCountdownCard({
       ref={cardRef}
       style={position ? { left: `${position.x}px`, top: `${position.y}px` } : undefined}
       className={`fixed z-30 select-none ${
-        !position ? 'top-16 sm:top-20 left-3 sm:left-6' : ''
+        !position ? 'bottom-[max(1rem,env(safe-area-inset-bottom,1rem))] left-3 sm:top-20 sm:left-6 sm:bottom-auto' : ''
       } animate-in fade-in zoom-in-95 duration-300 will-change-transform`}
     >
       <div className="w-[min(310px,calc(100vw-24px))] bg-[#121624f2] backdrop-blur-xl border border-amber-200/30 rounded-2xl sm:rounded-3xl p-3 sm:p-4 shadow-2xl shadow-black/60 text-white relative">

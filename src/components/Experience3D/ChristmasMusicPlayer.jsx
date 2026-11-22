@@ -22,9 +22,9 @@ export function stopChristmasAudio() {
 export default function ChristmasMusicPlayer({ showUI = true }) {
   const [isOpen, setIsOpen] = useState(() => {
     if (typeof window !== 'undefined') {
-      return window.innerWidth >= 640;
+      return window.innerWidth >= 768;
     }
-    return true;
+    return false;
   });
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(50);
@@ -252,7 +252,7 @@ export default function ChristmasMusicPlayer({ showUI = true }) {
         ref={cardRef}
         style={position ? { left: `${position.x}px`, top: `${position.y}px` } : undefined}
         className={`fixed z-40 select-none touch-none ${
-          !position ? 'top-16 sm:top-20 right-3 sm:right-6' : ''
+          !position ? 'bottom-[max(1rem,env(safe-area-inset-bottom,1rem))] right-3 sm:top-20 sm:right-6 sm:bottom-auto' : ''
         } animate-in fade-in zoom-in-95 duration-500`}
       >
         <div
@@ -305,8 +305,8 @@ export default function ChristmasMusicPlayer({ showUI = true }) {
       ref={cardRef}
       style={position ? { left: `${position.x}px`, top: `${position.y}px` } : undefined}
       className={`fixed z-40 select-none ${
-        !position ? 'top-16 sm:top-20 right-3 sm:right-6' : ''
-      } animate-in fade-in slide-in-from-top-3 duration-500 will-change-transform`}
+        !position ? 'bottom-[max(1rem,env(safe-area-inset-bottom,1rem))] right-3 sm:top-20 sm:right-6 sm:bottom-auto' : ''
+      } animate-in fade-in slide-in-from-bottom-3 sm:slide-in-from-top-3 duration-500 will-change-transform`}
     >
       <div className="w-[calc(100vw-24px)] max-w-[340px] sm:max-w-[370px] bg-[#14121cf0] backdrop-blur-xl text-white rounded-3xl p-3.5 sm:p-5 shadow-2xl border border-white/15 relative">
         {/* Top Drag Handle Bar */}

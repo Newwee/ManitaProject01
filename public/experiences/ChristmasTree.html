@@ -2061,13 +2061,22 @@
       ctx.restore();
     }
 
+    const rgbaCache = new Map();
     function hexToRgba(hex, alpha) {
+      const a = typeof alpha === 'number' ? Math.round(alpha * 100) / 100 : alpha;
+      const key = hex + '_' + a;
+      const cached = rgbaCache.get(key);
+      if (cached) return cached;
+
       const clean = hex.replace('#', '');
       const num = parseInt(clean, 16);
       const r = (num >> 16) & 255;
       const g = (num >> 8) & 255;
       const b = num & 255;
-      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+      const res = `rgba(${r}, ${g}, ${b}, ${a})`;
+      if (rgbaCache.size > 800) rgbaCache.clear();
+      rgbaCache.set(key, res);
+      return res;
     }
 
     function getGlowSprite(color) {
@@ -2978,23 +2987,32 @@
 
       ctx.clearRect(0, 0, width, height);
 
-      // เอฟเฟกต์: ออโรร่าเคลื่อนไหวช้าๆ
+      // เอฟเฟกต์: ออโรร่าเคลื่อนไหวช้าๆ (Optimize สำหรับมือถือ ลด fill-rate)
       {
         const auFade = hasStarted ? Math.min(introTime / 3, 1) : 0.6;
-        ctx.save();
-        ctx.globalCompositeOperation = 'lighter';
-        const auCols = [[currentTheme.treeColors[0], 0], [currentTheme.starColor, 2.1], [currentTheme.treeColors[1] || currentTheme.treeColors[0], 4.2]];
-        for (const [c, ph] of auCols) {
-          const ax = width * (0.2 + 0.6 * (0.5 + 0.5 * Math.sin(totalTime * 0.12 + ph)));
-          const ay = height * (0.2 + 0.08 * Math.sin(totalTime * 0.17 + ph * 1.3));
-          const ar = Math.max(width, height) * 0.5;
-          const ag = ctx.createRadialGradient(ax, ay, 0, ax, ay, ar);
-          ag.addColorStop(0, hexToRgba(c, 0.12 * auFade));
-          ag.addColorStop(1, hexToRgba(c, 0));
-          ctx.fillStyle = ag;
-          ctx.fillRect(0, 0, width, height);
+        if (auFade > 0.01) {
+          ctx.save();
+          ctx.globalCompositeOperation = 'lighter';
+          const isMob = width < 768;
+          const auCount = isMob ? 1 : 3;
+          const tc0 = currentTheme.treeColors[0];
+          const sc = currentTheme.starColor;
+          const tc1 = currentTheme.treeColors[1] || tc0;
+
+          for (let ai = 0; ai < auCount; ai++) {
+            const c = ai === 0 ? tc0 : (ai === 1 ? sc : tc1);
+            const ph = ai * 2.1;
+            const ax = width * (0.2 + 0.6 * (0.5 + 0.5 * Math.sin(totalTime * 0.12 + ph)));
+            const ay = height * (0.2 + 0.08 * Math.sin(totalTime * 0.17 + ph * 1.3));
+            const ar = Math.max(width, height) * (isMob ? 0.45 : 0.5);
+            const ag = ctx.createRadialGradient(ax, ay, 0, ax, ay, ar);
+            ag.addColorStop(0, hexToRgba(c, (isMob ? 0.14 : 0.12) * auFade));
+            ag.addColorStop(1, hexToRgba(c, 0));
+            ctx.fillStyle = ag;
+            ctx.fillRect(0, 0, width, height);
+          }
+          ctx.restore();
         }
-        ctx.restore();
 
         // ดาวตก
         if (totalTime > nextShoot) {
@@ -3124,17 +3142,27 @@
         }
       }
       updateBalls(dt, riseHeight, fov, centerX, centerY);
-      const drawables = visibleGifts.map(it => ({ z: it.z, run: () => drawGiftBox3D(it.box, it.p, fov, centerX, centerY, dt) }));
-      for (const pr of props) {
+      const drawables = [];
+      for (let i = 0; i < visibleGifts.length; i++) {
+        const it = visibleGifts[i];
+        drawables.push({ z: it.z, box: it.box, p: it.p, isBox: true });
+      }
+      for (let i = 0; i < props.length; i++) {
+        const pr = props[i];
         if (introTime < pr.appearTime) continue;
         const pp = Math.min((introTime - pr.appearTime) / 0.6, 1);
         const cp = project(pr.x, pr.y, pr.z, fov, centerX, centerY);
-        drawables.push({ z: cp ? cp.z : 0, run: () => drawProp(pr, pp, fov, centerX, centerY, dt) });
+        drawables.push({ z: cp ? cp.z : 0, pr, pp, isBox: false });
       }
       drawables.sort((a, b) => b.z - a.z);
-      for (const d of drawables) {
+      for (let i = 0; i < drawables.length; i++) {
+        const d = drawables[i];
         try {
-          d.run();
+          if (d.isBox) {
+            drawGiftBox3D(d.box, d.p, fov, centerX, centerY, dt);
+          } else {
+            drawProp(d.pr, d.pp, fov, centerX, centerY, dt);
+          }
         } catch (e) {
           console.warn('Drawable render error:', e);
         }
@@ -3418,6 +3446,8 @@
         b.sr = R;
         b.pz = pr.z;
       }
+      // จัดลำดับบอลล่วงหน้า 1 ครั้ง เพื่อให้ไม่ต้อง filter หรือ sort ใหม่ใน drawBalls
+      balls.sort((a, b) => b.pz - a.pz);
     }
 
     function drawBall(b) {
@@ -3496,9 +3526,14 @@
     }
 
     function drawBalls(front) {
-      if (!decorSettings.balls) return;
-      const list = balls.filter(b => b.sr > 0 && (front ? b.pz <= 0 : b.pz > 0)).sort((a, b) => b.pz - a.pz);
-      for (const b of list) drawBall(b);
+      if (!decorSettings.balls || balls.length === 0) return;
+      for (let i = 0; i < balls.length; i++) {
+        const b = balls[i];
+        if (b.sr <= 0) continue;
+        if (front ? b.pz <= 0 : b.pz > 0) {
+          drawBall(b);
+        }
+      }
     }
 
     function findBallAt(x, y) {
@@ -3712,10 +3747,11 @@
       ctx.rotate(Math.sin(t * 4 + ph) * 0.05);
       ctx.fillStyle = '#2b1a14';
       ctx.strokeStyle = '#2b1a14';
+      const isMob = width < 768;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
       ctx.shadowColor = 'rgba(255,215,130,0.75)';
-      ctx.shadowBlur = 8;
+      ctx.shadowBlur = isMob ? 0 : 8;
       ctx.lineWidth = 3.2;
       for (const [hx, po] of [[11, 0], [6, 1.2], [-8, 2.4], [-13, 3.6]]) {
         const a = Math.sin(t * 9 + ph + po);
@@ -3743,20 +3779,22 @@
       ctx.beginPath(); ctx.ellipse(0, 0, 19, 8.5, 0, Math.PI * 1.08, Math.PI * 1.92); ctx.stroke();
       if (lead) {
         ctx.shadowColor = '#ff3b3b';
-        ctx.shadowBlur = 18;
+        ctx.shadowBlur = isMob ? 3 : 18;
         ctx.fillStyle = '#ff3030';
         ctx.beginPath(); ctx.arc(39, -19.5, 2.6, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0;
       }
       ctx.restore();
     }
 
     function drawSleigh() {
+      const isMob = width < 768;
       ctx.save();
       ctx.lineCap = 'round';
       ctx.strokeStyle = '#ffd76b';
       ctx.lineWidth = 3;
       ctx.shadowColor = 'rgba(255,215,110,0.8)';
-      ctx.shadowBlur = 8;
+      ctx.shadowBlur = isMob ? 0 : 8;
       ctx.beginPath();
       ctx.moveTo(-72, 4);
       ctx.quadraticCurveTo(-76, 22, -60, 22);
