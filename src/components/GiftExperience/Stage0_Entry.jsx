@@ -192,22 +192,35 @@ export default function Stage0_Entry({
         </p>
       </div>
 
-      {/* CUSTOM SLICED ENVELOPE (Requirement 4) */}
+      {/* CUSTOM SLICED ENVELOPE (Requirement 4 & Protruding Letter) */}
       {envelopeStyle && envelopeStyle !== 'default' ? (
-        <GlareHover maxTilt={8} glareOpacity={0.25} borderRadius="20px" className="mt-1">
+        <GlareHover maxTilt={8} glareOpacity={0.25} borderRadius="20px" className="mt-8 sm:mt-10">
           <div
             onClick={handleOpen}
             className={`envelope-wrapper relative w-72 h-52 sm:w-80 sm:h-56 cursor-pointer select-none transition-transform duration-200 hover:scale-[1.02] active:scale-95 ${
               isOpen ? 'envelope-open' : ''
             }`}
           >
-            {/* Letter inside that slides up */}
-            <div className="envelope-letter absolute inset-x-6 top-6 bottom-4 bg-[#FFFDF9] rounded-2xl border border-[#D5C2B0] shadow-md p-4 flex flex-col items-center justify-center text-center z-10">
-              <span className="text-[10px] text-rose-500 font-bold mb-1 tracking-wider uppercase">DEAR SPECIAL ONE</span>
-              <p className="font-theme-display text-sm font-bold text-stone-800 line-clamp-3">
+            {/* Protruding Letter inside that peeks out and slides up on tap */}
+            <div
+              className={`envelope-letter absolute inset-x-6 -top-10 bottom-4 bg-[#FFFDF9] rounded-2xl border-2 border-[#D5C2B0] shadow-md p-3.5 flex flex-col items-center justify-start text-center z-10 transition-all duration-700 ease-out ${
+                isOpen ? '-translate-y-24 sm:-translate-y-28 shadow-2xl z-30' : 'hover:-translate-y-1'
+              }`}
+              style={{
+                backgroundImage: 'repeating-linear-gradient(transparent, transparent 18px, #EFE7DE 19px)'
+              }}
+            >
+              {/* Protruding Header Tab (Visibly Peeking Out at the Top of the Envelope) */}
+              <div className="flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-rose-100/90 border border-rose-300 text-[10px] font-extrabold text-rose-600 uppercase tracking-widest shadow-2xs mb-2">
+                <span>💌</span>
+                <span>DEAR SPECIAL ONE</span>
+              </div>
+
+              {/* Letter Message Preview / Full Content */}
+              <p className="font-theme-display text-xs sm:text-sm font-bold text-stone-800 line-clamp-3 leading-relaxed px-1">
                 {letterText}
               </p>
-              <div className="w-12 h-0.5 bg-rose-200 mt-2 rounded-full" />
+              <div className="w-10 h-0.5 bg-rose-300/70 mt-2 rounded-full" />
             </div>
 
             {/* Sliced Envelope Front Container */}
@@ -230,7 +243,7 @@ export default function Stage0_Entry({
           </div>
         </GlareHover>
       ) : theme === 'scrapbook' ? (
-        <GlareHover maxTilt={7} glareOpacity={0.3} borderRadius="16px" className="mt-2">
+        <GlareHover maxTilt={7} glareOpacity={0.3} borderRadius="16px" className="mt-8 sm:mt-10">
           <div
             onClick={handleOpen}
             className={`envelope-wrapper relative w-72 h-48 cursor-pointer select-none transition-transform duration-200 hover:scale-[1.02] active:scale-95 ${
@@ -238,45 +251,56 @@ export default function Stage0_Entry({
             }`}
           >
             {/* Envelope Pocket Body */}
-          <div className="absolute inset-0 bg-[#E8DACB] rounded-2xl border-2 border-[#C8A27C] shadow-lg overflow-hidden z-10">
+            <div className="absolute inset-0 bg-[#E8DACB] rounded-2xl border-2 border-[#C8A27C] shadow-lg overflow-hidden z-10">
+              <div
+                className="absolute inset-0 opacity-40"
+                style={{
+                  backgroundImage: 'repeating-linear-gradient(45deg, #D4BEA8 0, #D4BEA8 1px, transparent 0, transparent 16px)'
+                }}
+              />
+              {/* Inner shadows for paper feel */}
+              <div className="absolute -left-12 -top-12 w-32 h-32 rounded-full bg-black/5" />
+            </div>
+
+            {/* Envelope Triangle Flap */}
             <div
-              className="absolute inset-0 opacity-40"
+              className="envelope-flap absolute -top-1 left-0 right-0 h-28 z-20"
               style={{
-                backgroundImage: 'repeating-linear-gradient(45deg, #D4BEA8 0, #D4BEA8 1px, transparent 0, transparent 16px)'
+                clipPath: 'polygon(0 0, 100% 0, 50% 100%)',
+                backgroundColor: '#DFCBB8',
+                borderBottom: '2px solid #C09A74'
               }}
             />
-            {/* Inner shadows for paper feel */}
-            <div className="absolute -left-12 -top-12 w-32 h-32 rounded-full bg-black/5" />
-          </div>
 
-          {/* Envelope Triangle Flap */}
-          <div
-            className="envelope-flap absolute -top-1 left-0 right-0 h-28 z-20"
-            style={{
-              clipPath: 'polygon(0 0, 100% 0, 50% 100%)',
-              backgroundColor: '#DFCBB8',
-              borderBottom: '2px solid #C09A74'
-            }}
-          />
+            {/* Protruding Letter inside that peeks out and slides up */}
+            <div
+              className={`envelope-letter absolute inset-x-5 -top-10 bottom-2 bg-[#FFFDF9] rounded-xl border-2 border-[#D5C2B0] shadow-md p-3 flex flex-col items-center justify-start text-center z-15 transition-all duration-700 ease-out ${
+                isOpen ? '-translate-y-24 sm:-translate-y-28 shadow-2xl z-30' : 'hover:-translate-y-1'
+              }`}
+              style={{
+                backgroundImage: 'repeating-linear-gradient(transparent, transparent 18px, #EFE7DE 19px)'
+              }}
+            >
+              {/* Protruding Header Tab */}
+              <div className="flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-rose-100/90 border border-rose-300 text-[10px] font-extrabold text-rose-600 uppercase tracking-widest shadow-2xs mb-2">
+                <span>💌</span>
+                <span>DEAR SPECIAL ONE</span>
+              </div>
+              <p className="font-theme-display text-xs sm:text-sm font-bold text-stone-800 line-clamp-2 px-1">
+                {letterText}
+              </p>
+              <div className="w-12 h-0.5 bg-rose-200 mt-2 rounded-full" />
+            </div>
 
-          {/* Letter inside that slides up */}
-          <div className="envelope-letter absolute inset-x-4 top-4 bottom-2 bg-[#FFFDF9] rounded-xl border border-[#D5C2B0] shadow-sm p-4 flex flex-col items-center justify-center text-center z-15">
-            <span className="text-xs text-rose-500 font-bold mb-1">DEAR SPECIAL ONE</span>
-            <p className="font-theme-display text-sm font-bold text-stone-800 line-clamp-2">
-              {letterText}
-            </p>
-            <div className="w-12 h-0.5 bg-rose-200 mt-2 rounded-full" />
+            {/* Front Wax Seal Button */}
+            <div
+              className={`absolute left-1/2 top-[52%] -translate-x-1/2 -translate-y-1/2 z-40 w-12 h-12 rounded-full bg-[#A8383B] border-4 border-[#8E2B2E] shadow-xl flex items-center justify-center text-white text-lg transition-transform duration-300 ${
+                isOpen ? 'scale-0 opacity-0' : 'animate-pulse hover:scale-110'
+              }`}
+            >
+              <Heart className="w-5 h-5 fill-white text-white" />
+            </div>
           </div>
-
-          {/* Front Wax Seal Button */}
-          <div
-            className={`absolute left-1/2 top-[52%] -translate-x-1/2 -translate-y-1/2 z-40 w-12 h-12 rounded-full bg-[#A8383B] border-4 border-[#8E2B2E] shadow-xl flex items-center justify-center text-white text-lg transition-transform duration-300 ${
-              isOpen ? 'scale-0 opacity-0' : 'animate-pulse hover:scale-110'
-            }`}
-          >
-            <Heart className="w-5 h-5 fill-white text-white" />
-          </div>
-        </div>
         </GlareHover>
       ) : null}
 

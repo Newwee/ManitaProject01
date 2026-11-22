@@ -10,7 +10,7 @@ import {
   Minus,
   RotateCw,
   Trash2,
-  Palette
+  Move
 } from 'lucide-react';
 import { THEME_PRESETS } from '../../types/themePresets';
 import { DECORATION_ASSETS } from '../../types/assetManifests';
@@ -44,12 +44,14 @@ export default function PhoneFrame({
 }) {
   const [timeStr, setTimeStr] = useState('12:00');
   const [selectedDecId, setSelectedDecId] = useState(null);
-  const [draggingDecId, setDraggingDecId] = useState(null);
+  const [isTransforming, setIsTransforming] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [drawerCategory, setDrawerCategory] = useState('all');
   const themeData = THEME_PRESETS[theme] || THEME_PRESETS.scrapbook;
+
   const containerRef = useRef(null);
-  const dragStateRef = useRef(null);
+  const decElementsRef = useRef({});
+  const activeTransformRef = useRef(null);
 
   // Keep ref up-to-date with current decorations to eliminate stale closure bugs during drag
   const decorationsRef = useRef(decorations);
@@ -73,8 +75,21 @@ export default function PhoneFrame({
     return () => clearInterval(interval);
   }, []);
 
-  // Draggable item handlers using pointer capture for 100% reliable 60fps tracking
-  const handleDecPointerDown = (e, dec) => {
+  // Helper to get center coordinates of a decoration on screen
+  const getDecCenter = (decId) => {
+    const el = decElementsRef.current[decId];
+    if (!el) return null;
+    const rect = el.getBoundingClientRect();
+    return {
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2,
+      width: rect.width,
+      height: rect.height
+    };
+  };
+
+  // 1. Move Handler: Dragging the decoration body anywhere on the phone
+  const handleBodyPointerDown = (e, dec) => {
     if (!isEditable) return;
     e.stopPropagation();
 
@@ -83,69 +98,175 @@ export default function PhoneFrame({
     } catch (err) {}
 
     setSelectedDecId(dec.id);
-    setDraggingDecId(dec.id);
+    setIsTransforming(true);
 
-    const rect = containerRef.current.getBoundingClientRect();
-    dragStateRef.current = {
+    const containerRect = containerRef.current.getBoundingClientRect();
+    activeTransformRef.current = {
+      type: 'move',
+      decId: dec.id,
       startX: e.clientX,
       startY: e.clientY,
       initX: dec.x !== undefined ? dec.x : 50,
       initY: dec.y !== undefined ? dec.y : 50,
-      width: rect.width,
-      height: rect.height,
+      width: containerRect.width,
+      height: containerRect.height,
       currentX: dec.x !== undefined ? dec.x : 50,
       currentY: dec.y !== undefined ? dec.y : 50
     };
   };
 
-  const handleDecPointerMove = (e, decId) => {
-    if (draggingDecId !== decId || !dragStateRef.current) return;
+  // 2. Corner Scale Handler: Dragging corner handles to pull/resize
+  const handleScalePointerDown = (e, dec, corner) => {
+    if (!isEditable) return;
     e.stopPropagation();
 
-    const { startX, startY, initX, initY, width, height } = dragStateRef.current;
-    const dx = ((e.clientX - startX) / width) * 100;
-    const dy = ((e.clientY - startY) / height) * 100;
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch (err) {}
 
-    const newX = Math.round(Math.max(4, Math.min(96, initX + dx)));
-    const newY = Math.round(Math.max(4, Math.min(96, initY + dy)));
+    const center = getDecCenter(dec.id);
+    if (!center) return;
 
-    dragStateRef.current.currentX = newX;
-    dragStateRef.current.currentY = newY;
+    setIsTransforming(true);
+    const initialDist = Math.max(15, Math.hypot(e.clientX - center.x, e.clientY - center.y));
+    const initScale = dec.scale || 1;
 
-    const nextList = (decorationsRef.current || []).map((d) =>
-      d.id === decId ? { ...d, x: newX, y: newY } : d
-    );
-    decorationsRef.current = nextList;
-    if (onUpdateDecorations) {
-      onUpdateDecorations(nextList, false); // Fast update without blocking disk write
-    }
+    activeTransformRef.current = {
+      type: 'scale',
+      decId: dec.id,
+      corner,
+      centerX: center.x,
+      centerY: center.y,
+      initialDist,
+      initScale,
+      currentScale: initScale
+    };
   };
 
-  const handleDecPointerUp = (e, decId) => {
-    if (draggingDecId === decId) {
-      e.stopPropagation();
-      try {
-        e.currentTarget.releasePointerCapture(e.pointerId);
-      } catch (err) {}
+  // 3. Rotation Handler: Dragging top stem/handle to rotate
+  const handleRotatePointerDown = (e, dec) => {
+    if (!isEditable) return;
+    e.stopPropagation();
 
-      const finalX = dragStateRef.current?.currentX;
-      const finalY = dragStateRef.current?.currentY;
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch (err) {}
 
-      setDraggingDecId(null);
-      dragStateRef.current = null;
+    const center = getDecCenter(dec.id);
+    if (!center) return;
 
-      const finalList = (decorationsRef.current || []).map((d) =>
-        d.id === decId && finalX !== undefined && finalY !== undefined
-          ? { ...d, x: finalX, y: finalY }
-          : d
+    setIsTransforming(true);
+    const initialAngle = Math.atan2(e.clientY - center.y, e.clientX - center.x) * (180 / Math.PI);
+    const initRotation = dec.rotation || 0;
+
+    activeTransformRef.current = {
+      type: 'rotate',
+      decId: dec.id,
+      centerX: center.x,
+      centerY: center.y,
+      initialAngle,
+      initRotation,
+      currentRotation: initRotation,
+      hasMoved: false
+    };
+  };
+
+  // Unified Pointer Move
+  const handleTransformPointerMove = (e) => {
+    const transform = activeTransformRef.current;
+    if (!transform) return;
+    e.stopPropagation();
+
+    if (transform.type === 'move') {
+      const { startX, startY, initX, initY, width, height, decId } = transform;
+      const dx = ((e.clientX - startX) / width) * 100;
+      const dy = ((e.clientY - startY) / height) * 100;
+
+      const newX = Math.round(Math.max(4, Math.min(96, initX + dx)));
+      const newY = Math.round(Math.max(4, Math.min(96, initY + dy)));
+
+      transform.currentX = newX;
+      transform.currentY = newY;
+
+      const nextList = (decorationsRef.current || []).map((d) =>
+        d.id === decId ? { ...d, x: newX, y: newY } : d
       );
-      decorationsRef.current = finalList;
+      decorationsRef.current = nextList;
       if (onUpdateDecorations) {
-        onUpdateDecorations(finalList, true); // Commit and persist to localStorage
+        onUpdateDecorations(nextList, false); // Fast 60fps update
+      }
+    } else if (transform.type === 'scale') {
+      const { centerX, centerY, initialDist, initScale, decId } = transform;
+      const currentDist = Math.hypot(e.clientX - centerX, e.clientY - centerY);
+      const ratio = currentDist / initialDist;
+      const newScale = Math.max(0.4, Math.min(3.2, +(initScale * ratio).toFixed(2)));
+
+      transform.currentScale = newScale;
+
+      const nextList = (decorationsRef.current || []).map((d) =>
+        d.id === decId ? { ...d, scale: newScale } : d
+      );
+      decorationsRef.current = nextList;
+      if (onUpdateDecorations) {
+        onUpdateDecorations(nextList, false);
+      }
+    } else if (transform.type === 'rotate') {
+      const { centerX, centerY, initialAngle, initRotation, decId } = transform;
+      const currentAngle = Math.atan2(e.clientY - centerY, e.clientX - centerX) * (180 / Math.PI);
+      const delta = currentAngle - initialAngle;
+      let newRot = Math.round((initRotation + delta) % 360);
+      if (newRot < 0) newRot += 360;
+
+      transform.currentRotation = newRot;
+      transform.hasMoved = true;
+
+      const nextList = (decorationsRef.current || []).map((d) =>
+        d.id === decId ? { ...d, rotation: newRot } : d
+      );
+      decorationsRef.current = nextList;
+      if (onUpdateDecorations) {
+        onUpdateDecorations(nextList, false);
       }
     }
   };
 
+  // Unified Pointer Up / Release
+  const handleTransformPointerUp = (e) => {
+    const transform = activeTransformRef.current;
+    if (!transform) return;
+    e.stopPropagation();
+
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch (err) {}
+
+    const { decId, type } = transform;
+    let finalList = decorationsRef.current || [];
+
+    if (type === 'rotate' && !transform.hasMoved) {
+      // Just a tap on the rotate handle: rotate by +20 deg
+      const nextRot = ((transform.initRotation || 0) + 20) % 360;
+      finalList = finalList.map((d) => (d.id === decId ? { ...d, rotation: nextRot } : d));
+    } else if (type === 'move' && transform.currentX !== undefined) {
+      finalList = finalList.map((d) =>
+        d.id === decId ? { ...d, x: transform.currentX, y: transform.currentY } : d
+      );
+    } else if (type === 'scale' && transform.currentScale !== undefined) {
+      finalList = finalList.map((d) =>
+        d.id === decId ? { ...d, scale: transform.currentScale } : d
+      );
+    }
+
+    decorationsRef.current = finalList;
+    if (onUpdateDecorations) {
+      onUpdateDecorations(finalList, true); // Commit and persist to storage
+    }
+
+    activeTransformRef.current = null;
+    setIsTransforming(false);
+  };
+
+  // Quick Action Handlers
   const handleRemoveDecoration = (e, decId) => {
     e.stopPropagation();
     if (onUpdateDecorations) {
@@ -162,7 +283,7 @@ export default function PhoneFrame({
       const nextList = (decorationsRef.current || []).map((d) => {
         if (d.id === decId) {
           const currentScale = d.scale || 1;
-          const newScale = Math.max(0.5, Math.min(2.5, +(currentScale + delta).toFixed(2)));
+          const newScale = Math.max(0.4, Math.min(3.2, +(currentScale + delta).toFixed(2)));
           return { ...d, scale: newScale };
         }
         return d;
@@ -209,8 +330,12 @@ export default function PhoneFrame({
       {/* Soft translucent layer so text/keypads are always sharp and readable */}
       <div className="absolute inset-0 bg-stone-900/10 pointer-events-none z-0" />
 
-      {/* Phone Camera Notch & Status Bar */}
-      <div className="w-full pt-3 pb-2 px-6 flex items-center justify-between text-xs select-none z-30 shrink-0 opacity-80 relative">
+      {/* Phone Camera Notch & Status Bar (Dims during transform) */}
+      <div
+        className={`w-full pt-3 pb-2 px-6 flex items-center justify-between text-xs select-none z-20 shrink-0 relative transition-opacity duration-200 ${
+          isTransforming ? 'opacity-20' : 'opacity-85'
+        }`}
+      >
         <span className="font-semibold text-[11px] tracking-tight">{timeStr}</span>
 
         {/* Dynamic Island / Speaker Pill */}
@@ -225,8 +350,12 @@ export default function PhoneFrame({
         </div>
       </div>
 
-      {/* Mini Stage Progress Bar, Stage Navigation & Theme Badge */}
-      <div className="px-5 py-1.5 flex items-center justify-between z-20 shrink-0 relative">
+      {/* Mini Stage Progress Bar, Stage Navigation & Theme Badge (Dims during transform) */}
+      <div
+        className={`px-5 py-1.5 flex items-center justify-between z-20 shrink-0 relative transition-opacity duration-200 ${
+          isTransforming ? 'opacity-20' : 'opacity-100'
+        }`}
+      >
         {/* Stage progress dots (clickable to switch stage) */}
         <div className="flex items-center gap-1.5">
           {Array.from({ length: totalStages }).map((_, idx) => (
@@ -277,98 +406,186 @@ export default function PhoneFrame({
         </div>
       </div>
 
-      {/* Draggable Placed Decorations Overlay (Position Saved & Remembered) */}
+      {/* Active Stage Body (Keypad, Envelope, Chat) - Dims & disables pointer events during active transform */}
+      <div
+        className={`flex-1 flex flex-col overflow-y-auto relative p-3 z-10 transition-opacity duration-200 ${
+          isTransforming ? 'opacity-20 pointer-events-none' : 'opacity-100'
+        }`}
+      >
+        {children}
+      </div>
+
+      {/* DRAGGABLE & TRANSFORMABLE DECORATIONS OVERLAY (RENDERED AFTER STAGE BODY WITH HIGH Z-INDEX) */}
       {decorations &&
         decorations.map((dec) => {
           const isSelected = selectedDecId === dec.id;
-          const isDragging = draggingDecId === dec.id;
+          const currentRotation = dec.rotation || 0;
+          const currentScale = dec.scale || 1;
+
           return (
             <div
               key={dec.id}
-              onPointerDown={(e) => handleDecPointerDown(e, dec)}
-              onPointerMove={(e) => handleDecPointerMove(e, dec.id)}
-              onPointerUp={(e) => handleDecPointerUp(e, dec.id)}
-              onPointerCancel={(e) => handleDecPointerUp(e, dec.id)}
-              onClick={(e) => {
-                e.stopPropagation();
-                setSelectedDecId(dec.id);
+              ref={(el) => {
+                decElementsRef.current[dec.id] = el;
               }}
               style={{
                 left: `${dec.x !== undefined ? dec.x : 50}%`,
                 top: `${dec.y !== undefined ? dec.y : 50}%`,
-                transform: `translate(-50%, -50%) rotate(${dec.rotation || 0}deg) scale(${
-                  (dec.scale || 1) * (isDragging ? 1.08 : 1)
-                })`,
+                transform: `translate(-50%, -50%) rotate(${currentRotation}deg) scale(${currentScale})`,
                 touchAction: 'none'
               }}
-              className={`absolute z-35 select-none transition-shadow ${
-                isEditable ? 'cursor-grab active:cursor-grabbing' : 'pointer-events-none'
-              } ${isSelected && isEditable ? 'ring-2 ring-rose-500 ring-offset-2 ring-offset-white/70 rounded-xl' : ''} ${
-                isDragging ? 'opacity-90 shadow-2xl scale-105' : ''
+              className={`absolute select-none transition-shadow ${
+                isSelected ? 'z-50' : 'z-40'
+              } ${isEditable ? 'cursor-grab active:cursor-grabbing' : 'pointer-events-none'} ${
+                isTransforming && !isSelected ? 'opacity-30' : 'opacity-100'
               }`}
-              title={isEditable ? 'แตะค้างแล้วลากเพื่อย้ายตำแหน่งของตกแต่ง' : undefined}
             >
-              <img
-                src={dec.src}
-                alt="decoration"
-                draggable={false}
-                onDragStart={(e) => e.preventDefault()}
-                className="w-14 h-14 sm:w-16 sm:h-16 object-contain pointer-events-none drop-shadow-md select-none"
-              />
+              {/* Main Decoration Container */}
+              <div
+                onPointerDown={(e) => handleBodyPointerDown(e, dec)}
+                onPointerMove={handleTransformPointerMove}
+                onPointerUp={handleTransformPointerUp}
+                onPointerCancel={handleTransformPointerUp}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedDecId(dec.id);
+                }}
+                className={`relative p-1 rounded-xl transition-all ${
+                  isSelected && isEditable
+                    ? 'ring-2 ring-dashed ring-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.4)] bg-white/10 backdrop-blur-2xs'
+                    : ''
+                }`}
+                title={isEditable ? 'แตะ/คลิกเพื่อเลือก ดึงมุมปรับขนาด หรือลากไปวางตำแหน่งใดก็ได้' : undefined}
+              >
+                {/* Sticker Image */}
+                <img
+                  src={dec.src}
+                  alt="decoration"
+                  draggable={false}
+                  onDragStart={(e) => e.preventDefault()}
+                  className="w-14 h-14 sm:w-16 sm:h-16 object-contain pointer-events-none drop-shadow-md select-none"
+                />
 
-              {/* Action Toolbar on Selected / Hovered Decoration */}
-              {isEditable && (
-                <div
-                  className={`absolute -top-7 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-stone-900/90 backdrop-blur-xs text-white rounded-full px-1.5 py-0.5 shadow-lg border border-white/20 transition-opacity ${
-                    isSelected ? 'opacity-100 scale-100' : 'opacity-0 hover:opacity-100 pointer-events-none'
-                  }`}
-                >
-                  <button
-                    type="button"
-                    onClick={(e) => handleScaleDecoration(e, dec.id, 0.15)}
-                    className="p-0.5 hover:text-rose-400 transition"
-                    title="ขยายขนาด"
-                  >
-                    <Plus className="w-3 h-3" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => handleScaleDecoration(e, dec.id, -0.15)}
-                    className="p-0.5 hover:text-rose-400 transition"
-                    title="ย่อขนาด"
-                  >
-                    <Minus className="w-3 h-3" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => handleRotateDecoration(e, dec.id)}
-                    className="p-0.5 hover:text-amber-400 transition"
-                    title="หมุนองศา"
-                  >
-                    <RotateCw className="w-3 h-3" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => handleRemoveDecoration(e, dec.id)}
-                    className="p-0.5 text-red-400 hover:text-red-300 transition"
-                    title="ลบสติกเกอร์นี้"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                  </button>
-                </div>
-              )}
+                {/* INTERACTIVE TRANSFORM GIZMO (VISIBLE WHEN SELECTED IN EDIT MODE) */}
+                {isSelected && isEditable && (
+                  <>
+                    {/* Top Rotation Stem & Handle (ปรับความเอียงได้) */}
+                    <div className="absolute -top-10 left-1/2 -translate-x-1/2 flex flex-col items-center z-50 select-none">
+                      <div
+                        onPointerDown={(e) => handleRotatePointerDown(e, dec)}
+                        onPointerMove={handleTransformPointerMove}
+                        onPointerUp={handleTransformPointerUp}
+                        onPointerCancel={handleTransformPointerUp}
+                        className="w-7 h-7 rounded-full bg-white border-2 border-rose-500 shadow-lg flex items-center justify-center text-rose-600 hover:bg-rose-50 hover:scale-115 active:scale-125 cursor-grab active:cursor-grabbing transition-transform touch-none"
+                        title="คลิกลากเพื่อหมุนองศาอิสระ หรือแตะเพื่อหมุน +20°"
+                      >
+                        <RotateCw className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="w-0.5 h-3 bg-rose-500" />
+                    </div>
+
+                    {/* 4 Corner Pull Handles for Interactive Resizing (ดึงมุมปรับขนาด) */}
+                    {/* Top-Left (NW) */}
+                    <div
+                      onPointerDown={(e) => handleScalePointerDown(e, dec, 'nw')}
+                      onPointerMove={handleTransformPointerMove}
+                      onPointerUp={handleTransformPointerUp}
+                      onPointerCancel={handleTransformPointerUp}
+                      className="absolute -top-2.5 -left-2.5 w-5 h-5 rounded-full bg-white border-2 border-rose-500 shadow-md flex items-center justify-center cursor-nwse-resize z-50 hover:scale-125 active:scale-125 transition-transform touch-none"
+                      title="ลากมุมนี้เพื่อย่อ-ขยายขนาด"
+                    >
+                      <div className="w-1.5 h-1.5 bg-rose-500 rounded-full" />
+                    </div>
+
+                    {/* Top-Right (NE) */}
+                    <div
+                      onPointerDown={(e) => handleScalePointerDown(e, dec, 'ne')}
+                      onPointerMove={handleTransformPointerMove}
+                      onPointerUp={handleTransformPointerUp}
+                      onPointerCancel={handleTransformPointerUp}
+                      className="absolute -top-2.5 -right-2.5 w-5 h-5 rounded-full bg-white border-2 border-rose-500 shadow-md flex items-center justify-center cursor-nesw-resize z-50 hover:scale-125 active:scale-125 transition-transform touch-none"
+                      title="ลากมุมนี้เพื่อย่อ-ขยายขนาด"
+                    >
+                      <div className="w-1.5 h-1.5 bg-rose-500 rounded-full" />
+                    </div>
+
+                    {/* Bottom-Left (SW) */}
+                    <div
+                      onPointerDown={(e) => handleScalePointerDown(e, dec, 'sw')}
+                      onPointerMove={handleTransformPointerMove}
+                      onPointerUp={handleTransformPointerUp}
+                      onPointerCancel={handleTransformPointerUp}
+                      className="absolute -bottom-2.5 -left-2.5 w-5 h-5 rounded-full bg-white border-2 border-rose-500 shadow-md flex items-center justify-center cursor-nesw-resize z-50 hover:scale-125 active:scale-125 transition-transform touch-none"
+                      title="ลากมุมนี้เพื่อย่อ-ขยายขนาด"
+                    >
+                      <div className="w-1.5 h-1.5 bg-rose-500 rounded-full" />
+                    </div>
+
+                    {/* Bottom-Right (SE) */}
+                    <div
+                      onPointerDown={(e) => handleScalePointerDown(e, dec, 'se')}
+                      onPointerMove={handleTransformPointerMove}
+                      onPointerUp={handleTransformPointerUp}
+                      onPointerCancel={handleTransformPointerUp}
+                      className="absolute -bottom-2.5 -right-2.5 w-5 h-5 rounded-full bg-white border-2 border-rose-500 shadow-md flex items-center justify-center cursor-nwse-resize z-50 hover:scale-125 active:scale-125 transition-transform touch-none"
+                      title="ลากมุมนี้เพื่อย่อ-ขยายขนาด"
+                    >
+                      <div className="w-1.5 h-1.5 bg-rose-500 rounded-full" />
+                    </div>
+
+                    {/* Quick Floating Toolbar (Above the rotation handle) */}
+                    <div
+                      className="absolute -top-20 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-stone-900/95 backdrop-blur-md text-white rounded-full px-2 py-1 shadow-2xl border border-white/25 z-50 select-none animate-in fade-in zoom-in-95 duration-150"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        type="button"
+                        onClick={(e) => handleScaleDecoration(e, dec.id, 0.15)}
+                        className="p-1 hover:text-rose-400 active:scale-90 transition rounded-full hover:bg-white/10"
+                        title="ขยายขนาด (+)"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => handleScaleDecoration(e, dec.id, -0.15)}
+                        className="p-1 hover:text-rose-400 active:scale-90 transition rounded-full hover:bg-white/10"
+                        title="ย่อขนาด (-)"
+                      >
+                        <Minus className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => handleRotateDecoration(e, dec.id)}
+                        className="p-1 hover:text-amber-400 active:scale-90 transition rounded-full hover:bg-white/10"
+                        title="หมุนองศา (+20°)"
+                      >
+                        <RotateCw className="w-3.5 h-3.5" />
+                      </button>
+                      <div className="w-px h-3 bg-white/20 mx-0.5" />
+                      <button
+                        type="button"
+                        onClick={(e) => handleRemoveDecoration(e, dec.id)}
+                        className="p-1 text-red-400 hover:text-red-300 active:scale-90 transition rounded-full hover:bg-red-500/20"
+                        title="ลบสติกเกอร์นี้"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           );
         })}
 
-      {/* Active Stage Body */}
-      <div className="flex-1 flex flex-col overflow-y-auto relative p-3 z-10">
-        {children}
-      </div>
-
-      {/* Floating Preview Decoration Toolbar (For Creator Mode) */}
+      {/* Floating Preview Decoration Toolbar (For Creator Mode) - Dims during transform */}
       {isEditable && (
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 bg-stone-900/85 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20 shadow-xl text-white text-xs select-none">
+        <div
+          className={`absolute bottom-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 bg-stone-900/85 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20 shadow-xl text-white text-xs select-none transition-opacity duration-200 ${
+            isTransforming ? 'opacity-20 pointer-events-none' : 'opacity-100'
+          }`}
+        >
           <button
             type="button"
             onClick={(e) => {

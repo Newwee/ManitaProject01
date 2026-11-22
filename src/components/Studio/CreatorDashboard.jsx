@@ -238,7 +238,8 @@ export default function CreatorDashboard({
       src: item.src,
       x: 45 + Math.floor(Math.random() * 10),
       y: 45 + Math.floor(Math.random() * 10),
-      scale: 1
+      scale: 1,
+      rotation: 0
     };
     onChangeConfig({
       ...config,
