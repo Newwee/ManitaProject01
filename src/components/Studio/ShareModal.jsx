@@ -55,6 +55,7 @@ export default function ShareModal({
   const [qrTheme, setQrTheme] = useState('classic');
   const [qrCenterBadge, setQrCenterBadge] = useState('none'); // Default to 'none' (no logo) as requested
   const [qrFrameId, setQrFrameId] = useState('none');
+  const [qrCardLayout, setQrCardLayout] = useState('card'); // 'card' (Gift Card Mascot) | 'corner' (Peeking Mascot)
   const canvasRef = useRef(null);
   const qrFrameScrollRef = useRef(null);
   const qrMovedRef = useRef(false);
@@ -73,7 +74,7 @@ export default function ShareModal({
         setIsCloudSaved(result.isCloudSaved);
       }
 
-      await renderStyledQR(targetUrl, qrTheme, qrCenterBadge, qrFrameId);
+      await renderStyledQR(targetUrl, qrTheme, qrCenterBadge, qrFrameId, qrCardLayout);
     } catch (err) {
       console.error('Failed to generate shareable gift:', err);
       setErrorMsg('เกิดข้อผิดพลาดในการสร้างลิงก์ กรุณาลองใหม่อีกครั้ง');
@@ -82,7 +83,7 @@ export default function ShareModal({
     }
   };
 
-  const renderStyledQR = async (url, themeId, badge, frameId = qrFrameId) => {
+  const renderStyledQR = async (url, themeId, badge, frameId = qrFrameId, layout = qrCardLayout) => {
     if (!url) return;
     const theme = QR_PALETTES.find(t => t.id === themeId) || QR_PALETTES[0];
     const size = 360;
@@ -173,52 +174,195 @@ export default function ShareModal({
       }
     }
 
-    // If decorative QR frame is selected, composite onto a framed canvas while keeping QR 100% scannable
+    // If decorative character card or frame is selected:
     if (frameId && frameId !== 'none') {
       const frameAsset = QR_FRAME_ASSETS.find(f => f.id === frameId);
       if (frameAsset) {
-        const framedCanvas = document.createElement('canvas');
-        const frameW = 460;
-        const frameH = Math.round(frameW * (frameAsset.height / frameAsset.width));
-        framedCanvas.width = frameW;
-        framedCanvas.height = frameH;
-        const fctx = framedCanvas.getContext('2d');
+        const drawRoundedRect = (context, x, y, w, h, r) => {
+          context.beginPath();
+          if (context.roundRect) {
+            context.roundRect(x, y, w, h, r);
+          } else {
+            context.rect(x, y, w, h);
+          }
+        };
 
-        // Draw soft card background
-        fctx.fillStyle = theme.light;
-        fctx.fillRect(0, 0, frameW, frameH);
+        if (layout === 'corner') {
+          // LAYOUT 2: Peeking Mascot on Top of QR Card (460x500)
+          const cardW = 460;
+          const cardH = 500;
+          const qrSize = 300;
+          const qrX = (cardW - qrSize) / 2;
+          const qrY = 135;
 
-        // Load and draw frame image
-        await new Promise((resolve) => {
-          const fImg = new Image();
-          fImg.crossOrigin = 'anonymous';
-          fImg.onload = () => {
-            fctx.drawImage(fImg, 0, 0, frameW, frameH);
-            resolve();
-          };
-          fImg.onerror = () => resolve();
-          fImg.src = frameAsset.src;
-        });
+          const framedCanvas = document.createElement('canvas');
+          framedCanvas.width = cardW;
+          framedCanvas.height = cardH;
+          const fctx = framedCanvas.getContext('2d');
 
-        // Center clean white plate with shadow for QR code to ensure 100% scan fidelity
-        const qrSize = Math.min(frameW * 0.58, frameH * 0.58);
-        const qrX = (frameW - qrSize) / 2;
-        const qrY = (frameH - qrSize) / 2;
+          // Card background
+          fctx.fillStyle = theme.light;
+          drawRoundedRect(fctx, 0, 0, cardW, cardH, 26);
+          fctx.fill();
 
-        fctx.save();
-        fctx.shadowColor = 'rgba(0,0,0,0.12)';
-        fctx.shadowBlur = 10;
-        fctx.fillStyle = '#ffffff';
-        fctx.beginPath();
-        fctx.roundRect(qrX - 8, qrY - 8, qrSize + 16, qrSize + 16, 12);
-        fctx.fill();
-        fctx.restore();
+          fctx.lineWidth = 3.5;
+          fctx.strokeStyle = theme.border;
+          fctx.stroke();
 
-        // Draw the crisp QR code inside the safe zone
-        fctx.drawImage(canvas, qrX, qrY, qrSize, qrSize);
+          // Inner dashed border
+          fctx.save();
+          fctx.setLineDash([5, 5]);
+          fctx.lineWidth = 1.5;
+          fctx.strokeStyle = theme.accent || theme.dark;
+          fctx.globalAlpha = 0.25;
+          drawRoundedRect(fctx, 10, 10, cardW - 20, cardH - 20, 20);
+          fctx.stroke();
+          fctx.restore();
 
-        setQrDataUrl(framedCanvas.toDataURL('image/png'));
-        return;
+          // White Plate for QR Code with shadow
+          fctx.save();
+          fctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
+          fctx.shadowBlur = 12;
+          fctx.shadowOffsetY = 4;
+          fctx.fillStyle = '#ffffff';
+          drawRoundedRect(fctx, qrX - 10, qrY - 10, qrSize + 20, qrSize + 20, 18);
+          fctx.fill();
+          fctx.lineWidth = 1.5;
+          fctx.strokeStyle = theme.border;
+          fctx.stroke();
+          fctx.restore();
+
+          // Draw QR Code
+          fctx.drawImage(canvas, qrX, qrY, qrSize, qrSize);
+
+          // Draw Mascot sitting / peeking on top-center (NO OVERLAP ON QR CODE!)
+          await new Promise((resolve) => {
+            const fImg = new Image();
+            fImg.crossOrigin = 'anonymous';
+            fImg.onload = () => {
+              const mascotH = 130;
+              const mascotW = Math.round(mascotH * (frameAsset.width / frameAsset.height));
+              const mascotX = (cardW - mascotW) / 2;
+              const mascotY = 10;
+              fctx.save();
+              fctx.shadowColor = 'rgba(0, 0, 0, 0.12)';
+              fctx.shadowBlur = 8;
+              fctx.shadowOffsetY = 3;
+              fctx.drawImage(fImg, mascotX, mascotY, mascotW, mascotH);
+              fctx.restore();
+              resolve();
+            };
+            fImg.onerror = () => resolve();
+            fImg.src = frameAsset.src;
+          });
+
+          // Footer
+          fctx.font = 'bold 12px sans-serif';
+          fctx.fillStyle = theme.accent || theme.dark;
+          fctx.textAlign = 'center';
+          fctx.fillText('✨ สแกนด้วยกล้องมือถือได้ทันที (สแกนติดง่าย 100%) ✨', cardW / 2, cardH - 18);
+
+          setQrDataUrl(framedCanvas.toDataURL('image/png'));
+          return;
+        } else {
+          // LAYOUT 1: Elegant Gift Card Mascot (Portrait 460x580) - 100% Mascot Visible & 100% Scannable
+          const cardW = 460;
+          const charMaxH = 150;
+          const charH = Math.min(charMaxH, Math.round(cardW * 0.45 * (frameAsset.height / frameAsset.width)));
+          const charW = Math.round(charH * (frameAsset.width / frameAsset.height));
+          const qrSize = 260;
+          const cardH = 580;
+
+          const framedCanvas = document.createElement('canvas');
+          framedCanvas.width = cardW;
+          framedCanvas.height = cardH;
+          const fctx = framedCanvas.getContext('2d');
+
+          // 1. Soft Luxury Card Background
+          fctx.fillStyle = theme.light;
+          drawRoundedRect(fctx, 0, 0, cardW, cardH, 26);
+          fctx.fill();
+
+          // Outer Border
+          fctx.lineWidth = 4;
+          fctx.strokeStyle = theme.border;
+          fctx.stroke();
+
+          // Inner Decorative Dotted Border
+          fctx.save();
+          fctx.setLineDash([5, 5]);
+          fctx.lineWidth = 1.5;
+          fctx.strokeStyle = theme.accent || theme.dark;
+          fctx.globalAlpha = 0.25;
+          drawRoundedRect(fctx, 10, 10, cardW - 20, cardH - 20, 20);
+          fctx.stroke();
+          fctx.restore();
+
+          // 2. Top Header Pill
+          fctx.save();
+          fctx.fillStyle = 'rgba(0, 0, 0, 0.04)';
+          drawRoundedRect(fctx, (cardW - 190) / 2, 16, 190, 22, 11);
+          fctx.fill();
+          fctx.font = 'bold 11px sans-serif';
+          fctx.fillStyle = theme.dark;
+          fctx.textAlign = 'center';
+          fctx.textBaseline = 'middle';
+          fctx.fillText('💌 MANITA SPECIAL GIFT', cardW / 2, 27);
+          fctx.restore();
+
+          // 3. Draw Character Mascot at Top (100% UNCOVERED & FULLY VISIBLE)
+          await new Promise((resolve) => {
+            const fImg = new Image();
+            fImg.crossOrigin = 'anonymous';
+            fImg.onload = () => {
+              const charX = (cardW - charW) / 2;
+              const charY = 46;
+              fctx.save();
+              fctx.shadowColor = 'rgba(0, 0, 0, 0.08)';
+              fctx.shadowBlur = 6;
+              fctx.shadowOffsetY = 2;
+              fctx.drawImage(fImg, charX, charY, charW, charH);
+              fctx.restore();
+              resolve();
+            };
+            fImg.onerror = () => resolve();
+            fImg.src = frameAsset.src;
+          });
+
+          // Greeting caption below character
+          fctx.font = 'bold 13px sans-serif';
+          fctx.fillStyle = theme.dark;
+          fctx.textAlign = 'center';
+          fctx.fillText('แตะหรือใช้กล้องสแกนเพื่อเปิดของขวัญนะ ♡', cardW / 2, 46 + charH + 18);
+
+          // 4. Centered White Plate for QR Code (100% Scannable)
+          const qrX = (cardW - qrSize) / 2;
+          const qrY = 46 + charH + 30;
+
+          fctx.save();
+          fctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
+          fctx.shadowBlur = 12;
+          fctx.shadowOffsetY = 3;
+          fctx.fillStyle = '#ffffff';
+          drawRoundedRect(fctx, qrX - 10, qrY - 10, qrSize + 20, qrSize + 20, 18);
+          fctx.fill();
+          fctx.lineWidth = 1.5;
+          fctx.strokeStyle = theme.border;
+          fctx.stroke();
+          fctx.restore();
+
+          // Draw QR Code
+          fctx.drawImage(canvas, qrX, qrY, qrSize, qrSize);
+
+          // 5. Footer info
+          fctx.font = 'bold 11px sans-serif';
+          fctx.fillStyle = theme.accent || theme.dark;
+          fctx.textAlign = 'center';
+          fctx.fillText('✨ สแกนติดง่าย 100% • ใช้กล้องมือถือส่องเปิดได้ทันที ✨', cardW / 2, cardH - 18);
+
+          setQrDataUrl(framedCanvas.toDataURL('image/png'));
+          return;
+        }
       }
     }
 
@@ -232,9 +376,9 @@ export default function ShareModal({
 
   useEffect(() => {
     if (shareUrl) {
-      renderStyledQR(shareUrl, qrTheme, qrCenterBadge, qrFrameId);
+      renderStyledQR(shareUrl, qrTheme, qrCenterBadge, qrFrameId, qrCardLayout);
     }
-  }, [qrTheme, qrCenterBadge, qrFrameId]);
+  }, [qrTheme, qrCenterBadge, qrFrameId, qrCardLayout]);
 
   const handleCopyLink = () => {
     if (!shareUrl) return;
@@ -261,6 +405,18 @@ export default function ShareModal({
 
   const handleDownloadGiftCard = () => {
     if (!qrDataUrl) return;
+
+    // If using a character card frame, download the generated card directly
+    if (qrFrameId && qrFrameId !== 'none') {
+      const a = document.createElement('a');
+      a.href = qrDataUrl;
+      a.download = `MANITA-GiftCard-${qrTheme}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      return;
+    }
+
     const cardCanvas = document.createElement('canvas');
     cardCanvas.width = 600;
     cardCanvas.height = 800;
@@ -352,11 +508,11 @@ export default function ShareModal({
               <span>กำลังบันทึกของขวัญและสร้าง QR Code คมชัด...</span>
             </div>
           ) : qrDataUrl ? (
-            <div className="relative group">
+            <div className="relative group flex flex-col items-center">
               <img
                 src={qrDataUrl}
                 alt="MANITA Gift QR Code"
-                className="w-48 h-48 rounded-2xl shadow-md border-2 border-stone-200 dark:border-stone-600 bg-white p-2 mx-auto"
+                className="max-w-[220px] max-h-[290px] w-auto h-auto rounded-2xl shadow-lg border-2 border-stone-200 dark:border-stone-700 bg-white p-1 mx-auto object-contain transition-all"
               />
               <div className="text-[11px] text-stone-600 dark:text-stone-300 mt-2 font-medium flex items-center justify-center gap-1">
                 <span>📱</span>
@@ -431,13 +587,41 @@ export default function ShareModal({
 
           {/* QR Frame Style Selector */}
           <div className="mt-2 pt-2 border-t border-stone-200/60 dark:border-stone-700/60">
-            <div className="flex items-center justify-between text-[10px] mb-1.5">
+            <div className="flex items-center justify-between text-[10px] mb-1.5 flex-wrap gap-1">
               <span className="text-stone-500 dark:text-stone-400 font-medium flex items-center gap-1">
                 <LayoutTemplate className="w-3 h-3 text-rose-500" />
-                <span>กรอบการ์ด QR Code (สแกนติดง่าย 100%):</span>
+                <span>การ์ดลายคิ้วท์ ({QR_FRAME_ASSETS.length} ลาย):</span>
               </span>
-              <div className="flex items-center gap-1.5">
-                <span className="text-[9px] text-stone-400">{QR_FRAME_ASSETS.length} ลาย</span>
+              <div className="flex items-center gap-1">
+                {/* Layout Selector when frame is active */}
+                {qrFrameId !== 'none' && (
+                  <div className="flex items-center gap-0.5 bg-stone-200/60 dark:bg-stone-800 p-0.5 rounded-lg mr-1 border border-stone-300/60 dark:border-stone-700">
+                    <button
+                      type="button"
+                      onClick={() => setQrCardLayout('card')}
+                      className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition ${
+                        qrCardLayout === 'card'
+                          ? 'bg-rose-500 text-white shadow-xs'
+                          : 'text-stone-600 dark:text-stone-300 hover:text-stone-900'
+                      }`}
+                      title="สไตล์การ์ดของขวัญ: ตัวการ์ตูนเด่นด้านบน QR Code อยู่ด้านล่าง ไม่บังหน้าตา"
+                    >
+                      🎴 การ์ดแนวตั้ง
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setQrCardLayout('corner')}
+                      className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition ${
+                        qrCardLayout === 'corner'
+                          ? 'bg-rose-500 text-white shadow-xs'
+                          : 'text-stone-600 dark:text-stone-300 hover:text-stone-900'
+                      }`}
+                      title="สไตล์เกาะขอบ: ตัวการ์ตูนเกาะอยู่ด้านบนของ QR Code"
+                    >
+                      🐾 เกาะขอบ
+                    </button>
+                  </div>
+                )}
                 <button
                   type="button"
                   onClick={() => {
