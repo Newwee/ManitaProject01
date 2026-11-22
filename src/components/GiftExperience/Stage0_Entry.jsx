@@ -192,25 +192,27 @@ export default function Stage0_Entry({
         </p>
       </div>
 
-      {/* CUSTOM SLICED ENVELOPE (Requirement 4 & Protruding Letter) */}
+      {/* CUSTOM SLICED ENVELOPE (Requirement 4) */}
       {envelopeStyle && envelopeStyle !== 'default' ? (
-        <GlareHover maxTilt={8} glareOpacity={0.25} borderRadius="20px" className="mt-8 sm:mt-10">
+        <GlareHover maxTilt={8} glareOpacity={0.25} borderRadius="20px" className="mt-4 sm:mt-6">
           <div
             onClick={handleOpen}
             className={`envelope-wrapper relative w-72 h-52 sm:w-80 sm:h-56 cursor-pointer select-none transition-transform duration-200 hover:scale-[1.02] active:scale-95 ${
               isOpen ? 'envelope-open' : ''
             }`}
           >
-            {/* Protruding Letter inside that peeks out and slides up on tap */}
+            {/* Letter inside that is tucked inside when closed, and slides up when opened */}
             <div
-              className={`envelope-letter absolute w-[72%] max-w-[210px] mx-auto inset-x-0 -top-8 bottom-12 bg-[#FFFDF9] rounded-2xl border-2 border-[#D5C2B0] shadow-md p-3.5 flex flex-col items-center justify-start text-center z-10 transition-all duration-700 ease-out ${
-                isOpen ? '-translate-y-26 sm:-translate-y-30 shadow-2xl z-30' : 'hover:-translate-y-1'
+              className={`envelope-letter absolute w-[80%] max-w-[230px] mx-auto inset-x-0 top-6 bottom-4 bg-[#FFFDF9] rounded-2xl border-2 border-[#D5C2B0] shadow-md p-4 flex flex-col items-center justify-center text-center transition-all duration-700 ease-out ${
+                isOpen
+                  ? '-translate-y-28 sm:-translate-y-32 opacity-100 z-30 shadow-2xl scale-100 pointer-events-auto'
+                  : 'opacity-0 translate-y-6 scale-95 pointer-events-none z-10'
               }`}
               style={{
                 backgroundImage: 'repeating-linear-gradient(transparent, transparent 18px, #EFE7DE 19px)'
               }}
             >
-              {/* Protruding Header Tab (Visibly Peeking Out at the Top of the Envelope) */}
+              {/* Header Tab */}
               <div className="flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-rose-100/90 border border-rose-300 text-[10px] font-extrabold text-rose-600 uppercase tracking-widest shadow-2xs mb-2">
                 <span>💌</span>
                 <span>DEAR SPECIAL ONE</span>
@@ -243,7 +245,7 @@ export default function Stage0_Entry({
           </div>
         </GlareHover>
       ) : theme === 'scrapbook' ? (
-        <GlareHover maxTilt={7} glareOpacity={0.3} borderRadius="16px" className="mt-8 sm:mt-10">
+        <GlareHover maxTilt={7} glareOpacity={0.3} borderRadius="16px" className="mt-4 sm:mt-6">
           <div
             onClick={handleOpen}
             className={`envelope-wrapper relative w-72 h-48 cursor-pointer select-none transition-transform duration-200 hover:scale-[1.02] active:scale-95 ${
@@ -272,16 +274,16 @@ export default function Stage0_Entry({
               }}
             />
 
-            {/* Protruding Letter inside that peeks out and slides up */}
+            {/* Letter inside that stays inside when closed and slides up when opened */}
             <div
-              className={`envelope-letter absolute w-[78%] max-w-[220px] mx-auto inset-x-0 -top-8 bottom-8 bg-[#FFFDF9] rounded-xl border-2 border-[#D5C2B0] shadow-md p-3 flex flex-col items-center justify-start text-center z-15 transition-all duration-700 ease-out ${
-                isOpen ? '-translate-y-26 sm:-translate-y-30 shadow-2xl z-30' : 'hover:-translate-y-1'
+              className={`envelope-letter absolute inset-x-4 top-4 bottom-2 bg-[#FFFDF9] rounded-xl border-2 border-[#D5C2B0] shadow-md p-3.5 flex flex-col items-center justify-center text-center z-15 transition-all duration-700 ease-out ${
+                isOpen ? '-translate-y-26 sm:-translate-y-30 shadow-2xl z-30' : 'hover:-translate-y-0.5'
               }`}
               style={{
                 backgroundImage: 'repeating-linear-gradient(transparent, transparent 18px, #EFE7DE 19px)'
               }}
             >
-              {/* Protruding Header Tab */}
+              {/* Header Tab */}
               <div className="flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-rose-100/90 border border-rose-300 text-[10px] font-extrabold text-rose-600 uppercase tracking-widest shadow-2xs mb-2">
                 <span>💌</span>
                 <span>DEAR SPECIAL ONE</span>
