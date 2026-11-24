@@ -74,7 +74,7 @@ export default function SettingsModal({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 select-none">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/30 backdrop-blur-[2px] flex items-end sm:items-center justify-center p-0 sm:p-4 select-none transition-colors duration-300">
       <div
         className="w-full sm:max-w-2xl bg-white dark:bg-stone-900 rounded-t-3xl sm:rounded-3xl shadow-2xl border border-stone-200 dark:border-stone-800 overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[85vh] transition-all"
         role="dialog"
@@ -232,13 +232,13 @@ export default function SettingsModal({
                       <div
                         key={opt.id}
                         onClick={() => updateSection('background', { style: opt.id })}
-                        className={`p-3 rounded-2xl border transition cursor-pointer flex items-start gap-3 ${
+                        className={`p-3 rounded-2xl border transition cursor-pointer flex items-center gap-3 ${
                           bgStyle === opt.id
-                            ? 'border-rose-500 bg-rose-50/50 dark:bg-rose-950/20 shadow-xs'
+                            ? 'border-rose-500 bg-rose-50/60 dark:bg-rose-950/30 shadow-xs'
                             : 'border-stone-200 dark:border-stone-800 bg-stone-50/40 dark:bg-stone-800/30 hover:border-stone-300 dark:hover:border-stone-700'
                         }`}
                       >
-                        <div className="pt-0.5">
+                        <div className="shrink-0">
                           <div
                             className={`w-4 h-4 rounded-full border flex items-center justify-center ${
                               bgStyle === opt.id
@@ -249,13 +249,51 @@ export default function SettingsModal({
                             {bgStyle === opt.id && <Check className="w-2.5 h-2.5 stroke-[3]" />}
                           </div>
                         </div>
+
                         <div className="flex-1 min-w-0">
-                          <h4 className="text-xs font-bold text-stone-900 dark:text-stone-100">
-                            {opt.name}
-                          </h4>
-                          <p className="text-[11px] text-stone-500 dark:text-stone-400 mt-0.5">
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-xs font-bold text-stone-900 dark:text-stone-100">
+                              {opt.name}
+                            </h4>
+                            {bgStyle === opt.id && (
+                              <span className="px-1.5 py-0.5 rounded-full bg-rose-500 text-white text-[9px] font-black shrink-0">
+                                กำลังแสดงผลสด
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[11px] text-stone-500 dark:text-stone-400 mt-0.5 line-clamp-2">
                             {opt.desc}
                           </p>
+                        </div>
+
+                        <div className="shrink-0 w-10 h-10 rounded-xl overflow-hidden border border-stone-200/80 dark:border-stone-700/80 flex items-center justify-center relative shadow-xs">
+                          {opt.id === 'original' && (
+                            <div
+                              className="w-full h-full bg-[#EFE8DF] dark:bg-[#121214]"
+                              style={{
+                                backgroundImage: isDarkMode
+                                  ? 'radial-gradient(rgba(255, 255, 255, 0.2) 1.5px, transparent 1.5px)'
+                                  : 'radial-gradient(rgba(200, 162, 124, 0.4) 1.5px, transparent 1.5px)',
+                                backgroundSize: '6px 6px'
+                              }}
+                            />
+                          )}
+                          {opt.id === 'soft_aurora' && (
+                            <div className="w-full h-full bg-stone-900 relative overflow-hidden">
+                              <div className="absolute inset-0 bg-gradient-to-br from-rose-500/80 via-purple-500/80 to-sky-400/80 blur-xs" />
+                            </div>
+                          )}
+                          {opt.id === 'aurora' && (
+                            <div className="w-full h-full bg-stone-950 relative overflow-hidden">
+                              <div className="absolute -inset-1 bg-gradient-to-r from-pink-500 via-cyan-400 to-amber-300 blur-xs opacity-90 animate-pulse" />
+                            </div>
+                          )}
+                          {opt.id === 'floating_particles' && (
+                            <div className="w-full h-full bg-stone-900 flex items-center justify-center gap-0.5 text-[10px] text-pink-300">
+                              <span>✨</span>
+                              <span>♥</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -264,6 +302,10 @@ export default function SettingsModal({
 
                 {bgStyle !== 'original' && (
                   <div className="pt-4 border-t border-stone-100 dark:border-stone-800/60 space-y-4">
+                    <div className="px-3 py-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs font-bold text-rose-600 dark:text-rose-400 flex items-center justify-between">
+                      <span>✨ กำลังแสดงผลสดบนหน้าจอ</span>
+                      <span className="text-[11px] font-normal text-stone-500 dark:text-stone-400">ปรับค่าแสงได้ตามต้องการ</span>
+                    </div>
                     <div>
                       <div className="flex items-center justify-between text-xs font-bold mb-1">
                         <span className="text-stone-700 dark:text-stone-300">ความเข้มแสง (Intensity)</span>

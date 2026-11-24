@@ -678,7 +678,7 @@ function AppContent({ preferences, setPreferences }) {
           </div>
 
           {/* B. IPAD, TABLET & DESKTOP LAYOUT (>= md / >= 768px): SPLIT-SCREEN & TOGGLE VIEWS */}
-          <div className="hidden md:flex fixed inset-x-0 bottom-0 top-14 overflow-hidden z-10 flex-row bg-[#EFE8DF] dark:bg-[#121214] transition-colors duration-300">
+          <div className="hidden md:flex fixed inset-x-0 bottom-0 top-14 overflow-hidden z-10 flex-row bg-transparent transition-colors duration-300">
             {/* LEFT COLUMN: Editor Panel (Scrollable independently, collapsible) */}
             <div
               className={`h-full overflow-y-auto transition-all duration-300 ease-in-out border-r border-stone-200/80 dark:border-stone-800 relative ${

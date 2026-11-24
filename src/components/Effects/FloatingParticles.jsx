@@ -12,13 +12,12 @@ function FloatingParticles({ theme = 'scrapbook' }) {
     const spawnInterval = isMobile ? 3200 : 1800;
 
     const interval = setInterval(() => {
-      // Don't spawn if tab is hidden
       if (document.hidden) return;
 
       const id = Date.now() + Math.random();
       const symbol = symbols[Math.floor(Math.random() * symbols.length)];
-      const left = Math.random() * 95; // 0 - 95%
-      const duration = 5 + Math.random() * 5; // 5 - 10s
+      const left = Math.random() * 95;
+      const duration = 5 + Math.random() * 5;
       const size = isMobile ? 12 + Math.random() * 8 : 12 + Math.random() * 16;
 
       setParticles((prev) => [

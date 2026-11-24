@@ -1,14 +1,11 @@
 import React, { useMemo, useState, useEffect } from 'react';
 
-/**
- * React Bits - SoftAurora Background Component (Mobile GPU-Optimized)
- * Adds dreamy, gently undulating ambient aurora gradients behind content.
- * Automatically reduces blur radius and disables continuous opacity pulsing on mobile
- * to ensure a solid 60fps frame rate.
- */
 function SoftAurora({
   theme = 'scrapbook',
   isDarkMode = false,
+  intensity = 60,
+  speed = 1,
+  opacity = 60,
   className = ''
 }) {
   const [isMobile, setIsMobile] = useState(false);
@@ -19,57 +16,61 @@ function SoftAurora({
     }
   }, []);
 
-  // Color presets tailored for MANITA themes
-  const auroraPalette = useMemo(() => {
-    const map = {
-      scrapbook: isDarkMode
-        ? ['#4c1d24', '#2d1b2d', '#1e1b4b']
-        : ['#fce7f3', '#ffe4e6', '#fef3c7'],
-      y2k: isDarkMode
-        ? ['#581c87', '#312e81', '#1e1b4b']
-        : ['#fbcfe8', '#e0e7ff', '#f5d0fe'],
-      cinema: isDarkMode
-        ? ['#2e1065', '#1c1917', '#451a03']
-        : ['#fed7aa', '#fef3c7', '#fbcfe8'],
-      festive: isDarkMode
-        ? ['#064e3b', '#1e293b', '#7f1d1d']
-        : ['#d1fae5', '#fef3c7', '#fee2e2']
-    };
-    return map[theme] || map.scrapbook;
-  }, [theme, isDarkMode]);
+  const palette = useMemo(() => {
+    if (isDarkMode) {
+      return ['#f43f5e', '#8b5cf6', '#06b6d4', '#10b981'];
+    }
+    return ['#fda4af', '#c084fc', '#93c5fd', '#86efac'];
+  }, [isDarkMode]);
+
+  const computedOpacity = Math.min(1, Math.max(0.15, (opacity || 60) / 100));
+  const blurBase = Math.round(isMobile ? 35 : 45 + (intensity || 60) * 0.4);
 
   return (
     <div
-      className={`fixed inset-0 pointer-events-none overflow-hidden z-0 opacity-40 dark:opacity-30 transition-opacity duration-1000 ${className}`}
+      className={`fixed inset-0 pointer-events-none overflow-hidden z-0 transition-opacity duration-1000 ${className}`}
+      style={{ opacity: computedOpacity }}
       aria-hidden="true"
     >
       <div
-        className={`absolute -top-[25%] -left-[15%] w-[60vw] h-[60vw] rounded-full will-change-transform ${
-          isMobile ? 'blur-[35px]' : 'blur-[90px] animate-pulse'
+        className={`absolute -top-[20%] -left-[15%] w-[65vw] h-[65vw] rounded-full will-change-transform ${
+          isMobile ? '' : 'animate-pulse'
         }`}
         style={{
-          background: `radial-gradient(circle, ${auroraPalette[0]} 0%, transparent 70%)`,
-          animationDuration: '8s'
+          filter: `blur(${blurBase}px)`,
+          background: isDarkMode
+            ? `radial-gradient(circle, ${palette[0]} 0%, transparent 70%)`
+            : `radial-gradient(circle, rgba(253, 164, 175, 0.5) 0%, transparent 70%)`,
+          animationDuration: `${Math.max(4, 9 / (speed || 1))}s`,
+          mixBlendMode: isDarkMode ? 'screen' : 'normal'
         }}
       />
       <div
-        className={`absolute -bottom-[20%] -right-[15%] w-[55vw] h-[55vw] rounded-full will-change-transform ${
-          isMobile ? 'blur-[40px]' : 'blur-[100px] animate-pulse'
+        className={`absolute -bottom-[15%] -right-[15%] w-[60vw] h-[60vw] rounded-full will-change-transform ${
+          isMobile ? '' : 'animate-pulse'
         }`}
         style={{
-          background: `radial-gradient(circle, ${auroraPalette[1]} 0%, transparent 70%)`,
-          animationDuration: '10s',
-          animationDelay: '1.5s'
+          filter: `blur(${blurBase + 10}px)`,
+          background: isDarkMode
+            ? `radial-gradient(circle, ${palette[1]} 0%, transparent 70%)`
+            : `radial-gradient(circle, rgba(192, 132, 252, 0.45) 0%, transparent 70%)`,
+          animationDuration: `${Math.max(5, 11 / (speed || 1))}s`,
+          animationDelay: '1.5s',
+          mixBlendMode: isDarkMode ? 'screen' : 'normal'
         }}
       />
       <div
-        className={`absolute top-[40%] left-[30%] w-[45vw] h-[45vw] rounded-full will-change-transform ${
-          isMobile ? 'blur-[40px]' : 'blur-[110px] animate-pulse'
+        className={`absolute top-[35%] left-[25%] w-[50vw] h-[50vw] rounded-full will-change-transform ${
+          isMobile ? '' : 'animate-pulse'
         }`}
         style={{
-          background: `radial-gradient(circle, ${auroraPalette[2]} 0%, transparent 70%)`,
-          animationDuration: '12s',
-          animationDelay: '3s'
+          filter: `blur(${blurBase + 15}px)`,
+          background: isDarkMode
+            ? `radial-gradient(circle, ${palette[2]} 0%, transparent 70%)`
+            : `radial-gradient(circle, rgba(147, 197, 253, 0.45) 0%, transparent 70%)`,
+          animationDuration: `${Math.max(6, 13 / (speed || 1))}s`,
+          animationDelay: '3s',
+          mixBlendMode: isDarkMode ? 'screen' : 'normal'
         }}
       />
     </div>
