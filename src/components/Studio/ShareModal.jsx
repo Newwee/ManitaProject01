@@ -21,6 +21,7 @@ import {
   MANITA_SQL_SETUP,
   USER_PROJECT_URL
 } from '../../lib/supabase';
+import { useNotifications } from '../../context/NotificationContext';
 
 const QR_PALETTES = [
   { id: 'classic', name: 'Classic Dark', dark: '#18181b', light: '#ffffff', border: '#e4e4e7', accent: '#18181b' },
@@ -36,6 +37,7 @@ export default function ShareModal({
   config,
   isDarkMode = false
 }) {
+  const { notify } = useNotifications();
   const [shareUrl, setShareUrl] = useState('');
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedSql, setCopiedSql] = useState(false);
@@ -46,9 +48,8 @@ export default function ShareModal({
   const [showSqlGuide, setShowSqlGuide] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // QR Customization States
   const [qrTheme, setQrTheme] = useState('classic');
-  const [qrCenterBadge, setQrCenterBadge] = useState('none'); // Default to 'none' (no logo) as requested
+  const [qrCenterBadge, setQrCenterBadge] = useState('none');
 
   const generateLinkAndQR = async (chosenUrl) => {
     setIsGenerating(true);
@@ -62,12 +63,22 @@ export default function ShareModal({
         setShareUrl(result.url);
         setSaveMethod(result.method);
         setIsCloudSaved(result.isCloudSaved);
+        notify({
+          type: 'success',
+          title: 'บันทึกของขวัญสำเร็จ',
+          message: 'ของขวัญพร้อมส่งแล้ว สามารถส่งต่อลิงก์หรือ QR Code ได้ทันที'
+        });
       }
 
       await renderStyledQR(targetUrl, qrTheme, qrCenterBadge);
     } catch (err) {
       console.error('Failed to generate shareable gift:', err);
       setErrorMsg('เกิดข้อผิดพลาดในการสร้างลิงก์ กรุณาลองใหม่อีกครั้ง');
+      notify({
+        type: 'error',
+        title: 'เกิดข้อผิดพลาดในการบันทึก',
+        message: 'ไม่สามารถสร้างลิงก์ของขวัญได้ กรุณาลองใหม่อีกครั้ง'
+      });
     } finally {
       setIsGenerating(false);
     }
@@ -182,12 +193,22 @@ export default function ShareModal({
     if (!shareUrl) return;
     navigator.clipboard.writeText(shareUrl);
     setCopiedLink(true);
+    notify({
+      type: 'success',
+      title: 'คัดลอกลิงก์สำเร็จ',
+      message: 'คัดลอกลิงก์ของขวัญเรียบร้อยแล้ว ส่งต่อให้คนพิเศษได้ทันที'
+    });
     setTimeout(() => setCopiedLink(false), 2500);
   };
 
   const handleCopySql = () => {
     navigator.clipboard.writeText(MANITA_SQL_SETUP);
     setCopiedSql(true);
+    notify({
+      type: 'info',
+      title: 'คัดลอกคำสั่ง SQL สำเร็จ',
+      message: 'คัดลอกสคริปต์สร้างตาราง Supabase ลงในคลิปบอร์ดแล้ว'
+    });
     setTimeout(() => setCopiedSql(false), 3000);
   };
 
@@ -199,6 +220,11 @@ export default function ShareModal({
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+    notify({
+      type: 'success',
+      title: 'ดาวน์โหลด QR Code สำเร็จ',
+      message: 'บันทึกรูปภาพ QR Code คมชัดลงในอุปกรณ์ของคุณแล้ว'
+    });
   };
 
   const handleDownloadGiftCard = () => {
@@ -209,11 +235,9 @@ export default function ShareModal({
     const ctx = cardCanvas.getContext('2d');
     const theme = QR_PALETTES.find((t) => t.id === qrTheme) || QR_PALETTES[0];
 
-    // Card background
     ctx.fillStyle = theme.light;
     ctx.fillRect(0, 0, 600, 800);
 
-    // Decorative border
     ctx.strokeStyle = theme.border;
     ctx.lineWidth = 12;
     ctx.strokeRect(20, 20, 560, 760);
@@ -222,7 +246,6 @@ export default function ShareModal({
     ctx.lineWidth = 2;
     ctx.strokeRect(28, 28, 544, 744);
 
-    // Header
     ctx.fillStyle = theme.dark;
     ctx.font = 'bold 32px sans-serif';
     ctx.textAlign = 'center';
@@ -232,13 +255,11 @@ export default function ShareModal({
     ctx.fillStyle = '#71717a';
     ctx.fillText('ของขวัญและความทรงจำสำหรับคนพิเศษ 🎁', 300, 130);
 
-    // QR Image (Large & Crisp)
     const qrImg = new Image();
     qrImg.src = qrDataUrl;
     qrImg.onload = () => {
       ctx.drawImage(qrImg, 125, 170, 350, 350);
 
-      // Bottom Message
       ctx.fillStyle = theme.dark;
       ctx.font = 'bold 20px sans-serif';
       ctx.fillText('สแกน QR Code ด้วยกล้องมือถือเพื่อเปิดดู', 300, 580);
@@ -257,6 +278,12 @@ export default function ShareModal({
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
+
+      notify({
+        type: 'success',
+        title: 'ดาวน์โหลดการ์ดของขวัญสำเร็จ',
+        message: 'บันทึกภาพการ์ดของขวัญขนาด 600x800 เรียบร้อยแล้ว'
+      });
     };
   };
 

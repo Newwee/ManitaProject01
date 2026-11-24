@@ -12,9 +12,12 @@ import {
   CheckCircle,
   Disc,
   Columns2,
-  Smartphone
+  Smartphone,
+  Bell,
+  SlidersHorizontal
 } from 'lucide-react';
 import AboutModal from './UI/AboutModal';
+import StarBorder from './UI/StarBorder';
 
 export default function Navbar({
   appMode,
@@ -24,6 +27,10 @@ export default function Navbar({
   isMusicPlaying,
   onToggleMusic,
   onOpenShareModal,
+  onOpenSettings,
+  onOpenNotifications,
+  unreadCount = 0,
+  preferences,
   themeKey,
   presetCategory = 'chat_scratch',
   isRecipientOnly = false,
@@ -157,7 +164,33 @@ export default function Navbar({
 
         {/* Action Buttons: Studio Theme, Sound & Share */}
         <div className="flex items-center gap-1.5">
-          {/* Quick Studio Theme Toggle (Light / Dark / System) */}
+          {onOpenNotifications && !isRecipientOnly && (
+            <button
+              type="button"
+              onClick={onOpenNotifications}
+              title="การแจ้งเตือน (Notifications)"
+              className="relative w-8 h-8 rounded-full flex items-center justify-center bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-700 transition"
+            >
+              <Bell className="w-4 h-4" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center animate-pulse">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </button>
+          )}
+
+          {onOpenSettings && !isRecipientOnly && (
+            <button
+              type="button"
+              onClick={onOpenSettings}
+              title="การตั้งค่าส่วนบุคคล (Personalization Settings)"
+              className="w-8 h-8 rounded-full flex items-center justify-center bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:bg-stone-200 dark:hover:bg-stone-700 transition"
+            >
+              <SlidersHorizontal className="w-4 h-4" />
+            </button>
+          )}
+
           {onChangeStudioTheme && !isRecipientOnly && (
             <div className="hidden sm:flex items-center bg-stone-100 dark:bg-stone-800 p-0.5 rounded-xl border border-stone-200 dark:border-stone-700">
               <button
@@ -196,7 +229,6 @@ export default function Navbar({
             </div>
           )}
 
-          {/* Music Sound Toggle */}
           {presetCategory !== 'christmas_tree' && (
             <button
               onClick={() => {
@@ -213,17 +245,23 @@ export default function Navbar({
             </button>
           )}
 
-          {/* Finish & Save / Share Button */}
           {!isRecipientOnly && (
-            <button
-              onClick={onOpenShareModal}
-              title="เสร็จสิ้นและบันทึกของขวัญ เพื่อสร้าง QR Code และลิงก์ส่งต่อ"
-              className="px-3 sm:px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-black shadow-md shadow-emerald-500/20 flex items-center gap-1.5 transition active:scale-95 whitespace-nowrap shrink-0"
+            <StarBorder
+              enabled={preferences?.animation?.starBorder}
+              color="#10b981"
+              speed="3s"
+              className="shrink-0"
             >
-              <CheckCircle className="w-3.5 h-3.5 text-emerald-100" />
-              <span className="hidden md:inline">✓ เสร็จสิ้น (QR Code)</span>
-              <span className="md:hidden">เสร็จสิ้น</span>
-            </button>
+              <button
+                onClick={onOpenShareModal}
+                title="เสร็จสิ้นและบันทึกของขวัญ เพื่อสร้าง QR Code และลิงก์ส่งต่อ"
+                className="px-3 sm:px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-black shadow-md shadow-emerald-500/20 flex items-center gap-1.5 transition active:scale-95 whitespace-nowrap shrink-0"
+              >
+                <CheckCircle className="w-3.5 h-3.5 text-emerald-100" />
+                <span className="hidden md:inline">✓ เสร็จสิ้น (QR Code)</span>
+                <span className="md:hidden">เสร็จสิ้น</span>
+              </button>
+            </StarBorder>
           )}
         </div>
       </div>

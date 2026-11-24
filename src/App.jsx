@@ -13,6 +13,12 @@ import CreatorDashboard from './components/Studio/CreatorDashboard';
 import FloatingParticles from './components/Effects/FloatingParticles';
 import ClickSpark from './components/UI/ClickSpark';
 import SoftAurora from './components/UI/SoftAurora';
+import Aurora from './components/UI/Aurora';
+import SettingsModal from './components/Settings/SettingsModal';
+import NotificationCenter from './components/Notification/NotificationCenter';
+import ToastContainer from './components/Notification/ToastContainer';
+import { NotificationProvider, useNotifications } from './context/NotificationContext';
+import { loadUserPreferences, saveUserPreferences, resetUserPreferences } from './lib/userPreferences';
 import { THEME_PRESETS, DEFAULT_QUIZZES } from './types/themePresets';
 import { saveLocalDraft, loadLocalDraft, resolveGiftFromUrl } from './lib/giftStorage';
 import { toggleMusic, stopMusic } from './lib/soundEngine';
@@ -23,7 +29,11 @@ const ArrowBirthdayExperience = React.lazy(() => import('./components/Experience
 const GhostFibers = React.lazy(() => import('./components/UI/GhostFibers'));
 const ShareModal = React.lazy(() => import('./components/Studio/ShareModal'));
 
-export default function App() {
+function AppContent({ preferences, setPreferences }) {
+  const { unreadCount, notify } = useNotifications();
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+
   const initialPreset = THEME_PRESETS.scrapbook;
 
   const [config, setConfig] = useState({
@@ -79,12 +89,8 @@ export default function App() {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Studio Theme: 'light' | 'dark' | 'system'
   const [studioTheme, setStudioTheme] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('manita_studio_ui_theme') || 'system';
-    }
-    return 'system';
+    return preferences?.appearance?.theme || 'system';
   });
 
   const [isSystemDark, setIsSystemDark] = useState(() => {
@@ -121,14 +127,50 @@ export default function App() {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem('manita_studio_ui_theme', studioTheme);
       if (isDarkMode) {
         document.documentElement.classList.add('dark');
       } else {
         document.documentElement.classList.remove('dark');
       }
     }
-  }, [studioTheme, isDarkMode]);
+  }, [isDarkMode]);
+
+  const handleStudioThemeChange = (newTheme) => {
+    setStudioTheme(newTheme);
+    const updated = {
+      ...preferences,
+      appearance: {
+        ...(preferences?.appearance || {}),
+        theme: newTheme
+      }
+    };
+    setPreferences(updated);
+    saveUserPreferences(updated);
+  };
+
+  const handlePreferencesChange = (newPrefs) => {
+    setPreferences(newPrefs);
+    saveUserPreferences(newPrefs);
+    if (newPrefs.appearance?.theme && newPrefs.appearance.theme !== studioTheme) {
+      setStudioTheme(newPrefs.appearance.theme);
+    }
+    notify({
+      type: 'info',
+      title: 'บันทึกการตั้งค่าแล้ว',
+      message: 'ปรับใช้การตั้งค่าส่วนบุคคลเรียบร้อย'
+    });
+  };
+
+  const handleResetPreferences = () => {
+    const defaults = resetUserPreferences();
+    setPreferences(defaults);
+    setStudioTheme(defaults.appearance.theme);
+    notify({
+      type: 'info',
+      title: 'คืนค่าเริ่มต้นสำเร็จ',
+      message: 'คืนค่าการแสดงผลและเอฟเฟกต์เป็นแบบดั้งเดิม 100%'
+    });
+  };
 
   // Sanitize photo captions to ensure no file sizes like '(197 KB)' leak into UI
   const sanitizePhotos = (photos) => {
@@ -428,6 +470,8 @@ export default function App() {
     <div
       data-theme={config.theme}
       className={`min-h-screen flex flex-col items-center justify-center relative transition-colors duration-500 ${
+        preferences?.appearance?.glassSurface ? 'manita-glass' : ''
+      } ${
         isDarkMode ? 'dark bg-[#121214] text-stone-100' : 'bg-[#EFE8DF] text-stone-800'
       }`}
       style={{
@@ -437,66 +481,81 @@ export default function App() {
         backgroundSize: '24px 24px'
       }}
     >
-      {/* Studio Ambient Background: Ghost Fibers (React Bits) */}
-      {!isRecipientOnly && (appMode === 'builder' || desktopViewMode !== 'preview') && (
-        <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden opacity-60 dark:opacity-80 transition-opacity duration-1000">
-          <React.Suspense fallback={null}>
-            <GhostFibers
-              glowColor="#8b5cf6"
-              layers={isMobile ? 2 : 3}
-              twist={1.2}
-              threads={isMobile ? 36 : 72}
-              fiberStyle="dots"
-              depthOfField={0.85}
-              hoverEffect="focus"
-              intro
-              mouseInteraction={!isMobile}
-              lineColor="#dfd1fc"
-              secondaryColor="#6f4ac5"
-              gradient="depth"
-              waves={1}
-              volume={0.7}
-              spread={1}
-              scale={1}
-              rotation={18}
-              perspective={0.65}
-              density={1}
-              thickness={1}
-              tips={0}
-              foldGlow={1}
-              speed={0.5}
-              flow={0.4}
-              rollSpeed={0.15}
-              focusDepth={0}
-              particles={isMobile ? 0.2 : 0.5}
-              sparkle={0.5}
-              glow={0.8}
-              brightness={1}
-              vignette={0.3}
-              grain={0.06}
-              mouseStrength={1}
-              pulseOnClick
-              lightMode={!isDarkMode}
-              dpr={isMobile ? 1 : 1.5}
-            />
-          </React.Suspense>
-        </div>
+      {preferences?.background?.style === 'aurora' && (
+        <Aurora
+          theme={config.theme}
+          isDarkMode={isDarkMode}
+          intensity={preferences.background?.intensity}
+          speed={preferences.background?.speed}
+          opacity={preferences.background?.opacity}
+        />
       )}
 
-      {/* Preview Ambient Backgrounds: Paused during 3D fullscreen */}
-      {(isRecipientOnly || appMode === 'preview' || desktopViewMode === 'preview') &&
-        category !== 'christmas_tree' &&
-        category !== 'arrow_birthday' && (
-          <>
-            <SoftAurora theme={config.theme} isDarkMode={isDarkMode} />
-            <FloatingParticles theme={config.theme} />
-          </>
+      {preferences?.background?.style === 'soft_aurora' && (
+        <SoftAurora
+          theme={config.theme}
+          isDarkMode={isDarkMode}
+          intensity={preferences.background?.intensity}
+          speed={preferences.background?.speed}
+          opacity={preferences.background?.opacity}
+        />
+      )}
+
+      {preferences?.background?.style === 'floating_particles' && (
+        <FloatingParticles theme={config.theme} />
+      )}
+
+      {!isRecipientOnly &&
+        (appMode === 'builder' || desktopViewMode !== 'preview') &&
+        preferences?.appearance?.visualEffects && (
+          <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden opacity-60 dark:opacity-80 transition-opacity duration-1000">
+            <React.Suspense fallback={null}>
+              <GhostFibers
+                glowColor="#8b5cf6"
+                layers={isMobile ? 2 : 3}
+                twist={1.2}
+                threads={isMobile ? 36 : 72}
+                fiberStyle="dots"
+                depthOfField={0.85}
+                hoverEffect="focus"
+                intro
+                mouseInteraction={!isMobile}
+                lineColor="#dfd1fc"
+                secondaryColor="#6f4ac5"
+                gradient="depth"
+                waves={1}
+                volume={0.7}
+                spread={1}
+                scale={1}
+                rotation={18}
+                perspective={0.65}
+                density={1}
+                thickness={1}
+                tips={0}
+                foldGlow={1}
+                speed={0.5}
+                flow={0.4}
+                rollSpeed={0.15}
+                focusDepth={0}
+                particles={isMobile ? 0.2 : 0.5}
+                sparkle={0.5}
+                glow={0.8}
+                brightness={1}
+                vignette={0.3}
+                grain={0.06}
+                mouseStrength={1}
+                pulseOnClick
+                lightMode={!isDarkMode}
+                dpr={isMobile ? 1 : 1.5}
+              />
+            </React.Suspense>
+          </div>
         )}
 
-      {/* React Bits - Interactive Click Spark Emitter */}
-      <ClickSpark sparkColor={isDarkMode ? '#fb7185' : '#f43f5e'} />
+      {preferences?.animation?.clickSpark && (
+        <ClickSpark sparkColor={isDarkMode ? '#fb7185' : '#f43f5e'} />
+      )}
 
-      {/* Top Navbar */}
       <Navbar
         appMode={appMode}
         setAppMode={setAppMode}
@@ -505,11 +564,15 @@ export default function App() {
         isMusicPlaying={isMusicPlaying}
         onToggleMusic={handleToggleMusic}
         onOpenShareModal={() => setIsShareModalOpen(true)}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenNotifications={() => setIsNotificationsOpen(true)}
+        unreadCount={unreadCount}
+        preferences={preferences}
         themeKey={config.theme}
         presetCategory={config.presetCategory}
         isRecipientOnly={isRecipientOnly}
         studioTheme={studioTheme}
-        onChangeStudioTheme={setStudioTheme}
+        onChangeStudioTheme={handleStudioThemeChange}
         isDarkMode={isDarkMode}
       />
 
@@ -766,7 +829,20 @@ export default function App() {
         </>
       )}
 
-      {/* Share & QR Code Modal */}
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        preferences={preferences}
+        onChangePreferences={handlePreferencesChange}
+        onResetPreferences={handleResetPreferences}
+        isDarkMode={isDarkMode}
+      />
+
+      <NotificationCenter
+        isOpen={isNotificationsOpen}
+        onClose={() => setIsNotificationsOpen(false)}
+      />
+
       <React.Suspense fallback={null}>
         {isShareModalOpen && (
           <ShareModal
@@ -778,5 +854,16 @@ export default function App() {
         )}
       </React.Suspense>
     </div>
+  );
+}
+
+export default function App() {
+  const [preferences, setPreferences] = useState(() => loadUserPreferences());
+
+  return (
+    <NotificationProvider preferences={preferences}>
+      <AppContent preferences={preferences} setPreferences={setPreferences} />
+      <ToastContainer />
+    </NotificationProvider>
   );
 }

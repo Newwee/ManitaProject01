@@ -34,6 +34,7 @@ import { PRESET_CATEGORIES, THEME_PRESETS, AVAILABLE_STICKERS, SCRATCH_COLORS } 
 import { FRAME_STYLES } from '../GiftExperience/Stage_Camera';
 import { compressImageFile } from '../../lib/imageCompressor';
 import { ENVELOPE_ASSETS, DECORATION_ASSETS } from '../../types/assetManifests';
+import { useNotifications } from '../../context/NotificationContext';
 
 const DECORATION_CATEGORIES = [
   { id: 'all', label: 'ทั้งหมด (146)' },
@@ -58,11 +59,11 @@ export default function CreatorDashboard({
   isEmbedded = false,
   onActiveTabChange
 }) {
+  const { notify } = useNotifications();
   const [activeTab, setActiveTab] = useState('category');
   const [compressing, setCompressing] = useState(false);
   const [compressMsg, setCompressMsg] = useState('');
 
-  // Automatically inform parent when activeTab changes (to sync Live Preview)
   React.useEffect(() => {
     if (onActiveTabChange) {
       onActiveTabChange(activeTab);
@@ -171,7 +172,6 @@ export default function CreatorDashboard({
     });
   };
 
-  // Multi-file photo upload with auto-compression (PNG, JPG, JPEG, GIF)
   const handlePhotoUpload = async (e) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
@@ -194,10 +194,20 @@ export default function CreatorDashboard({
       onChangeConfig({ ...config, photos: updatedPhotos });
 
       setCompressMsg(`✅ อัปโหลดรูปภาพสำเร็จ (${files.length} รูป)`);
+      notify({
+        type: 'success',
+        title: 'อัปโหลดรูปภาพสำเร็จ',
+        message: `อัปโหลดและปรับขนาดรูปภาพ ${files.length} รูปเรียบร้อยแล้ว`
+      });
       setTimeout(() => setCompressMsg(''), 3000);
     } catch (err) {
       console.error(err);
       setCompressMsg('❌ เกิดข้อผิดพลาดในการโหลดรูปภาพ');
+      notify({
+        type: 'error',
+        title: 'เกิดข้อผิดพลาดในการโหลดรูปภาพ',
+        message: 'ไม่สามารถประมวลผลไฟล์รูปภาพได้ กรุณาลองใหม่อีกครั้ง'
+      });
     } finally {
       setCompressing(false);
       if (e.target) e.target.value = '';
@@ -217,7 +227,6 @@ export default function CreatorDashboard({
     }
   };
 
-  // Custom Background Uploader
   const handleCustomBgUpload = async (e, field = 'phoneBackground') => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -229,10 +238,20 @@ export default function CreatorDashboard({
       const res = await compressImageFile(file);
       onChangeConfig({ ...config, [field]: res.dataUrl });
       setCompressMsg('✅ อัปโหลดภาพพื้นหลังสำเร็จ');
+      notify({
+        type: 'success',
+        title: 'เปลี่ยนภาพพื้นหลังสำเร็จ',
+        message: 'บันทึกภาพพื้นหลังที่กำหนดเองเรียบร้อยแล้ว'
+      });
       setTimeout(() => setCompressMsg(''), 3000);
     } catch (err) {
       console.error(err);
       setCompressMsg('❌ เกิดข้อผิดพลาดในการโหลดรูปภาพ');
+      notify({
+        type: 'error',
+        title: 'เกิดข้อผิดพลาดในการโหลดรูปภาพ',
+        message: 'ไม่สามารถประมวลผลภาพพื้นหลังได้'
+      });
     } finally {
       setCompressing(false);
       if (e.target) e.target.value = '';
