@@ -43,6 +43,24 @@ export default function SettingsModal({
   const bgStyle = preferences.background?.style || 'original';
   const animIntensity = preferences.animation?.intensity || 'normal';
 
+  const currentIntensity = preferences.background?.intensity !== undefined ? preferences.background.intensity : 70;
+  const currentSpeed = preferences.background?.speed !== undefined ? preferences.background.speed : 1;
+  const currentOpacity = preferences.background?.opacity !== undefined ? preferences.background.opacity : 60;
+
+  const handleSelectOriginal = () => {
+    onChangePreferences({
+      ...preferences,
+      background: {
+        ...(preferences.background || {}),
+        style: 'original'
+      },
+      appearance: {
+        ...(preferences.appearance || {}),
+        visualEffects: false
+      }
+    });
+  };
+
   const tabs = [
     { id: 'appearance', label: 'รูปลักษณ์', icon: <Palette className="w-4 h-4" /> },
     { id: 'background', label: 'ภาพพื้นหลัง', icon: <Layers className="w-4 h-4" /> },
@@ -219,7 +237,7 @@ export default function SettingsModal({
                     {bgStyle !== 'original' && (
                       <button
                         type="button"
-                        onClick={() => updateSection('background', { style: 'original' })}
+                        onClick={handleSelectOriginal}
                         className="text-[11px] font-bold text-rose-500 hover:text-rose-600 transition"
                       >
                         ปิดเอฟเฟกต์ (กลับสู่ Original)
@@ -231,7 +249,13 @@ export default function SettingsModal({
                     {backgroundOptions.map((opt) => (
                       <div
                         key={opt.id}
-                        onClick={() => updateSection('background', { style: opt.id })}
+                        onClick={() => {
+                          if (opt.id === 'original') {
+                            handleSelectOriginal();
+                          } else {
+                            updateSection('background', { style: opt.id });
+                          }
+                        }}
                         className={`p-3 rounded-2xl border transition cursor-pointer flex items-center gap-3 ${
                           bgStyle === opt.id
                             ? 'border-rose-500 bg-rose-50/60 dark:bg-rose-950/30 shadow-xs'
@@ -302,29 +326,88 @@ export default function SettingsModal({
 
                 {bgStyle !== 'original' && (
                   <div className="pt-4 border-t border-stone-100 dark:border-stone-800/60 space-y-4">
-                    <div className="px-3 py-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs font-bold text-rose-600 dark:text-rose-400 flex items-center justify-between">
-                      <span>✨ กำลังแสดงผลสดบนหน้าจอ</span>
-                      <span className="text-[11px] font-normal text-stone-500 dark:text-stone-400">ปรับค่าแสงได้ตามต้องการ</span>
+                    <div className="relative w-full h-24 rounded-2xl overflow-hidden border border-stone-200/90 dark:border-stone-700/90 bg-stone-950 p-3 flex flex-col justify-between shadow-inner select-none">
+                      <div
+                        className="absolute inset-0 pointer-events-none overflow-hidden transition-opacity duration-150"
+                        style={{
+                          opacity: currentOpacity / 100,
+                          filter: `brightness(${(0.45 + (currentIntensity / 100) * 0.85).toFixed(2)}) saturate(${(0.55 + (currentIntensity / 100) * 0.85).toFixed(2)})`
+                        }}
+                      >
+                        {bgStyle === 'soft_aurora' && (
+                          <div
+                            className="w-full h-full relative"
+                            style={{ filter: `blur(${Math.round(8 + currentIntensity * 0.18)}px)` }}
+                          >
+                            <div
+                              className="absolute -top-3 -left-3 w-28 h-28 rounded-full bg-rose-500 animate-pulse"
+                              style={{ animationDuration: `${Math.max(1.2, 4.5 / currentSpeed)}s` }}
+                            />
+                            <div
+                              className="absolute -bottom-3 -right-3 w-28 h-28 rounded-full bg-purple-500 animate-pulse"
+                              style={{ animationDuration: `${Math.max(1.5, 6 / currentSpeed)}s` }}
+                            />
+                            <div
+                              className="absolute top-2 left-1/3 w-20 h-20 rounded-full bg-cyan-400 animate-pulse"
+                              style={{ animationDuration: `${Math.max(2, 7.5 / currentSpeed)}s` }}
+                            />
+                          </div>
+                        )}
+                        {bgStyle === 'aurora' && (
+                          <div
+                            className="w-full h-full relative"
+                            style={{ filter: `blur(${Math.round(8 + currentIntensity * 0.18)}px)` }}
+                          >
+                            <div
+                              className="absolute -inset-3 bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-400 animate-aurora-wave"
+                              style={{ animationDuration: `${Math.max(1.5, 5 / currentSpeed)}s` }}
+                            />
+                          </div>
+                        )}
+                        {bgStyle === 'floating_particles' && (
+                          <div className="w-full h-full flex items-center justify-around text-pink-300 text-sm animate-pulse">
+                            <span>✨</span>
+                            <span>♥</span>
+                            <span>🌸</span>
+                            <span>✨</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="relative z-10 flex items-center justify-between text-[11px] font-bold text-white/90 drop-shadow-sm">
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                          <span>พรีวิวเอฟเฟกต์สด (Live Preview)</span>
+                        </span>
+                        <span className="text-[10px] bg-white/20 backdrop-blur-xs px-2 py-0.5 rounded-full font-mono">
+                          {currentIntensity}% • {currentSpeed}x • {currentOpacity}%
+                        </span>
+                      </div>
+
+                      <div className="relative z-10 text-[10px] text-white/70 drop-shadow-sm">
+                        ปรับเลื่อนแถบด้านล่างเพื่อดูผลลัพธ์แสงและความเร็วแบบสดๆ
+                      </div>
                     </div>
+
                     <div>
                       <div className="flex items-center justify-between text-xs font-bold mb-1">
                         <span className="text-stone-700 dark:text-stone-300">ความเข้มแสง (Intensity)</span>
-                        <span className="text-rose-500 font-mono">{preferences.background?.intensity || 70}%</span>
+                        <span className="text-rose-500 font-mono">{currentIntensity}%</span>
                       </div>
                       <input
                         type="range"
-                        min="20"
+                        min="10"
                         max="100"
-                        value={preferences.background?.intensity || 70}
+                        value={currentIntensity}
                         onChange={(e) => updateSection('background', { intensity: Number(e.target.value) })}
-                        className="w-full accent-rose-500"
+                        className="w-full accent-rose-500 cursor-pointer"
                       />
                     </div>
 
                     <div>
                       <div className="flex items-center justify-between text-xs font-bold mb-1">
                         <span className="text-stone-700 dark:text-stone-300">ความเร็วการเคลื่อนไหว (Speed)</span>
-                        <span className="text-rose-500 font-mono">{preferences.background?.speed || 1}x</span>
+                        <span className="text-rose-500 font-mono">{currentSpeed}x</span>
                       </div>
                       <div className="grid grid-cols-3 gap-2">
                         {[
@@ -337,9 +420,9 @@ export default function SettingsModal({
                             type="button"
                             onClick={() => updateSection('background', { speed: s.val })}
                             className={`py-1.5 rounded-xl border text-xs font-bold transition ${
-                              (preferences.background?.speed || 1) === s.val
+                              currentSpeed === s.val
                                 ? 'border-rose-500 bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400'
-                                : 'border-stone-200 dark:border-stone-800 text-stone-600 dark:text-stone-400'
+                                : 'border-stone-200 dark:border-stone-800 text-stone-600 dark:text-stone-400 hover:border-stone-300'
                             }`}
                           >
                             {s.label}
@@ -351,15 +434,15 @@ export default function SettingsModal({
                     <div>
                       <div className="flex items-center justify-between text-xs font-bold mb-1">
                         <span className="text-stone-700 dark:text-stone-300">ความโปร่งแสง (Opacity)</span>
-                        <span className="text-rose-500 font-mono">{preferences.background?.opacity || 60}%</span>
+                        <span className="text-rose-500 font-mono">{currentOpacity}%</span>
                       </div>
                       <input
                         type="range"
-                        min="15"
-                        max="90"
-                        value={preferences.background?.opacity || 60}
+                        min="10"
+                        max="100"
+                        value={currentOpacity}
                         onChange={(e) => updateSection('background', { opacity: Number(e.target.value) })}
-                        className="w-full accent-rose-500"
+                        className="w-full accent-rose-500 cursor-pointer"
                       />
                     </div>
                   </div>

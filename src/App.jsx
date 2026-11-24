@@ -154,11 +154,6 @@ function AppContent({ preferences, setPreferences }) {
     if (newPrefs.appearance?.theme && newPrefs.appearance.theme !== studioTheme) {
       setStudioTheme(newPrefs.appearance.theme);
     }
-    notify({
-      type: 'info',
-      title: 'บันทึกการตั้งค่าแล้ว',
-      message: 'ปรับใช้การตั้งค่าส่วนบุคคลเรียบร้อย'
-    });
   };
 
   const handleResetPreferences = () => {
@@ -507,6 +502,7 @@ function AppContent({ preferences, setPreferences }) {
 
       {!isRecipientOnly &&
         (appMode === 'builder' || desktopViewMode !== 'preview') &&
+        preferences?.background?.style !== 'original' &&
         preferences?.appearance?.visualEffects && (
           <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden opacity-60 dark:opacity-80 transition-opacity duration-1000">
             <React.Suspense fallback={null}>

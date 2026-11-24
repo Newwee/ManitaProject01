@@ -23,13 +23,18 @@ function SoftAurora({
     return ['#fda4af', '#c084fc', '#93c5fd', '#86efac'];
   }, [isDarkMode]);
 
-  const computedOpacity = Math.min(1, Math.max(0.15, (opacity || 60) / 100));
-  const blurBase = Math.round(isMobile ? 35 : 45 + (intensity || 60) * 0.4);
+  const computedOpacity = Math.min(1, Math.max(0.05, (opacity !== undefined ? opacity : 60) / 100));
+  const blurBase = Math.round(isMobile ? 25 : 30 + (intensity || 60) * 0.35);
+  const brightnessVal = (0.45 + ((intensity || 60) / 100) * 0.85).toFixed(2);
+  const saturateVal = (0.55 + ((intensity || 60) / 100) * 0.85).toFixed(2);
 
   return (
     <div
-      className={`fixed inset-0 pointer-events-none overflow-hidden z-0 transition-opacity duration-1000 ${className}`}
-      style={{ opacity: computedOpacity }}
+      className={`fixed inset-0 pointer-events-none overflow-hidden z-0 transition-opacity duration-150 ${className}`}
+      style={{
+        opacity: computedOpacity,
+        filter: `brightness(${brightnessVal}) saturate(${saturateVal})`
+      }}
       aria-hidden="true"
     >
       <div
@@ -40,8 +45,8 @@ function SoftAurora({
           filter: `blur(${blurBase}px)`,
           background: isDarkMode
             ? `radial-gradient(circle, ${palette[0]} 0%, transparent 70%)`
-            : `radial-gradient(circle, rgba(253, 164, 175, 0.5) 0%, transparent 70%)`,
-          animationDuration: `${Math.max(4, 9 / (speed || 1))}s`,
+            : `radial-gradient(circle, rgba(253, 164, 175, 0.55) 0%, transparent 70%)`,
+          animationDuration: `${Math.max(2.5, 7 / (speed || 1))}s`,
           mixBlendMode: isDarkMode ? 'screen' : 'normal'
         }}
       />
@@ -50,12 +55,12 @@ function SoftAurora({
           isMobile ? '' : 'animate-pulse'
         }`}
         style={{
-          filter: `blur(${blurBase + 10}px)`,
+          filter: `blur(${blurBase + 8}px)`,
           background: isDarkMode
             ? `radial-gradient(circle, ${palette[1]} 0%, transparent 70%)`
-            : `radial-gradient(circle, rgba(192, 132, 252, 0.45) 0%, transparent 70%)`,
-          animationDuration: `${Math.max(5, 11 / (speed || 1))}s`,
-          animationDelay: '1.5s',
+            : `radial-gradient(circle, rgba(192, 132, 252, 0.5) 0%, transparent 70%)`,
+          animationDuration: `${Math.max(3, 9 / (speed || 1))}s`,
+          animationDelay: '1s',
           mixBlendMode: isDarkMode ? 'screen' : 'normal'
         }}
       />
@@ -64,12 +69,12 @@ function SoftAurora({
           isMobile ? '' : 'animate-pulse'
         }`}
         style={{
-          filter: `blur(${blurBase + 15}px)`,
+          filter: `blur(${blurBase + 12}px)`,
           background: isDarkMode
             ? `radial-gradient(circle, ${palette[2]} 0%, transparent 70%)`
-            : `radial-gradient(circle, rgba(147, 197, 253, 0.45) 0%, transparent 70%)`,
-          animationDuration: `${Math.max(6, 13 / (speed || 1))}s`,
-          animationDelay: '3s',
+            : `radial-gradient(circle, rgba(147, 197, 253, 0.5) 0%, transparent 70%)`,
+          animationDuration: `${Math.max(3.5, 11 / (speed || 1))}s`,
+          animationDelay: '2s',
           mixBlendMode: isDarkMode ? 'screen' : 'normal'
         }}
       />
