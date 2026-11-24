@@ -57,7 +57,8 @@ export default function CreatorDashboard({
   onChangeStudioTheme,
   isDarkMode = false,
   isEmbedded = false,
-  onActiveTabChange
+  onActiveTabChange,
+  preferences
 }) {
   const { notify } = useNotifications();
   const [activeTab, setActiveTab] = useState('category');
@@ -644,9 +645,9 @@ export default function CreatorDashboard({
           <div className="hidden lg:block pt-3 border-t border-stone-200 dark:border-stone-700 mt-3">
             <button
               onClick={onOpenShareModal}
-              className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-600 hover:to-teal-700 text-white font-black text-xs sm:text-sm shadow-lg shadow-emerald-500/20 active:scale-95 transition-all flex items-center justify-center gap-2 group"
+              className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-600 hover:to-teal-700 text-white font-black text-xs sm:text-sm shadow-lg shadow-emerald-500/20 active:scale-95 transition-all flex items-center justify-center gap-2 group tween-hover"
             >
-              <CheckCircle className="w-5 h-5 text-emerald-100 group-hover:scale-110 transition-transform" />
+              <CheckCircle className="w-4 h-4 text-emerald-100 group-hover:scale-110 transition-transform" />
               <span>✓ เสร็จสิ้น (บันทึกของขวัญ)</span>
             </button>
             <p className="text-[10px] text-center text-stone-400 dark:text-stone-500 mt-2 font-medium">
@@ -657,7 +658,10 @@ export default function CreatorDashboard({
 
         {/* Right Editor Panels */}
         <div className="lg:col-span-3 bg-white dark:bg-stone-900 rounded-3xl p-5 sm:p-6 shadow-sm border border-stone-200 dark:border-stone-800 flex flex-col justify-between transition-colors duration-300">
-          <div>
+          <div
+            key={activeTab}
+            className={preferences?.animation?.tabTransitions ? 'tab-transition-enter' : ''}
+          >
             {/* TAB 1: PRESET CATEGORIES */}
             {activeTab === 'category' && (
               <div className="space-y-4">
@@ -678,7 +682,7 @@ export default function CreatorDashboard({
                       <div
                         key={cat.id}
                         onClick={() => handleSelectCategory(cat.id)}
-                        className={`p-4 sm:p-5 rounded-3xl border-2 cursor-pointer transition text-left flex flex-col justify-between ${
+                        className={`p-4 sm:p-5 rounded-3xl border-2 cursor-pointer transition text-left flex flex-col justify-between tween-hover ${
                           isSelected
                             ? 'border-rose-500 bg-rose-50/50 dark:bg-rose-950/20 shadow-md ring-2 ring-rose-200 dark:ring-rose-800'
                             : 'border-stone-200 dark:border-stone-750 hover:border-stone-300 dark:hover:border-stone-600 bg-stone-50/50 dark:bg-stone-800/40'
@@ -2347,7 +2351,7 @@ export default function CreatorDashboard({
 
             <button
               onClick={onOpenShareModal}
-              className="w-full sm:w-auto px-5 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-600 hover:to-teal-700 text-white text-xs sm:text-sm font-black shadow-md shadow-emerald-500/25 active:scale-95 transition flex items-center justify-center gap-2 group ring-2 ring-emerald-300/40"
+              className="w-full sm:w-auto px-5 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 hover:from-emerald-600 hover:to-teal-700 text-white text-xs sm:text-sm font-black shadow-md shadow-emerald-500/25 active:scale-95 transition flex items-center justify-center gap-2 group ring-2 ring-emerald-300/40 tween-hover"
             >
               <CheckCircle className="w-4 h-4 text-emerald-100 group-hover:scale-110 transition-transform" />
               <span>✓ เสร็จสิ้น (บันทึกและรับ QR Code)</span>

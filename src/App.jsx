@@ -27,6 +27,8 @@ import { toggleMusic, stopMusic } from './lib/soundEngine';
 const ChristmasTreeExperience = React.lazy(() => import('./components/Experience3D/ChristmasTreeExperience'));
 const ArrowBirthdayExperience = React.lazy(() => import('./components/Experience3D/ArrowBirthdayExperience'));
 const GhostFibers = React.lazy(() => import('./components/UI/GhostFibers'));
+const HoloMosaic = React.lazy(() => import('./components/UI/HoloMosaic'));
+const FluxLines = React.lazy(() => import('./components/UI/FluxLines'));
 const ShareModal = React.lazy(() => import('./components/Studio/ShareModal'));
 
 function AppContent({ preferences, setPreferences }) {
@@ -500,6 +502,45 @@ function AppContent({ preferences, setPreferences }) {
         <FloatingParticles theme={config.theme} />
       )}
 
+      {preferences?.background?.style === 'holo_mosaic' && (
+        <div
+          className="fixed inset-0 pointer-events-none z-0 overflow-hidden transition-opacity duration-150"
+          style={{ opacity: (preferences.background?.opacity !== undefined ? preferences.background.opacity : 60) / 100 }}
+        >
+          <React.Suspense fallback={null}>
+            <HoloMosaic
+              color={isDarkMode ? '#120f17' : '#efe8df'}
+              metalColor={isDarkMode ? '#e8ebf1' : '#c8a27c'}
+              spectrum="full"
+              speed={(preferences.background?.speed || 1) * 0.5}
+              intensity={((preferences.background?.intensity || 70) / 70) * 1.25}
+              mouseInteraction={false}
+              flipOnClick={false}
+              lightMode={!isDarkMode}
+            />
+          </React.Suspense>
+        </div>
+      )}
+
+      {preferences?.background?.style === 'flux_lines' && (
+        <div
+          className="fixed inset-0 pointer-events-none z-0 overflow-hidden transition-opacity duration-150"
+          style={{ opacity: (preferences.background?.opacity !== undefined ? preferences.background.opacity : 60) / 100 }}
+        >
+          <React.Suspense fallback={null}>
+            <FluxLines
+              colors={isDarkMode ? ['#ff2a85', '#a855f7', '#06b6d4'] : ['#f43f5e', '#c084fc', '#38bdf8']}
+              glow={2}
+              speed={(preferences.background?.speed || 1) * 0.5}
+              flowDirection="down"
+              mouseInteraction={false}
+              clickSwirl={false}
+              lightMode={!isDarkMode}
+            />
+          </React.Suspense>
+        </div>
+      )}
+
       {!isRecipientOnly &&
         (appMode === 'builder' || desktopViewMode !== 'preview') &&
         preferences?.background?.style !== 'original' &&
@@ -668,6 +709,7 @@ function AppContent({ preferences, setPreferences }) {
                   onChangeStudioTheme={setStudioTheme}
                   isDarkMode={isDarkMode}
                   onActiveTabChange={handleTabChangeFromDashboard}
+                  preferences={preferences}
                 />
               </main>
             )}
@@ -710,6 +752,7 @@ function AppContent({ preferences, setPreferences }) {
                 isDarkMode={isDarkMode}
                 isEmbedded={true}
                 onActiveTabChange={handleTabChangeFromDashboard}
+                preferences={preferences}
               />
             </div>
 

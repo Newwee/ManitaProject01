@@ -45,6 +45,7 @@ export default function PhoneFrame({
   const [timeStr, setTimeStr] = useState('12:00');
   const [selectedDecId, setSelectedDecId] = useState(null);
   const [isTransforming, setIsTransforming] = useState(false);
+  const [isOverTrash, setIsOverTrash] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [drawerCategory, setDrawerCategory] = useState('all');
   const themeData = THEME_PRESETS[theme] || THEME_PRESETS.scrapbook;
@@ -188,6 +189,9 @@ export default function PhoneFrame({
       transform.currentX = newX;
       transform.currentY = newY;
 
+      const overTrash = newY >= 75 && newX >= 25 && newX <= 75;
+      setIsOverTrash(overTrash);
+
       const nextList = (decorationsRef.current || []).map((d) =>
         d.id === decId ? { ...d, x: newX, y: newY } : d
       );
@@ -241,10 +245,19 @@ export default function PhoneFrame({
     } catch (err) {}
 
     const { decId, type } = transform;
+
+    if (type === 'move' && isOverTrash) {
+      handleRemoveDecoration(null, decId);
+      setIsOverTrash(false);
+      activeTransformRef.current = null;
+      setIsTransforming(false);
+      return;
+    }
+    setIsOverTrash(false);
+
     let finalList = decorationsRef.current || [];
 
     if (type === 'rotate' && !transform.hasMoved) {
-      // Just a tap on the rotate handle: rotate by +20 deg
       const nextRot = ((transform.initRotation || 0) + 20) % 360;
       finalList = finalList.map((d) => (d.id === decId ? { ...d, rotation: nextRot } : d));
     } else if (type === 'move' && transform.currentX !== undefined) {
@@ -259,22 +272,25 @@ export default function PhoneFrame({
 
     decorationsRef.current = finalList;
     if (onUpdateDecorations) {
-      onUpdateDecorations(finalList, true); // Commit and persist to storage
+      onUpdateDecorations(finalList, true);
     }
 
     activeTransformRef.current = null;
     setIsTransforming(false);
   };
 
-  // Quick Action Handlers
   const handleRemoveDecoration = (e, decId) => {
-    e.stopPropagation();
-    if (onUpdateDecorations) {
-      const nextList = (decorationsRef.current || []).filter((d) => d.id !== decId);
-      decorationsRef.current = nextList;
-      onUpdateDecorations(nextList, true);
-      if (selectedDecId === decId) setSelectedDecId(null);
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
     }
+    const currentList = decorationsRef.current || decorations || [];
+    const nextList = currentList.filter((d) => d.id !== decId);
+    decorationsRef.current = nextList;
+    if (onUpdateDecorations) {
+      onUpdateDecorations(nextList, true);
+    }
+    setSelectedDecId(null);
   };
 
   const handleScaleDecoration = (e, decId, delta) => {
@@ -536,10 +552,14 @@ export default function PhoneFrame({
                     {/* Quick Floating Toolbar (Above the rotation handle) */}
                     <div
                       className="absolute -top-20 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-stone-900/95 backdrop-blur-md text-white rounded-full px-2 py-1 shadow-2xl border border-white/25 z-50 select-none animate-in fade-in zoom-in-95 duration-150"
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onPointerMove={(e) => e.stopPropagation()}
+                      onPointerUp={(e) => e.stopPropagation()}
                       onClick={(e) => e.stopPropagation()}
                     >
                       <button
                         type="button"
+                        onPointerDown={(e) => e.stopPropagation()}
                         onClick={(e) => handleScaleDecoration(e, dec.id, 0.15)}
                         className="p-1 hover:text-rose-400 active:scale-90 transition rounded-full hover:bg-white/10"
                         title="ขยายขนาด (+)"
@@ -548,6 +568,7 @@ export default function PhoneFrame({
                       </button>
                       <button
                         type="button"
+                        onPointerDown={(e) => e.stopPropagation()}
                         onClick={(e) => handleScaleDecoration(e, dec.id, -0.15)}
                         className="p-1 hover:text-rose-400 active:scale-90 transition rounded-full hover:bg-white/10"
                         title="ย่อขนาด (-)"
@@ -556,6 +577,7 @@ export default function PhoneFrame({
                       </button>
                       <button
                         type="button"
+                        onPointerDown={(e) => e.stopPropagation()}
                         onClick={(e) => handleRotateDecoration(e, dec.id)}
                         className="p-1 hover:text-amber-400 active:scale-90 transition rounded-full hover:bg-white/10"
                         title="หมุนองศา (+20°)"
@@ -565,8 +587,9 @@ export default function PhoneFrame({
                       <div className="w-px h-3 bg-white/20 mx-0.5" />
                       <button
                         type="button"
+                        onPointerDown={(e) => e.stopPropagation()}
                         onClick={(e) => handleRemoveDecoration(e, dec.id)}
-                        className="p-1 text-red-400 hover:text-red-300 active:scale-90 transition rounded-full hover:bg-red-500/20"
+                        className="p-1 text-red-400 hover:text-red-300 active:scale-90 transition rounded-full hover:bg-red-500/20 cursor-pointer"
                         title="ลบสติกเกอร์นี้"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -578,6 +601,33 @@ export default function PhoneFrame({
             </div>
           );
         })}
+
+      {isEditable && isTransforming && activeTransformRef.current?.type === 'move' && (
+        <div
+          className={`absolute bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none transition-all duration-200 flex flex-col items-center gap-1.5 ${
+            isOverTrash ? 'scale-125 -translate-y-2' : 'scale-100 animate-bounce'
+          }`}
+        >
+          <div
+            className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-200 shadow-2xl ${
+              isOverTrash
+                ? 'bg-red-600 text-white ring-4 ring-red-400/90 shadow-[0_0_25px_rgba(239,68,68,0.85)] animate-pulse'
+                : 'bg-stone-900/90 text-red-400 border border-red-500/40 backdrop-blur-md'
+            }`}
+          >
+            <Trash2 className={`transition-transform duration-200 ${isOverTrash ? 'w-7 h-7 scale-110' : 'w-6 h-6'}`} />
+          </div>
+          <span
+            className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold shadow-md whitespace-nowrap transition-all ${
+              isOverTrash
+                ? 'bg-red-600 text-white'
+                : 'bg-stone-900/85 text-red-200 border border-white/20 backdrop-blur-xs'
+            }`}
+          >
+            {isOverTrash ? 'ปล่อยเพื่อลบทันที! 🔥' : 'ลากมาที่นี่เพื่อลบ 🗑️'}
+          </span>
+        </div>
+      )}
 
       {/* Floating Preview Decoration Toolbar (For Creator Mode) - Dims during transform */}
       {isEditable && (

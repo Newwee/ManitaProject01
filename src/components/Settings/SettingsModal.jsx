@@ -88,6 +88,16 @@ export default function SettingsModal({
       id: 'floating_particles',
       name: 'Starry Dust (ละอองดาวลอยละล่อง)',
       desc: 'ประกายละอองดาวและหัวใจจิ๋วลอยอย่างนุ่มนวล เพิ่มมนต์สะกดให้น่าประทับใจ'
+    },
+    {
+      id: 'holo_mosaic',
+      name: 'Holo Mosaic (โมเสกโฮโลแกรม)',
+      desc: 'แผ่นกระเบื้องโลหะสะท้อนประกายแสงสีรุ้งเหลือบสามมิติสุดล้ำ'
+    },
+    {
+      id: 'flux_lines',
+      name: 'Flux Lines (ฟลักซ์สายธารแสง)',
+      desc: 'เส้นใยของเหลวเรืองแสงพลิ้วไหวอย่างต่อเนื่อง เพิ่มพลังงานและมิติ'
     }
   ];
 
@@ -318,6 +328,21 @@ export default function SettingsModal({
                               <span>♥</span>
                             </div>
                           )}
+                          {opt.id === 'holo_mosaic' && (
+                            <div className="w-full h-full bg-stone-950 grid grid-cols-2 gap-0.5 p-0.5">
+                              <div className="bg-gradient-to-br from-pink-400 to-indigo-500 rounded-xs" />
+                              <div className="bg-gradient-to-br from-amber-300 to-teal-400 rounded-xs" />
+                              <div className="bg-gradient-to-br from-cyan-400 to-rose-400 rounded-xs" />
+                              <div className="bg-gradient-to-br from-purple-400 to-amber-400 rounded-xs" />
+                            </div>
+                          )}
+                          {opt.id === 'flux_lines' && (
+                            <div className="w-full h-full bg-stone-950 flex flex-col justify-around p-1">
+                              <div className="h-0.5 w-full bg-gradient-to-r from-pink-500 via-rose-300 to-cyan-400 rounded-full animate-pulse" />
+                              <div className="h-0.5 w-3/4 mx-auto bg-gradient-to-r from-cyan-400 to-purple-400 rounded-full" />
+                              <div className="h-0.5 w-full bg-gradient-to-r from-purple-500 to-pink-400 rounded-full animate-pulse" />
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -370,6 +395,33 @@ export default function SettingsModal({
                             <span>♥</span>
                             <span>🌸</span>
                             <span>✨</span>
+                          </div>
+                        )}
+                        {bgStyle === 'holo_mosaic' && (
+                          <div className="w-full h-full grid grid-cols-4 gap-1 p-1">
+                            {Array.from({ length: 8 }).map((_, i) => (
+                              <div
+                                key={i}
+                                className="rounded-xs bg-gradient-to-tr from-pink-500 via-teal-400 to-amber-300 animate-pulse"
+                                style={{ animationDuration: `${Math.max(1, 3.5 / currentSpeed + (i % 3) * 0.4)}s` }}
+                              />
+                            ))}
+                          </div>
+                        )}
+                        {bgStyle === 'flux_lines' && (
+                          <div className="w-full h-full flex flex-col justify-around p-2">
+                            <div
+                              className="h-1 w-full bg-gradient-to-r from-pink-500 via-rose-300 to-cyan-400 rounded-full animate-pulse"
+                              style={{ animationDuration: `${Math.max(1, 3 / currentSpeed)}s` }}
+                            />
+                            <div
+                              className="h-1 w-4/5 mx-auto bg-gradient-to-r from-cyan-400 via-purple-400 to-rose-400 rounded-full animate-pulse"
+                              style={{ animationDuration: `${Math.max(1.2, 4 / currentSpeed)}s` }}
+                            />
+                            <div
+                              className="h-1 w-full bg-gradient-to-r from-purple-500 via-pink-400 to-cyan-400 rounded-full animate-pulse"
+                              style={{ animationDuration: `${Math.max(1.5, 4.5 / currentSpeed)}s` }}
+                            />
                           </div>
                         )}
                       </div>
@@ -552,6 +604,32 @@ export default function SettingsModal({
                       <span
                         className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${
                           preferences.animation?.starBorder ? 'translate-x-5' : ''
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-xs font-bold text-stone-800 dark:text-stone-200">
+                        แอนิเมชันเปลี่ยนหน้าใน Editor (Tab Page Transitions)
+                      </h4>
+                      <p className="text-[11px] text-stone-400 dark:text-stone-500">
+                        เล่นแอนิเมชันสไลด์และเลือนนุ่มนวลเวลาเปลี่ยนขั้นตอนปรับแต่ง (1 ไป 2 ไป 3)
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        updateSection('animation', { tabTransitions: !preferences.animation?.tabTransitions })
+                      }
+                      className={`w-11 h-6 rounded-full transition-colors relative ${
+                        preferences.animation?.tabTransitions ? 'bg-rose-500' : 'bg-stone-200 dark:bg-stone-700'
+                      }`}
+                    >
+                      <span
+                        className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white transition-transform ${
+                          preferences.animation?.tabTransitions ? 'translate-x-5' : ''
                         }`}
                       />
                     </button>

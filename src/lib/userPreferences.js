@@ -18,7 +18,8 @@ export const DEFAULT_PREFERENCES = {
     clickSpark: false,
     blurText: true,
     fadeContent: true,
-    starBorder: false
+    starBorder: false,
+    tabTransitions: false
   },
   notifications: {
     enabled: true,
