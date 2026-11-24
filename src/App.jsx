@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Columns2, Eye, Edit3 } from 'lucide-react';
 import Navbar from './components/Navbar';
 import PhoneFrame from './components/GiftExperience/PhoneFrame';
 import Stage0_Entry from './components/GiftExperience/Stage0_Entry';
@@ -70,7 +71,8 @@ export default function App() {
     arrowSign: '— จากคนที่หวังดีเสมอ ✨'
   });
 
-  const [appMode, setAppMode] = useState('preview'); // 'preview' | 'builder'
+  const [appMode, setAppMode] = useState('preview'); // 'preview' | 'builder' (Mobile view mode)
+  const [desktopViewMode, setDesktopViewMode] = useState('split'); // 'split' | 'editor' | 'preview' (Tablet/Desktop view mode)
   const [currentStage, setCurrentStage] = useState(0);
   const [isRecipientOnly, setIsRecipientOnly] = useState(false);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
@@ -94,7 +96,7 @@ export default function App() {
 
   const [isMobile, setIsMobile] = useState(() => {
     if (typeof window !== 'undefined') {
-      return window.matchMedia('(max-width: 768px)').matches;
+      return window.matchMedia('(max-width: 767px)').matches;
     }
     return false;
   });
@@ -105,7 +107,7 @@ export default function App() {
     const listener = (e) => setIsSystemDark(e.matches);
     media.addEventListener('change', listener);
 
-    const mobileMedia = window.matchMedia('(max-width: 768px)');
+    const mobileMedia = window.matchMedia('(max-width: 767px)');
     const mobileListener = (e) => setIsMobile(e.matches);
     mobileMedia.addEventListener('change', mobileListener);
 
@@ -240,6 +242,173 @@ export default function App() {
     setCurrentStage(0);
   };
 
+  // Synchronize Live Preview Stage with active tab from Creator Dashboard
+  const handleTabChangeFromDashboard = (tabId) => {
+    if (tabId === 'entry') setCurrentStage(0);
+    else if (tabId === 'passcode') setCurrentStage(1);
+    else if (tabId === 'chat') setCurrentStage(2);
+    else if (tabId === 'reveal') setCurrentStage(4);
+    else if (tabId === 'coupons') setCurrentStage(5);
+  };
+
+  // Helper to render phone stages (Shared seamlessly between Mobile & Desktop Live Preview)
+  const renderPhoneStages = () => (
+    <>
+      {/* Stage 0: 3D Envelope & Wax Seal / Gift Entry / Time Capsule */}
+      {currentStage === 0 && (
+        <Stage0_Entry
+          theme={config.theme}
+          introTitle={config.introTitle}
+          introSub={config.introSub}
+          letterText={config.letterText}
+          envelopeStyle={config.envelopeStyle}
+          introTitlePos={config.introTitlePos}
+          introSubPos={config.introSubPos}
+          badgePos={config.badgePos}
+          promptPos={config.promptPos}
+          waxSealPos={config.waxSealPos}
+          waxSealScale={config.waxSealScale}
+          waxSealRotation={config.waxSealRotation}
+          badgeText={config.badgeText || 'วันครบรอบ ♡'}
+          promptText={config.promptText || 'แตะที่ของขวัญเพื่อเปิดดูด่านต่อไป'}
+          onChangeConfig={(updates) => {
+            setConfig((prev) => {
+              const updated = { ...prev, ...updates };
+              if (!isRecipientOnly) saveLocalDraft(updated);
+              return updated;
+            });
+          }}
+          isEditable={!isRecipientOnly}
+          timeLockEnabled={config.timeLockEnabled}
+          timeLockDate={config.timeLockDate}
+          onNextStage={handleNextStage}
+        />
+      )}
+
+      {/* Stage 1: 6-Digit Passcode Input */}
+      {currentStage === 1 && (
+        <Stage1_Passcode
+          expectedPasscode={config.passcode || '231069'}
+          passcodeHint={config.passcodeHint}
+          postItNotes={config.passcodeNotes || []}
+          onUpdatePostItNotes={(notes) => {
+            setConfig((prev) => {
+              const updated = { ...prev, passcodeNotes: notes };
+              if (!isRecipientOnly) saveLocalDraft(updated);
+              return updated;
+            });
+          }}
+          onNextStage={handleNextStage}
+        />
+      )}
+
+      {/* Stage 2: Simulated Interactive Chat with ChatBG.jpg */}
+      {currentStage === 2 && (
+        <Stage2_Chat
+          chatName={config.chatName}
+          chatAvatar={config.chatAvatar}
+          chatMsg1={config.chatMsg1}
+          chatDialog={config.chatDialog}
+          onNextStage={handleNextStage}
+        />
+      )}
+
+      {/* Stage 3: Interactive Mini Quiz */}
+      {currentStage === 3 && (
+        <Stage3_Quiz
+          quizzes={config.quizzes}
+          revealType={category === 'chat_camera' || config.revealType === 'camera' ? 'camera' : 'scratch'}
+          onNextStage={handleNextStage}
+        />
+      )}
+
+      {/* Stage 4: Scratch-to-Reveal Card OR Instant Camera */}
+      {currentStage === 4 && (
+        category === 'chat_camera' || config.revealType === 'camera' ? (
+          <Stage_Camera
+            photos={config.photos}
+            cameraFrameStyle={config.cameraFrameStyle || 'square'}
+            onNextStage={handleNextStage}
+          />
+        ) : (
+          <Stage4_Scratch
+            scratchSecret={config.scratchSecret}
+            scratchColor={config.scratchColor || 'gold'}
+            onNextStage={handleNextStage}
+          />
+        )
+      )}
+
+      {/* Stage 5: Grand Finale (Vinyl record + Polaroid + Redeemable coupons) */}
+      {currentStage === 5 && (
+        <Stage5_Finale
+          voiceCaption={config.voiceCaption}
+          photos={config.photos}
+          selectedSticker={config.selectedSticker}
+          coupons={config.coupons}
+          isMusicPlaying={isMusicPlaying}
+          onToggleMusic={handleToggleMusic}
+        />
+      )}
+    </>
+  );
+
+  // Helper to render 3D full-screen / container experiences
+  const render3DExperience = () => {
+    if (category === 'christmas_tree') {
+      return (
+        <React.Suspense
+          fallback={
+            <div className="w-full h-full flex items-center justify-center bg-black text-rose-300 text-xs gap-2">
+              <div className="w-5 h-5 border-2 border-rose-500 border-t-transparent rounded-full animate-spin" />
+              <span>กำลังโหลด 3D Christmas Tree...</span>
+            </div>
+          }
+        >
+          <ChristmasTreeExperience
+            title={config.treeTitle || 'Merry Christmas'}
+            subtitle={config.treeSubtitle || 'A SPECIAL WISH FOR YOU'}
+            wishMessage={config.treeWish}
+            photos={config.photos}
+            treeTheme={config.treeTheme || 'classic'}
+            lockMode={config.treeLockMode || 'immediate'}
+            unlockDate={config.treeUnlockDate || '2026-12-25T00:00'}
+            boxUnlockDates={config.treeBoxUnlockDates || []}
+            lockMessage={config.treeLockMessage || ''}
+            showCountdown={config.treeShowCountdown !== undefined ? config.treeShowCountdown : true}
+            countdownTitle={config.treeCountdownTitle || ''}
+            decorations={config.treeDecorations || {}}
+            isRecipient={isRecipientOnly}
+          />
+        </React.Suspense>
+      );
+    }
+
+    if (category === 'arrow_birthday') {
+      return (
+        <React.Suspense
+          fallback={
+            <div className="w-full h-full flex items-center justify-center bg-[#04020a] text-pink-300 text-xs gap-2">
+              <div className="w-5 h-5 border-2 border-pink-500 border-t-transparent rounded-full animate-spin" />
+              <span>กำลังโหลด 3D Birthday Experience...</span>
+            </div>
+          }
+        >
+          <ArrowBirthdayExperience
+            title={config.arrowTitle || 'Happy Birthday'}
+            subtitle={config.arrowSubtitle || 'WISHING YOU ENDLESS HAPPINESS ✨'}
+            wishMessage={config.arrowWish}
+            wishSign={config.arrowSign}
+            photos={config.photos}
+            isRecipient={isRecipientOnly}
+          />
+        </React.Suspense>
+      );
+    }
+
+    return null;
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-[#EFE8DF] dark:bg-[#121214] text-stone-800 dark:text-stone-100">
@@ -269,7 +438,7 @@ export default function App() {
       }}
     >
       {/* Studio Ambient Background: Ghost Fibers (React Bits) */}
-      {appMode === 'builder' && (
+      {!isRecipientOnly && (appMode === 'builder' || desktopViewMode !== 'preview') && (
         <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden opacity-60 dark:opacity-80 transition-opacity duration-1000">
           <React.Suspense fallback={null}>
             <GhostFibers
@@ -314,13 +483,15 @@ export default function App() {
         </div>
       )}
 
-      {/* Preview Ambient Backgrounds: Paused during 3D fullscreen to guarantee 60fps on mobile */}
-      {appMode === 'preview' && category !== 'christmas_tree' && category !== 'arrow_birthday' && (
-        <>
-          <SoftAurora theme={config.theme} isDarkMode={isDarkMode} />
-          <FloatingParticles theme={config.theme} />
-        </>
-      )}
+      {/* Preview Ambient Backgrounds: Paused during 3D fullscreen */}
+      {(isRecipientOnly || appMode === 'preview' || desktopViewMode === 'preview') &&
+        category !== 'christmas_tree' &&
+        category !== 'arrow_birthday' && (
+          <>
+            <SoftAurora theme={config.theme} isDarkMode={isDarkMode} />
+            <FloatingParticles theme={config.theme} />
+          </>
+        )}
 
       {/* React Bits - Interactive Click Spark Emitter */}
       <ClickSpark sparkColor={isDarkMode ? '#fb7185' : '#f43f5e'} />
@@ -329,6 +500,8 @@ export default function App() {
       <Navbar
         appMode={appMode}
         setAppMode={setAppMode}
+        desktopViewMode={desktopViewMode}
+        setDesktopViewMode={setDesktopViewMode}
         isMusicPlaying={isMusicPlaying}
         onToggleMusic={handleToggleMusic}
         onOpenShareModal={() => setIsShareModalOpen(true)}
@@ -340,59 +513,18 @@ export default function App() {
         isDarkMode={isDarkMode}
       />
 
-      {/* Main Experience Router */}
-      {appMode === 'preview' ? (
+      {/* MAIN CONTENT ROUTER */}
+      {isRecipientOnly ? (
+        /* ================= 1. RECIPIENT MODE: 100% CLEAN EXPERIENCE ================= */
         category === 'christmas_tree' ? (
-          /* Preset Category 3: 3D Christmas Tree - FULL SCREEN */
           <div className="fixed inset-0 top-14 w-full h-[calc(100vh-56px)] bg-black z-10 overflow-hidden flex flex-col">
-            <React.Suspense
-              fallback={
-                <div className="w-full h-full flex items-center justify-center bg-black text-rose-300 text-xs gap-2">
-                  <div className="w-5 h-5 border-2 border-rose-500 border-t-transparent rounded-full animate-spin" />
-                  <span>กำลังโหลด 3D Christmas Tree...</span>
-                </div>
-              }
-            >
-              <ChristmasTreeExperience
-                title={config.treeTitle || 'Merry Christmas'}
-                subtitle={config.treeSubtitle || 'A SPECIAL WISH FOR YOU'}
-                wishMessage={config.treeWish}
-                photos={config.photos}
-                treeTheme={config.treeTheme || 'classic'}
-                lockMode={config.treeLockMode || 'immediate'}
-                unlockDate={config.treeUnlockDate || '2026-12-25T00:00'}
-                boxUnlockDates={config.treeBoxUnlockDates || []}
-                lockMessage={config.treeLockMessage || ''}
-                showCountdown={config.treeShowCountdown !== undefined ? config.treeShowCountdown : true}
-                countdownTitle={config.treeCountdownTitle || ''}
-                decorations={config.treeDecorations || {}}
-                isRecipient={isRecipientOnly}
-              />
-            </React.Suspense>
+            {render3DExperience()}
           </div>
         ) : category === 'arrow_birthday' ? (
-          /* Preset Category 4: 3D Arrow Birthday Shooting - FULL SCREEN */
           <div className="fixed inset-0 top-14 w-full h-[calc(100vh-56px)] bg-[#04020a] z-10 overflow-hidden flex flex-col">
-            <React.Suspense
-              fallback={
-                <div className="w-full h-full flex items-center justify-center bg-[#04020a] text-pink-300 text-xs gap-2">
-                  <div className="w-5 h-5 border-2 border-pink-500 border-t-transparent rounded-full animate-spin" />
-                  <span>กำลังโหลด 3D Birthday Experience...</span>
-                </div>
-              }
-            >
-              <ArrowBirthdayExperience
-                title={config.arrowTitle || 'Happy Birthday'}
-                subtitle={config.arrowSubtitle || 'WISHING YOU ENDLESS HAPPINESS ✨'}
-                wishMessage={config.arrowWish}
-                wishSign={config.arrowSign}
-                photos={config.photos}
-                isRecipient={isRecipientOnly}
-              />
-            </React.Suspense>
+            {render3DExperience()}
           </div>
         ) : (
-          /* Preset Category 1 & 2: Chat + Scratch OR Chat + Camera */
           <main className="w-full max-w-md mx-auto pt-16 sm:pt-20 pb-6 px-2 sm:px-4 flex-1 flex flex-col items-center justify-center z-10">
             <PhoneFrame
               theme={config.theme}
@@ -404,143 +536,234 @@ export default function App() {
               onPrevStage={handlePrevStage}
               onSelectStage={(idx) => setCurrentStage(idx)}
               decorations={config.decorations || []}
-              onUpdateDecorations={(decs, flush = true) => {
-                setConfig((prev) => {
-                  const updated = { ...prev, decorations: decs };
-                  if (!isRecipientOnly && flush) saveLocalDraft(updated);
-                  return updated;
-                });
-              }}
-              onAddDecoration={(dec) => {
-                setConfig((prev) => {
-                  const currentDecs = prev.decorations || [];
-                  const newDec = {
-                    id: 'dec_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
-                    src: dec.src,
-                    x: 50,
-                    y: 50,
-                    scale: 1,
-                    rotation: 0
-                  };
-                  const updated = { ...prev, decorations: [...currentDecs, newDec] };
-                  if (!isRecipientOnly) saveLocalDraft(updated);
-                  return updated;
-                });
-              }}
-              isEditable={!isRecipientOnly}
+              isEditable={false}
             >
-              {/* Stage 0: 3D Envelope & Wax Seal / Gift Entry / Time Capsule */}
-              {currentStage === 0 && (
-                <Stage0_Entry
-                  theme={config.theme}
-                  introTitle={config.introTitle}
-                  introSub={config.introSub}
-                  letterText={config.letterText}
-                  envelopeStyle={config.envelopeStyle}
-                  introTitlePos={config.introTitlePos}
-                  introSubPos={config.introSubPos}
-                  badgePos={config.badgePos}
-                  promptPos={config.promptPos}
-                  waxSealPos={config.waxSealPos}
-                  waxSealScale={config.waxSealScale}
-                  waxSealRotation={config.waxSealRotation}
-                  badgeText={config.badgeText || 'วันครบรอบ ♡'}
-                  promptText={config.promptText || 'แตะที่ของขวัญเพื่อเปิดดูด่านต่อไป'}
-                  onChangeConfig={(updates) => {
-                    setConfig((prev) => {
-                      const updated = { ...prev, ...updates };
-                      if (!isRecipientOnly) saveLocalDraft(updated);
-                      return updated;
-                    });
-                  }}
-                  isEditable={!isRecipientOnly}
-                  timeLockEnabled={config.timeLockEnabled}
-                  timeLockDate={config.timeLockDate}
-                  onNextStage={handleNextStage}
-                />
-              )}
-
-              {/* Stage 1: 6-Digit Passcode Input */}
-              {currentStage === 1 && (
-                <Stage1_Passcode
-                  expectedPasscode={config.passcode || '231069'}
-                  passcodeHint={config.passcodeHint}
-                  postItNotes={config.passcodeNotes || []}
-                  onUpdatePostItNotes={(notes) => {
-                    setConfig((prev) => {
-                      const updated = { ...prev, passcodeNotes: notes };
-                      if (!isRecipientOnly) saveLocalDraft(updated);
-                      return updated;
-                    });
-                  }}
-                  onNextStage={handleNextStage}
-                />
-              )}
-
-              {/* Stage 2: Simulated Interactive Chat with ChatBG.jpg */}
-              {currentStage === 2 && (
-                <Stage2_Chat
-                  chatName={config.chatName}
-                  chatAvatar={config.chatAvatar}
-                  chatMsg1={config.chatMsg1}
-                  chatDialog={config.chatDialog}
-                  onNextStage={handleNextStage}
-                />
-              )}
-
-              {/* Stage 3: Interactive Mini Quiz */}
-              {currentStage === 3 && (
-                <Stage3_Quiz
-                  quizzes={config.quizzes}
-                  revealType={category === 'chat_camera' || config.revealType === 'camera' ? 'camera' : 'scratch'}
-                  onNextStage={handleNextStage}
-                />
-              )}
-
-              {/* Stage 4: Scratch-to-Reveal Card OR Instant Camera (Image 4 & 5) */}
-              {currentStage === 4 && (
-                category === 'chat_camera' || config.revealType === 'camera' ? (
-                  <Stage_Camera
-                    photos={config.photos}
-                    cameraFrameStyle={config.cameraFrameStyle || 'square'}
-                    onNextStage={handleNextStage}
-                  />
-                ) : (
-                  <Stage4_Scratch
-                    scratchSecret={config.scratchSecret}
-                    scratchColor={config.scratchColor || 'gold'}
-                    onNextStage={handleNextStage}
-                  />
-                )
-              )}
-
-              {/* Stage 5: Grand Finale (Vinyl record + Polaroid + Redeemable coupons) */}
-              {currentStage === 5 && (
-                <Stage5_Finale
-                  voiceCaption={config.voiceCaption}
-                  photos={config.photos}
-                  selectedSticker={config.selectedSticker}
-                  coupons={config.coupons}
-                  isMusicPlaying={isMusicPlaying}
-                  onToggleMusic={handleToggleMusic}
-                />
-              )}
+              {renderPhoneStages()}
             </PhoneFrame>
           </main>
         )
       ) : (
-        /* Creator Studio Dashboard */
-        <main className="w-full flex-1 z-10">
-          <CreatorDashboard
-            config={config}
-            onChangeConfig={setConfig}
-            onSwitchToPreview={() => setAppMode('preview')}
-            onOpenShareModal={() => setIsShareModalOpen(true)}
-            studioTheme={studioTheme}
-            onChangeStudioTheme={setStudioTheme}
-            isDarkMode={isDarkMode}
-          />
-        </main>
+        /* ================= 2. CREATOR / STUDIO MODE ================= */
+        <>
+          {/* A. MOBILE LAYOUT (< md / < 768px): 100% UNCHANGED ORIGINAL UX */}
+          <div className="md:hidden w-full flex-1 flex flex-col">
+            {appMode === 'preview' ? (
+              category === 'christmas_tree' ? (
+                <div className="fixed inset-0 top-14 w-full h-[calc(100vh-56px)] bg-black z-10 overflow-hidden flex flex-col">
+                  {render3DExperience()}
+                </div>
+              ) : category === 'arrow_birthday' ? (
+                <div className="fixed inset-0 top-14 w-full h-[calc(100vh-56px)] bg-[#04020a] z-10 overflow-hidden flex flex-col">
+                  {render3DExperience()}
+                </div>
+              ) : (
+                <main className="w-full max-w-md mx-auto pt-16 sm:pt-20 pb-6 px-2 sm:px-4 flex-1 flex flex-col items-center justify-center z-10">
+                  <PhoneFrame
+                    theme={config.theme}
+                    phoneBackground={config.phoneBackground}
+                    passcodeBackground={config.passcodeBackground}
+                    currentStage={currentStage}
+                    totalStages={6}
+                    onResetExperience={handleResetExperience}
+                    onPrevStage={handlePrevStage}
+                    onSelectStage={(idx) => setCurrentStage(idx)}
+                    decorations={config.decorations || []}
+                    onUpdateDecorations={(decs, flush = true) => {
+                      setConfig((prev) => {
+                        const updated = { ...prev, decorations: decs };
+                        if (!isRecipientOnly && flush) saveLocalDraft(updated);
+                        return updated;
+                      });
+                    }}
+                    onAddDecoration={(dec) => {
+                      setConfig((prev) => {
+                        const currentDecs = prev.decorations || [];
+                        const newDec = {
+                          id: 'dec_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+                          src: dec.src,
+                          x: 50,
+                          y: 50,
+                          scale: 1,
+                          rotation: 0
+                        };
+                        const updated = { ...prev, decorations: [...currentDecs, newDec] };
+                        if (!isRecipientOnly) saveLocalDraft(updated);
+                        return updated;
+                      });
+                    }}
+                    isEditable={true}
+                  >
+                    {renderPhoneStages()}
+                  </PhoneFrame>
+                </main>
+              )
+            ) : (
+              /* Mobile Creator Dashboard (Full Width Scrollable) */
+              <main className="w-full flex-1 z-10">
+                <CreatorDashboard
+                  config={config}
+                  onChangeConfig={setConfig}
+                  onSwitchToPreview={() => setAppMode('preview')}
+                  onOpenShareModal={() => setIsShareModalOpen(true)}
+                  studioTheme={studioTheme}
+                  onChangeStudioTheme={setStudioTheme}
+                  isDarkMode={isDarkMode}
+                  onActiveTabChange={handleTabChangeFromDashboard}
+                />
+              </main>
+            )}
+          </div>
+
+          {/* B. IPAD, TABLET & DESKTOP LAYOUT (>= md / >= 768px): SPLIT-SCREEN & TOGGLE VIEWS */}
+          <div className="hidden md:flex fixed inset-x-0 bottom-0 top-14 overflow-hidden z-10 flex-row bg-[#EFE8DF] dark:bg-[#121214] transition-colors duration-300">
+            {/* LEFT COLUMN: Editor Panel (Scrollable independently, collapsible) */}
+            <div
+              className={`h-full overflow-y-auto transition-all duration-300 ease-in-out border-r border-stone-200/80 dark:border-stone-800 relative ${
+                desktopViewMode === 'split'
+                  ? 'w-[52%] lg:w-[56%] xl:w-[58%] shrink-0 opacity-100'
+                  : desktopViewMode === 'editor'
+                  ? 'w-full flex-1 shrink-0 opacity-100'
+                  : 'w-0 shrink-0 opacity-0 pointer-events-none overflow-hidden p-0 m-0 border-0'
+              }`}
+            >
+              {/* Quick toggle pill in Full Editor mode to return to Split Screen */}
+              {desktopViewMode === 'editor' && (
+                <div className="sticky top-3 right-4 z-30 flex justify-end pr-4 pointer-events-none">
+                  <button
+                    type="button"
+                    onClick={() => setDesktopViewMode('split')}
+                    className="pointer-events-auto px-3.5 py-1.5 rounded-full bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold shadow-md shadow-rose-500/25 transition-all flex items-center gap-1.5 active:scale-95"
+                    title="เปิดดูตัวอย่างมือถือคู่กัน (Split View)"
+                  >
+                    <Columns2 className="w-3.5 h-3.5" />
+                    <span>เปิดดูตัวอย่างคู่กัน (Split View) 📱</span>
+                  </button>
+                </div>
+              )}
+
+              <CreatorDashboard
+                config={config}
+                onChangeConfig={setConfig}
+                onSwitchToPreview={() => setDesktopViewMode('preview')}
+                onOpenShareModal={() => setIsShareModalOpen(true)}
+                studioTheme={studioTheme}
+                onChangeStudioTheme={setStudioTheme}
+                isDarkMode={isDarkMode}
+                isEmbedded={true}
+                onActiveTabChange={handleTabChangeFromDashboard}
+              />
+            </div>
+
+            {/* RIGHT COLUMN: Live Preview Panel (Scrollable independently, collapsible) */}
+            <div
+              className={`h-full overflow-y-auto transition-all duration-300 ease-in-out flex flex-col items-center justify-start relative select-none ${
+                desktopViewMode === 'split'
+                  ? 'w-[48%] lg:w-[44%] xl:w-[42%] shrink-0 opacity-100 bg-stone-900/5 dark:bg-black/20 p-4 lg:p-6 border-l border-stone-200/60 dark:border-stone-800/60'
+                  : desktopViewMode === 'preview'
+                  ? 'w-full flex-1 shrink-0 opacity-100 bg-transparent p-4 sm:p-8'
+                  : 'w-0 shrink-0 opacity-0 pointer-events-none overflow-hidden p-0 m-0 border-0'
+              }`}
+            >
+              {/* Top Header of Preview Panel */}
+              {desktopViewMode === 'preview' ? (
+                <div className="w-full max-w-4xl mx-auto mb-3 flex items-center justify-between px-2">
+                  <button
+                    type="button"
+                    onClick={() => setDesktopViewMode('split')}
+                    className="px-3.5 py-1.5 rounded-xl bg-white/95 dark:bg-stone-800/95 hover:bg-white dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 text-xs font-bold shadow-sm border border-stone-200 dark:border-stone-700 flex items-center gap-1.5 transition active:scale-95"
+                  >
+                    <Columns2 className="w-3.5 h-3.5 text-rose-500" />
+                    <span>← กลับสู่โหมดแบ่งหน้าจอ (Split View)</span>
+                  </button>
+                  <div className="text-xs font-bold text-stone-500 dark:text-stone-400 flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>โหมดตัวอย่างเต็มตา (Full Preview Mode)</span>
+                  </div>
+                </div>
+              ) : desktopViewMode === 'split' ? (
+                <div className="w-full max-w-[420px] mb-2.5 flex items-center justify-between px-1">
+                  <div className="flex items-center gap-2">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    </span>
+                    <span className="text-xs font-extrabold text-stone-700 dark:text-stone-300">
+                      ตัวอย่างมือถือ (Live Preview)
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setDesktopViewMode('preview')}
+                    title="ขยายตัวอย่างมือถือเต็มตา (Full Preview)"
+                    className="px-2.5 py-1 rounded-lg bg-stone-200/80 hover:bg-stone-300 dark:bg-stone-800 dark:hover:bg-stone-700 text-[11px] font-bold text-stone-700 dark:text-stone-300 transition flex items-center gap-1"
+                  >
+                    <Eye className="w-3 h-3 text-rose-500" />
+                    <span>ขยายเต็มตา</span>
+                  </button>
+                </div>
+              ) : null}
+
+              {/* Live Preview Content (Real-time updates without switching tabs) */}
+              {category === 'christmas_tree' ? (
+                <div
+                  className={`w-full ${
+                    desktopViewMode === 'preview' ? 'max-w-3xl h-[calc(100vh-140px)]' : 'max-w-[420px] h-[720px]'
+                  } rounded-[36px] overflow-hidden shadow-2xl border-[6px] border-stone-800 bg-black relative flex flex-col my-auto transition-all`}
+                >
+                  {render3DExperience()}
+                </div>
+              ) : category === 'arrow_birthday' ? (
+                <div
+                  className={`w-full ${
+                    desktopViewMode === 'preview' ? 'max-w-3xl h-[calc(100vh-140px)]' : 'max-w-[420px] h-[720px]'
+                  } rounded-[36px] overflow-hidden shadow-2xl border-[6px] border-stone-800 bg-[#04020a] relative flex flex-col my-auto transition-all`}
+                >
+                  {render3DExperience()}
+                </div>
+              ) : (
+                <div className="w-full max-w-[420px] my-auto scale-[0.92] sm:scale-95 lg:scale-100 origin-top transition-transform">
+                  <PhoneFrame
+                    theme={config.theme}
+                    phoneBackground={config.phoneBackground}
+                    passcodeBackground={config.passcodeBackground}
+                    currentStage={currentStage}
+                    totalStages={6}
+                    onResetExperience={handleResetExperience}
+                    onPrevStage={handlePrevStage}
+                    onSelectStage={(idx) => setCurrentStage(idx)}
+                    decorations={config.decorations || []}
+                    onUpdateDecorations={(decs, flush = true) => {
+                      setConfig((prev) => {
+                        const updated = { ...prev, decorations: decs };
+                        if (!isRecipientOnly && flush) saveLocalDraft(updated);
+                        return updated;
+                      });
+                    }}
+                    onAddDecoration={(dec) => {
+                      setConfig((prev) => {
+                        const currentDecs = prev.decorations || [];
+                        const newDec = {
+                          id: 'dec_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+                          src: dec.src,
+                          x: 50,
+                          y: 50,
+                          scale: 1,
+                          rotation: 0
+                        };
+                        const updated = { ...prev, decorations: [...currentDecs, newDec] };
+                        if (!isRecipientOnly) saveLocalDraft(updated);
+                        return updated;
+                      });
+                    }}
+                    isEditable={true}
+                  >
+                    {renderPhoneStages()}
+                  </PhoneFrame>
+                </div>
+              )}
+            </div>
+          </div>
+        </>
       )}
 
       {/* Share & QR Code Modal */}

@@ -54,11 +54,20 @@ export default function CreatorDashboard({
   onOpenShareModal,
   studioTheme = 'system',
   onChangeStudioTheme,
-  isDarkMode = false
+  isDarkMode = false,
+  isEmbedded = false,
+  onActiveTabChange
 }) {
   const [activeTab, setActiveTab] = useState('category');
   const [compressing, setCompressing] = useState(false);
   const [compressMsg, setCompressMsg] = useState('');
+
+  // Automatically inform parent when activeTab changes (to sync Live Preview)
+  React.useEffect(() => {
+    if (onActiveTabChange) {
+      onActiveTabChange(activeTab);
+    }
+  }, [activeTab, onActiveTabChange]);
 
   // Gallery Navigation & View Mode States
   const [decorCategory, setDecorCategory] = useState('all');
@@ -379,7 +388,9 @@ export default function CreatorDashboard({
   const totalTabsCount = getTabList().length;
 
   return (
-    <div className="w-full max-w-5xl mx-auto pt-16 sm:pt-20 pb-20 px-3 sm:px-6 transition-colors duration-300">
+    <div className={`w-full max-w-5xl mx-auto pb-20 px-3 sm:px-6 transition-colors duration-300 ${
+      isEmbedded ? 'pt-4 sm:pt-6' : 'pt-16 sm:pt-20'
+    }`}>
       {/* Top Banner with Studio Theme Switcher and Finish Button */}
       <div className="bg-white dark:bg-stone-900 rounded-3xl p-4 sm:p-6 shadow-sm border border-stone-200 dark:border-stone-800 mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-colors duration-300">
         <div>
