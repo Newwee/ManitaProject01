@@ -1639,6 +1639,8 @@
       activeInstances: [],
       introTime2Played: false,
       introTime5Played: false,
+      introTime4Count: 0,
+      lastIntroTime4: 0,
 
       init() {
         Object.entries(SFX_CONFIG).forEach(([key, cfg]) => {
@@ -1660,6 +1662,14 @@
 
         const baseAudio = this.pool[name];
         if (!baseAudio) return null;
+
+        if (name === 'introTime4') {
+          if (this.introTime4Count >= 5) return null;
+          const now = Date.now();
+          if (now - this.lastIntroTime4 < 120) return null;
+          this.lastIntroTime4 = now;
+          this.introTime4Count++;
+        }
 
         let sound;
         if (name === 'introTime4' || name === 'tapBall' || options.clone) {
@@ -1731,6 +1741,8 @@
       resetRound() {
         this.introTime2Played = false;
         this.introTime5Played = false;
+        this.introTime4Count = 0;
+        this.lastIntroTime4 = 0;
       }
     };
     try { sfxManager.init(); } catch(e) {}
@@ -2355,9 +2367,13 @@
       } catch(e) {}
     }
 
+    let lastGiftboxSFXTime = 0;
     function playGiftboxSFX() {
       initAudio();
       if (isSoundMuted) return;
+      const now = Date.now();
+      if (now - lastGiftboxSFXTime < 250) return;
+      lastGiftboxSFXTime = now;
       try {
         if (sfxGiftboxAudio) {
           sfxGiftboxAudio.currentTime = 0;
@@ -2366,9 +2382,13 @@
       } catch(e) {}
     }
 
+    let lastPopSFXTime = 0;
     function playPopSFX() {
       initAudio();
       if (isSoundMuted) return;
+      const now = Date.now();
+      if (now - lastPopSFXTime < 160) return;
+      lastPopSFXTime = now;
       try {
         if (sfxPopAudio) {
           sfxPopAudio.currentTime = 0;
@@ -2543,12 +2563,12 @@
     }
 
     function buildGiftBoxes() {
+      const prevBoxes = giftBoxes || [];
       giftBoxes = [];
       const count = 5;
       const baseScale = Math.max(0.7, Math.min(1.15, treeHeight / 540));
       const palettes = currentTheme.giftPalettes;
 
-      // จัดวางกล่องของขวัญรอบฐานต้นคริสต์มาส
       const configs = [
         { angle: -0.45, dist: 0.78, w: 46, h: 42, d: 46, rot: 0.28 },
         { angle: 0.62,  dist: 0.86, w: 38, h: 34, d: 38, rot: -0.35 },
@@ -2563,6 +2583,9 @@
         const w = cfg.w * baseScale;
         const h = cfg.h * baseScale;
         const d = cfg.d * baseScale;
+        const prev = prevBoxes[i];
+        const wasBursted = prev ? prev.bursted : (introTime >= GIFTS_START_TIME + i * 0.17);
+        const wasOpened = prev ? prev.opened : false;
 
         giftBoxes.push({
           index: i,
@@ -2573,8 +2596,8 @@
           localRot: cfg.rot,
           palette: palettes[i % palettes.length],
           appearTime: GIFTS_START_TIME + i * 0.17,
-          bursted: false,
-          opened: false,
+          bursted: wasBursted,
+          opened: wasOpened,
           hoverAmount: 0,
           phase: i * 1.3,
           screenBounds: null,
@@ -4212,9 +4235,14 @@
       }, 1550));
     }
 
+    let isOpeningGiftModal = false;
     function openGiftModal(boxIndex = 0) {
-      if (!hasStarted) return;
+      if (!hasStarted || isOpeningGiftModal) return;
+      if (giftModal && giftModal.classList.contains('open')) return;
       if (isBoxLocked(boxIndex)) { showLockToast(boxIndex); return; }
+
+      isOpeningGiftModal = true;
+      setTimeout(() => { isOpeningGiftModal = false; }, 400);
 
       const box = giftBoxes[boxIndex] || giftBoxes[0];
       if (box) {

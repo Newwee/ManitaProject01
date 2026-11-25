@@ -645,7 +645,7 @@ function AppContent({ preferences, setPreferences }) {
       ) : (
         /* ================= 2. CREATOR / STUDIO MODE ================= */
         <>
-          {/* A. MOBILE LAYOUT (< md / < 768px): 100% UNCHANGED ORIGINAL UX */}
+          {isMobile ? (
           <div className="md:hidden w-full flex-1 flex flex-col">
             {appMode === 'preview' ? (
               category === 'christmas_tree' ? (
@@ -714,8 +714,7 @@ function AppContent({ preferences, setPreferences }) {
               </main>
             )}
           </div>
-
-          {/* B. IPAD, TABLET & DESKTOP LAYOUT (>= md / >= 768px): SPLIT-SCREEN & TOGGLE VIEWS */}
+          ) : (
           <div className="hidden md:flex fixed inset-x-0 bottom-0 top-14 overflow-hidden z-10 flex-row bg-transparent transition-colors duration-300">
             {/* LEFT COLUMN: Editor Panel (Scrollable independently, collapsible) */}
             <div
@@ -826,25 +825,25 @@ function AppContent({ preferences, setPreferences }) {
 
               {/* Live Preview Content (Real-time updates without switching tabs) */}
               {category === 'christmas_tree' ? (
-                desktopViewMode === 'preview' ? (
-                  <div className="w-full h-full relative flex flex-col bg-black overflow-hidden">
-                    {render3DExperience()}
-                  </div>
-                ) : (
-                  <div className="w-full max-w-[420px] h-[720px] rounded-[36px] overflow-hidden shadow-2xl border-[6px] border-stone-800 bg-black relative flex flex-col my-auto transition-all">
-                    {render3DExperience()}
-                  </div>
-                )
+                <div
+                  className={`relative flex flex-col bg-black overflow-hidden transition-all duration-300 ${
+                    desktopViewMode === 'preview'
+                      ? 'w-full h-full'
+                      : 'w-full max-w-[420px] h-[720px] rounded-[36px] shadow-2xl border-[6px] border-stone-800 my-auto'
+                  }`}
+                >
+                  {render3DExperience()}
+                </div>
               ) : category === 'arrow_birthday' ? (
-                desktopViewMode === 'preview' ? (
-                  <div className="w-full h-full relative flex flex-col bg-[#04020a] overflow-hidden">
-                    {render3DExperience()}
-                  </div>
-                ) : (
-                  <div className="w-full max-w-[420px] h-[720px] rounded-[36px] overflow-hidden shadow-2xl border-[6px] border-stone-800 bg-[#04020a] relative flex flex-col my-auto transition-all">
-                    {render3DExperience()}
-                  </div>
-                )
+                <div
+                  className={`relative flex flex-col bg-[#04020a] overflow-hidden transition-all duration-300 ${
+                    desktopViewMode === 'preview'
+                      ? 'w-full h-full'
+                      : 'w-full max-w-[420px] h-[720px] rounded-[36px] shadow-2xl border-[6px] border-stone-800 my-auto'
+                  }`}
+                >
+                  {render3DExperience()}
+                </div>
               ) : (
                 <div className="w-full max-w-[420px] my-auto scale-[0.92] sm:scale-95 lg:scale-100 origin-top transition-transform">
                   <PhoneFrame
@@ -888,6 +887,7 @@ function AppContent({ preferences, setPreferences }) {
               )}
             </div>
           </div>
+          )}
         </>
       )}
 
