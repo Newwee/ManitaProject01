@@ -16,6 +16,7 @@ export default function ChristmasTreeExperience({
   showCountdown = true,
   countdownTitle = '',
   decorations = {},
+  musicTrack = 'auto',
   isRecipient = false
 }) {
   const containerRef = useRef(null);
@@ -176,7 +177,7 @@ export default function ChristmasTreeExperience({
         />
       )}
 
-      <ChristmasMusicPlayer showUI={true} />
+      <ChristmasMusicPlayer showUI={true} musicTrack={musicTrack} defaultTrack="last_christmas" />
     </div>
   );
 }

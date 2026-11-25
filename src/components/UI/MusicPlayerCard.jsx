@@ -4,12 +4,14 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { VolumeHighIcon, VolumeLowIcon } from '@hugeicons/core-free-icons';
 import ElasticSlider from './ElasticSlider';
 import { isAudioPlaying, toggleMusic, setMusicVolume } from '../../lib/soundEngine';
+import { MUSIC_TRACKS } from '../../types/themePresets';
 
 export default function MusicPlayerCard({
   isOpen,
   onClose,
   themeKey = 'scrapbook',
   presetCategory = 'chat_scratch',
+  selectedMusic = 'auto',
   isMusicPlaying = false,
   onToggleMusic,
   isDarkMode = false
@@ -17,8 +19,24 @@ export default function MusicPlayerCard({
   const [volume, setVolume] = useState(70);
   const [trackProgress, setTrackProgress] = useState(28);
 
-  // Compute active song metadata based on Preset and Theme
   const getSongMeta = () => {
+    if (selectedMusic === 'none') {
+      return {
+        title: 'ปิดเพลงประกอบ (Silent)',
+        artist: 'เล่นเฉพาะเอฟเฟกต์เสียง',
+        cover: '/assets/Background.jpg'
+      };
+    }
+    if (selectedMusic && selectedMusic !== 'auto') {
+      const customTrack = MUSIC_TRACKS.find((t) => t.id === selectedMusic);
+      if (customTrack) {
+        return {
+          title: customTrack.title,
+          artist: customTrack.artist,
+          cover: '/assets/Background.jpg'
+        };
+      }
+    }
     if (presetCategory === 'christmas_tree' || presetCategory === 'ascii_christmas' || themeKey === 'festive') {
       return {
         title: 'Last Christmas',

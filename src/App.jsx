@@ -21,7 +21,7 @@ import { NotificationProvider, useNotifications } from './context/NotificationCo
 import { loadUserPreferences, saveUserPreferences, resetUserPreferences } from './lib/userPreferences';
 import { THEME_PRESETS, DEFAULT_QUIZZES } from './types/themePresets';
 import { saveLocalDraft, loadLocalDraft, resolveGiftFromUrl } from './lib/giftStorage';
-import { toggleMusic, stopMusic } from './lib/soundEngine';
+import { toggleMusic, startMusic, stopMusic } from './lib/soundEngine';
 
 // Code Splitting & Lazy Loading for heavy 3D experiences, shaders, and modals
 const ChristmasTreeExperience = React.lazy(() => import('./components/Experience3D/ChristmasTreeExperience'));
@@ -95,7 +95,8 @@ function AppContent({ preferences, setPreferences }) {
       'พักผ่อนเยอะๆ และใจดีกับตัวเองด้วยนะ ❄️',
       'ปีหน้าขอให้เป็นปีที่ยอดเยี่ยมที่สุด! 🎁'
     ],
-    asciiCharset: ''
+    asciiCharset: '',
+    selectedMusic: 'auto'
   });
 
   const [appMode, setAppMode] = useState('preview'); // 'preview' | 'builder' (Mobile view mode)
@@ -274,13 +275,25 @@ function AppContent({ preferences, setPreferences }) {
     }
   }, [category, isMusicPlaying]);
 
+  useEffect(() => {
+    if (isMusicPlaying && category !== 'christmas_tree' && category !== 'ascii_christmas') {
+      if (config.selectedMusic === 'none') {
+        stopMusic();
+        setIsMusicPlaying(false);
+      } else {
+        startMusic(config.theme, category, config.selectedMusic || 'auto');
+      }
+    }
+  }, [config.selectedMusic, config.theme, category]);
+
   const handleToggleMusic = () => {
     toggleMusic(
       config.theme,
       (state) => {
         setIsMusicPlaying(state);
       },
-      config.presetCategory
+      config.presetCategory,
+      config.selectedMusic || 'auto'
     );
   };
 
@@ -432,6 +445,7 @@ function AppContent({ preferences, setPreferences }) {
             showCountdown={config.treeShowCountdown !== undefined ? config.treeShowCountdown : true}
             countdownTitle={config.treeCountdownTitle || ''}
             decorations={config.treeDecorations || {}}
+            musicTrack={config.selectedMusic || 'auto'}
             isRecipient={isRecipientOnly}
           />
         </React.Suspense>
@@ -479,6 +493,7 @@ function AppContent({ preferences, setPreferences }) {
             photos={config.photos}
             ornamentNotes={config.asciiOrnamentNotes}
             customCharset={config.asciiCharset || ''}
+            musicTrack={config.selectedMusic || 'auto'}
             isRecipient={isRecipientOnly}
           />
         </React.Suspense>

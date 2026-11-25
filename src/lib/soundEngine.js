@@ -2,7 +2,7 @@
  * MANITA Studio - Audio Synthesizer & Sound Effects
  * Uses standard Web Audio API (zero external audio files needed)
  */
-import { THEME_PRESETS } from '../types/themePresets';
+import { THEME_PRESETS, MUSIC_TRACKS } from '../types/themePresets';
 
 let audioCtx = null;
 let musicInterval = null;
@@ -10,6 +10,11 @@ let isMusicPlaying = false;
 let currentNoteIndex = 0;
 let currentAudioEl = null;
 let currentVolume = 0.7;
+let externalStopper = null;
+
+export function registerExternalAudioStop(fn) {
+  externalStopper = typeof fn === 'function' ? fn : null;
+}
 
 function getAudioContext() {
   if (!audioCtx) {
@@ -97,39 +102,53 @@ export function isAudioPlaying() {
   return isMusicPlaying;
 }
 
-export function toggleMusic(themeKey = 'scrapbook', onStateChange, presetCategory = 'chat_scratch') {
+export function toggleMusic(themeKey = 'scrapbook', onStateChange, presetCategory = 'chat_scratch', selectedMusic = 'auto') {
   if (isMusicPlaying) {
     stopMusic();
     if (onStateChange) onStateChange(false);
     return false;
   } else {
-    startMusic(themeKey, presetCategory);
+    if (selectedMusic === 'none') {
+      stopMusic();
+      if (onStateChange) onStateChange(false);
+      return false;
+    }
+    startMusic(themeKey, presetCategory, selectedMusic);
     if (onStateChange) onStateChange(true);
     return true;
   }
 }
 
-export function startMusic(themeKey = 'scrapbook', presetCategory = 'chat_scratch') {
+export function startMusic(themeKey = 'scrapbook', presetCategory = 'chat_scratch', selectedMusic = 'auto') {
   stopMusic();
+  if (externalStopper) {
+    try {
+      externalStopper();
+    } catch (e) {}
+  }
 
-  if (presetCategory === 'christmas_tree') {
-    // Christmas tree uses its own dedicated ChristmasMusicPlayer component
+  if (selectedMusic === 'none' || presetCategory === 'christmas_tree' || presetCategory === 'ascii_christmas') {
     return;
   }
 
-  const isChristmas = themeKey === 'festive';
-  if (isChristmas) {
+  let resolvedTrack = null;
+  if (selectedMusic && selectedMusic !== 'auto') {
+    resolvedTrack = MUSIC_TRACKS.find((t) => t.id === selectedMusic && t.src);
+  } else if (themeKey === 'festive') {
+    resolvedTrack = MUSIC_TRACKS.find((t) => t.id === 'last_christmas');
+  }
+
+  if (resolvedTrack && resolvedTrack.src) {
     try {
-      currentAudioEl = new Audio('/assets/Music/LastChristmas.mp3');
-      currentAudioEl.loop = true;
-      currentAudioEl.volume = currentVolume;
-      currentAudioEl.play().catch(e => {
-        console.debug('Last Christmas playback pending user interaction:', e);
-      });
+      const el = new Audio(resolvedTrack.src);
+      el.loop = true;
+      el.volume = currentVolume;
+      currentAudioEl = el;
+      el.play().catch(() => {});
       isMusicPlaying = true;
       return;
     } catch (err) {
-      console.warn('Failed to load LastChristmas.mp3, falling back to synthesizer', err);
+      currentAudioEl = null;
     }
   }
 
@@ -140,7 +159,6 @@ export function startMusic(themeKey = 'scrapbook', presetCategory = 'chat_scratc
   isMusicPlaying = true;
   currentNoteIndex = 0;
 
-  // Play immediately
   playTone(notes[0], 1.2, themeKey === 'y2k' ? 'square' : 'sine', 0.1 * currentVolume);
 
   musicInterval = setInterval(() => {

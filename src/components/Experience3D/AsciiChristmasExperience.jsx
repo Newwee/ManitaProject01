@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Maximize2, Minimize2 } from 'lucide-react';
+import ChristmasMusicPlayer from './ChristmasMusicPlayer';
 
 export default function AsciiChristmasExperience({
   wishTitle = 'MERRY CHRISTMAS & HAPPY NEW YEAR',
@@ -10,6 +11,7 @@ export default function AsciiChristmasExperience({
   photos = [],
   ornamentNotes = [],
   customCharset = '',
+  musicTrack = 'auto',
   isRecipient = false
 }) {
   const containerRef = useRef(null);
@@ -126,6 +128,8 @@ export default function AsciiChristmasExperience({
         {isFullscreen ? <Minimize2 className="w-3.5 h-3.5 text-amber-400" /> : <Maximize2 className="w-3.5 h-3.5 text-amber-400" />}
         <span>{isFullscreen ? 'ออกเต็มจอ' : 'เต็มจอ'}</span>
       </button>
+
+      <ChristmasMusicPlayer showUI={true} musicTrack={musicTrack} defaultTrack="we_wish" />
     </div>
   );
 }

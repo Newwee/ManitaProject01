@@ -3,8 +3,9 @@ import { Play, Pause, SkipBack, SkipForward, Music, X } from 'lucide-react';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { VolumeHighIcon, VolumeLowIcon } from '@hugeicons/core-free-icons';
 import ElasticSlider from '../UI/ElasticSlider';
+import { MUSIC_TRACKS } from '../../types/themePresets';
+import { stopMusic, registerExternalAudioStop } from '../../lib/soundEngine';
 
-// Module-level global singleton to guarantee only ONE Christmas audio element ever plays
 let globalChristmasAudio = null;
 
 export function stopChristmasAudio() {
@@ -19,7 +20,11 @@ export function stopChristmasAudio() {
   }
 }
 
-export default function ChristmasMusicPlayer({ showUI = true }) {
+export default function ChristmasMusicPlayer({ showUI = true, musicTrack = 'auto', defaultTrack = 'last_christmas' }) {
+  const effectiveId = !musicTrack || musicTrack === 'auto' ? defaultTrack : musicTrack;
+  const resolvedTrack = effectiveId === 'none'
+    ? null
+    : (MUSIC_TRACKS.find((t) => t.id === effectiveId && t.src) || MUSIC_TRACKS.find((t) => t.id === defaultTrack));
   const [isOpen, setIsOpen] = useState(() => {
     if (typeof window !== 'undefined') {
       return window.innerWidth >= 768;
@@ -144,15 +149,24 @@ export default function ChristmasMusicPlayer({ showUI = true }) {
     }
   };
 
-  // Initialize and auto-play Last Christmas when animation begins
   useEffect(() => {
+    registerExternalAudioStop(stopChristmasAudio);
+    stopMusic();
     stopChristmasAudio();
 
-    const audio = new Audio('/assets/Music/LastChristmas.mp3');
+    if (!resolvedTrack || !resolvedTrack.src) {
+      audioRef.current = null;
+      setIsPlaying(false);
+      setCurrentTime(0);
+      return;
+    }
+
+    const audio = new Audio(resolvedTrack.src);
     audio.loop = true;
     audio.volume = volume / 100;
     audioRef.current = audio;
     globalChristmasAudio = audio;
+    setCurrentTime(0);
 
     const handleLoadedMetadata = () => {
       if (audio.duration && !isNaN(audio.duration)) {
@@ -167,7 +181,6 @@ export default function ChristmasMusicPlayer({ showUI = true }) {
     audio.addEventListener('loadedmetadata', handleLoadedMetadata);
     audio.addEventListener('timeupdate', handleTimeUpdate);
 
-    // Try auto-play safely
     let isDisposed = false;
     const playPromise = audio.play();
     if (playPromise !== undefined) {
@@ -203,8 +216,11 @@ export default function ChristmasMusicPlayer({ showUI = true }) {
       if (globalChristmasAudio === audio) {
         globalChristmasAudio = null;
       }
+      if (audioRef.current === audio) {
+        audioRef.current = null;
+      }
     };
-  }, []);
+  }, [resolvedTrack?.src]);
 
   const handleTogglePlay = () => {
     const audio = audioRef.current;
@@ -242,8 +258,7 @@ export default function ChristmasMusicPlayer({ showUI = true }) {
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
-  // Keep audio playing in background, but hide visual UI until intro animation completes
-  if (!showUI) return null;
+  if (!showUI || !resolvedTrack) return null;
 
   // If minimized, display sleek floating draggable music pill
   if (!isOpen) {
@@ -369,10 +384,10 @@ export default function ChristmasMusicPlayer({ showUI = true }) {
                 <span>🎄 Christmas Soundtrack</span>
               </div>
               <h4 className="font-theme-display text-sm sm:text-base font-bold text-white truncate leading-snug pointer-events-none">
-                Last Christmas
+                {resolvedTrack.title}
               </h4>
               <p className="text-[11px] sm:text-xs text-white/60 truncate mb-2 pointer-events-none">
-                Wham! • Festive Tree Edition
+                {resolvedTrack.artist}
               </p>
             </div>
 

@@ -286,3 +286,41 @@ export const SCRATCH_COLORS = [
     swatchGrad: 'linear-gradient(135deg, #3498DB, #D6EAF8, #1B4F72)'
   }
 ];
+
+export const MUSIC_TRACKS = [
+  {
+    id: 'auto',
+    title: 'อัตโนมัติตามธีม / Preset',
+    artist: 'MANITA Smart Audio',
+    src: '',
+    badge: 'ค่าเริ่มต้น'
+  },
+  {
+    id: 'last_christmas',
+    title: 'Last Christmas',
+    artist: 'Wham! • Festive Edition',
+    src: '/assets/Music/LastChristmas.mp3',
+    badge: 'MP3'
+  },
+  {
+    id: 'all_i_want',
+    title: 'All I Want For Christmas Is You',
+    artist: 'Mariah Carey • Holiday Classic',
+    src: '/assets/Music/All I Want For Christmas Is You.mp3',
+    badge: 'MP3'
+  },
+  {
+    id: 'we_wish',
+    title: 'We Wish You a Merry Christmas',
+    artist: 'Christmas Carol • Warm Melody',
+    src: '/assets/Music/We Wish You a Merry Christmas.mp3',
+    badge: 'MP3'
+  },
+  {
+    id: 'none',
+    title: 'ปิดเพลงประกอบ (Silent)',
+    artist: 'เล่นเฉพาะเอฟเฟกต์เสียง',
+    src: '',
+    badge: 'Mute'
+  }
+];
