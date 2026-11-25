@@ -26,6 +26,7 @@ import { toggleMusic, stopMusic } from './lib/soundEngine';
 // Code Splitting & Lazy Loading for heavy 3D experiences, shaders, and modals
 const ChristmasTreeExperience = React.lazy(() => import('./components/Experience3D/ChristmasTreeExperience'));
 const ArrowBirthdayExperience = React.lazy(() => import('./components/Experience3D/ArrowBirthdayExperience'));
+const AsciiChristmasExperience = React.lazy(() => import('./components/Experience3D/AsciiChristmasExperience'));
 const GhostFibers = React.lazy(() => import('./components/UI/GhostFibers'));
 const HoloMosaic = React.lazy(() => import('./components/UI/HoloMosaic'));
 const FluxLines = React.lazy(() => import('./components/UI/FluxLines'));
@@ -80,7 +81,21 @@ function AppContent({ preferences, setPreferences }) {
     arrowTitle: 'Happy Birthday',
     arrowSubtitle: 'WISHING YOU ENDLESS HAPPINESS ✨',
     arrowWish: 'สุขสันต์วันเกิดนะ! 🎂✨ ขอให้ปีนี้เป็นปีที่ใจดีกับเธอมากๆ เต็มไปด้วยรอยยิ้ม เสียงหัวเราะ และความสุขในทุกๆ วัน เติบโตอย่างสดใสที่สุดเลยนะ 💖',
-    arrowSign: '— จากคนที่หวังดีเสมอ ✨'
+    arrowSign: '— จากคนที่หวังดีเสมอ ✨',
+    asciiTitle: 'MERRY CHRISTMAS & HAPPY NEW YEAR',
+    asciiWish: 'ขอให้ช่วงเวลาแห่งความสุขนี้อบอวลไปด้วยรอยยิ้ม ความอบอุ่น และความทรงจำดีๆ ตลอดทั้งปีนะครับ\nไม่ว่าปีหน้าจะเจอเรื่องท้าทายแค่ไหน ขอให้มีแต่พลังบวกและคนดีๆ อยู่รอบตัวเสมอ ✨',
+    asciiSender: 'Secret Santa',
+    asciiRecipient: 'Special Person',
+    asciiTheme: 'classic',
+    asciiOrnamentNotes: [
+      'ขอให้ทุกวันเริ่มต้นด้วยรอยยิ้ม ✨',
+      'สุขภาพแข็งแรง เงินทองไหลมาเทมา 💫',
+      'ขอบคุณที่อยู่ข้างกันเสมอมา 🎄',
+      'ขอให้สมหวังในทุกเรื่องที่ตั้งใจไว้ 🌟',
+      'พักผ่อนเยอะๆ และใจดีกับตัวเองด้วยนะ ❄️',
+      'ปีหน้าขอให้เป็นปีที่ยอดเยี่ยมที่สุด! 🎁'
+    ],
+    asciiCharset: ''
   });
 
   const [appMode, setAppMode] = useState('preview'); // 'preview' | 'builder' (Mobile view mode)
@@ -253,7 +268,7 @@ function AppContent({ preferences, setPreferences }) {
 
   // Ensure website ambient BGM does not overlap when entering Christmas tree experience
   useEffect(() => {
-    if (category === 'christmas_tree' && isMusicPlaying) {
+    if ((category === 'christmas_tree' || category === 'ascii_christmas') && isMusicPlaying) {
       stopMusic();
       setIsMusicPlaying(false);
     }
@@ -445,6 +460,31 @@ function AppContent({ preferences, setPreferences }) {
       );
     }
 
+    if (category === 'ascii_christmas') {
+      return (
+        <React.Suspense
+          fallback={
+            <div className="w-full h-full flex items-center justify-center bg-black text-amber-300 text-xs gap-2">
+              <div className="w-5 h-5 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+              <span>กำลังโหลด ASCII 3D Christmas Tree...</span>
+            </div>
+          }
+        >
+          <AsciiChristmasExperience
+            wishTitle={config.asciiTitle || 'MERRY CHRISTMAS & HAPPY NEW YEAR'}
+            wishMessage={config.asciiWish}
+            senderName={config.asciiSender}
+            recipientName={config.asciiRecipient}
+            theme={config.asciiTheme || 'classic'}
+            photos={config.photos}
+            ornamentNotes={config.asciiOrnamentNotes}
+            customCharset={config.asciiCharset || ''}
+            isRecipient={isRecipientOnly}
+          />
+        </React.Suspense>
+      );
+    }
+
     return null;
   };
 
@@ -616,7 +656,7 @@ function AppContent({ preferences, setPreferences }) {
       {/* MAIN CONTENT ROUTER */}
       {isRecipientOnly ? (
         /* ================= 1. RECIPIENT MODE: 100% CLEAN EXPERIENCE ================= */
-        category === 'christmas_tree' ? (
+        (category === 'christmas_tree' || category === 'ascii_christmas') ? (
           <div className="fixed inset-0 top-14 w-full h-[calc(100vh-56px)] bg-black z-10 overflow-hidden flex flex-col">
             {render3DExperience()}
           </div>
@@ -648,7 +688,7 @@ function AppContent({ preferences, setPreferences }) {
           {isMobile ? (
           <div className="md:hidden w-full flex-1 flex flex-col">
             {appMode === 'preview' ? (
-              category === 'christmas_tree' ? (
+              (category === 'christmas_tree' || category === 'ascii_christmas') ? (
                 <div className="fixed inset-0 top-14 w-full h-[calc(100vh-56px)] bg-black z-10 overflow-hidden flex flex-col">
                   {render3DExperience()}
                 </div>
@@ -761,15 +801,14 @@ function AppContent({ preferences, setPreferences }) {
                 desktopViewMode === 'split'
                   ? 'w-[48%] lg:w-[44%] xl:w-[42%] shrink-0 opacity-100 bg-stone-900/5 dark:bg-black/20 p-4 lg:p-6 border-l border-stone-200/60 dark:border-stone-800/60 overflow-y-auto items-center justify-start'
                   : desktopViewMode === 'preview'
-                  ? (category === 'christmas_tree' || category === 'arrow_birthday')
+                  ? (category === 'christmas_tree' || category === 'arrow_birthday' || category === 'ascii_christmas')
                     ? 'w-full flex-1 shrink-0 opacity-100 bg-black p-0 m-0 overflow-hidden items-stretch justify-start'
                     : 'w-full flex-1 shrink-0 opacity-100 bg-transparent p-4 sm:p-8 overflow-y-auto items-center justify-start'
                   : 'w-0 shrink-0 opacity-0 pointer-events-none overflow-hidden p-0 m-0 border-0'
               }`}
             >
-              {/* Top Header of Preview Panel */}
               {desktopViewMode === 'preview' ? (
-                (category === 'christmas_tree' || category === 'arrow_birthday') ? (
+                (category === 'christmas_tree' || category === 'arrow_birthday' || category === 'ascii_christmas') ? (
                   <div className="absolute top-3.5 left-4 z-40 flex items-center gap-2">
                     <button
                       type="button"
@@ -824,7 +863,7 @@ function AppContent({ preferences, setPreferences }) {
               ) : null}
 
               {/* Live Preview Content (Real-time updates without switching tabs) */}
-              {category === 'christmas_tree' ? (
+              {(category === 'christmas_tree' || category === 'ascii_christmas') ? (
                 <div
                   className={`relative flex flex-col bg-black overflow-hidden transition-all duration-300 ${
                     desktopViewMode === 'preview'

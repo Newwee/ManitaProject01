@@ -1,0 +1,1877 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>ASCII 3D Christmas Tree</title>
+  <style>
+    :root {
+      --bg-color: #000000;
+      --ui-text: #f8fafc;
+      --ui-muted: #94a3b8;
+      --ui-accent: #facc15;
+      --ui-surface: rgba(10, 14, 22, 0.78);
+      --ui-border: rgba(255, 255, 255, 0.14);
+      --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', 'Courier New', monospace;
+      --font-sans: 'Prompt', 'Kanit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    html, body {
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: var(--bg-color);
+      color: var(--ui-text);
+      font-family: var(--font-sans);
+      touch-action: none;
+    }
+
+    #stage {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      display: block;
+      cursor: grab;
+      z-index: 1;
+    }
+
+    #stage:active {
+      cursor: grabbing;
+    }
+
+    #stage.pointer-hover {
+      cursor: pointer;
+    }
+
+    .header-overlay {
+      position: fixed;
+      top: max(14px, env(safe-area-inset-top));
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      text-align: center;
+      pointer-events: none;
+      width: min(92vw, 680px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .header-title {
+      font-family: var(--font-mono);
+      font-size: clamp(0.95rem, 2.5vw, 1.55rem);
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--ui-accent);
+      text-shadow: 0 0 18px rgba(250, 204, 21, 0.45);
+      line-height: 1.25;
+    }
+
+    .header-sub {
+      margin-top: 4px;
+      font-size: clamp(0.72rem, 1.6vw, 0.9rem);
+      color: var(--ui-muted);
+      letter-spacing: 0.04em;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+    }
+
+    .top-controls {
+      position: fixed;
+      top: max(14px, env(safe-area-inset-top));
+      right: 112px;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      appearance: none;
+      border: 1px solid var(--ui-border);
+      background: var(--ui-surface);
+      color: var(--ui-text);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-radius: 999px;
+      height: 36px;
+      padding: 0 12px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: transform 0.18s ease, border-color 0.2s ease, background 0.2s ease;
+    }
+
+    .icon-btn:hover {
+      border-color: var(--ui-accent);
+      transform: translateY(-1px);
+    }
+
+    .icon-btn:active {
+      transform: scale(0.96);
+    }
+
+    .icon-btn.active {
+      border-color: var(--ui-accent);
+      color: var(--ui-accent);
+    }
+
+    .creator-toolbar {
+      position: fixed;
+      bottom: max(14px, env(safe-area-inset-bottom));
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 20;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: var(--ui-surface);
+      border: 1px solid var(--ui-border);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      max-width: 94vw;
+    }
+
+    .creator-toolbar.hidden {
+      display: none !important;
+    }
+
+    .pill-btn {
+      appearance: none;
+      border: 1px solid transparent;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--ui-text);
+      border-radius: 999px;
+      padding: 5px 11px;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .pill-btn:hover {
+      background: rgba(255, 255, 255, 0.14);
+    }
+
+    .pill-btn.active {
+      border-color: var(--ui-accent);
+      color: var(--ui-accent);
+      background: rgba(250, 204, 21, 0.12);
+    }
+
+    .hint-badge {
+      position: fixed;
+      bottom: max(14px, env(safe-area-inset-bottom));
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 15;
+      pointer-events: none;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: rgba(226, 232, 240, 0.58);
+      background: rgba(0, 0, 0, 0.48);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 5px 12px;
+      border-radius: 999px;
+      white-space: nowrap;
+      transition: opacity 0.6s ease;
+    }
+
+    .hint-badge.creator-offset {
+      bottom: max(62px, calc(env(safe-area-inset-bottom) + 50px));
+    }
+
+    .hover-tooltip {
+      position: fixed;
+      z-index: 25;
+      pointer-events: none;
+      padding: 5px 10px;
+      border-radius: 8px;
+      background: rgba(8, 12, 20, 0.92);
+      border: 1px solid var(--ui-accent);
+      color: var(--ui-text);
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      white-space: nowrap;
+      opacity: 0;
+      transform: translate(-50%, -135%);
+      transition: opacity 0.15s ease;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+    }
+
+    .hover-tooltip.visible {
+      opacity: 1;
+    }
+
+    .ornament-toast {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.92);
+      z-index: 30;
+      max-width: min(86vw, 360px);
+      padding: 14px 20px;
+      border-radius: 14px;
+      background: rgba(10, 14, 24, 0.92);
+      border: 1px solid var(--ui-accent);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      text-align: center;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+      box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65);
+    }
+
+    .ornament-toast.show {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    .ornament-toast-tag {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--ui-accent);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 4px;
+    }
+
+    .ornament-toast-text {
+      font-size: 0.95rem;
+      line-height: 1.5;
+      color: var(--ui-text);
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      background: rgba(0, 0, 0, 0.74);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .modal-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-card {
+      width: min(92vw, 460px);
+      max-height: 88vh;
+      overflow-y: auto;
+      background: rgba(13, 17, 26, 0.96);
+      border: 1px solid var(--ui-border);
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.75);
+      transform: translateY(18px) scale(0.96);
+      transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+      position: relative;
+    }
+
+    .modal-backdrop.open .modal-card {
+      transform: translateY(0) scale(1);
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 1px solid var(--ui-border);
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--ui-text);
+      font-size: 1rem;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      transition: background 0.2s ease, border-color 0.2s ease;
+    }
+
+    .modal-close:hover {
+      background: rgba(255, 255, 255, 0.16);
+      border-color: var(--ui-accent);
+    }
+
+    .modal-badge {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--ui-accent);
+      background: rgba(250, 204, 21, 0.12);
+      border: 1px solid rgba(250, 204, 21, 0.3);
+      padding: 4px 10px;
+      border-radius: 999px;
+      margin-bottom: 12px;
+    }
+
+    .modal-photo-frame {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      max-height: 44vh;
+      border-radius: 14px;
+      overflow: hidden;
+      background: radial-gradient(circle at center, rgba(255,255,255,0.06), rgba(0,0,0,0.65));
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 14px;
+      position: relative;
+    }
+
+    .modal-photo-frame img {
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      display: block;
+      border-radius: 6px;
+    }
+
+    .modal-caption {
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--ui-accent);
+      margin-bottom: 8px;
+      text-align: center;
+    }
+
+    .modal-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--ui-text);
+      margin-bottom: 8px;
+      line-height: 1.35;
+    }
+
+    .modal-message {
+      font-size: 0.94rem;
+      line-height: 1.65;
+      color: #cbd5e1;
+      white-space: pre-line;
+    }
+
+    .modal-signature {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px dashed rgba(255, 255, 255, 0.14);
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--ui-muted);
+    }
+
+    @media (max-width: 600px) {
+      .icon-btn span.label {
+        display: none;
+      }
+      .icon-btn {
+        padding: 0 10px;
+      }
+      .creator-toolbar {
+        padding: 5px 8px;
+        gap: 5px;
+      }
+      .pill-btn {
+        padding: 4px 9px;
+        font-size: 0.68rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="stage"></canvas>
+
+  <header class="header-overlay" id="headerOverlay">
+    <h1 class="header-title" id="uiWishTitle"></h1>
+    <p class="header-sub" id="uiSubLine"></p>
+  </header>
+
+  <div class="top-controls">
+    <button class="icon-btn" id="btnMute" type="button" aria-label="Toggle Sound">
+      <span id="muteIcon">🔇</span>
+      <span class="label" id="muteLabel">Sound Off</span>
+    </button>
+  </div>
+
+  <div class="hint-badge" id="hintBadge">Drag to spin • Tap gifts, ornaments &amp; star</div>
+
+  <div class="creator-toolbar" id="creatorToolbar">
+    <button class="pill-btn" id="btnReplay" type="button">↻ Replay</button>
+    <button class="pill-btn" id="btnDensity" type="button">Grid: Normal</button>
+    <button class="pill-btn theme-btn" data-theme="classic" type="button">Classic</button>
+    <button class="pill-btn theme-btn" data-theme="frost" type="button">Frost</button>
+    <button class="pill-btn theme-btn" data-theme="cyberpunk" type="button">Cyber</button>
+    <button class="pill-btn theme-btn" data-theme="champagne" type="button">Cozy</button>
+  </div>
+
+  <div class="hover-tooltip" id="hoverTooltip"></div>
+
+  <div class="ornament-toast" id="ornamentToast">
+    <div class="ornament-toast-tag" id="ornamentToastTag">✨ Ornament Memory</div>
+    <div class="ornament-toast-text" id="ornamentToastText"></div>
+  </div>
+
+  <div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <button class="modal-close" id="modalClose" type="button" aria-label="Close">✕</button>
+      <div class="modal-badge" id="modalBadge">🎁 GIFT #1</div>
+      <div class="modal-photo-frame" id="modalPhotoFrame">
+        <img id="modalPhoto" alt="Holiday Memory" />
+      </div>
+      <div class="modal-caption" id="modalCaption"></div>
+      <h2 class="modal-title" id="modalTitle"></h2>
+      <p class="modal-message" id="modalMessage"></p>
+      <div class="modal-signature">
+        <span id="modalTo"></span>
+        <span id="modalFrom"></span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const FALLBACK_PHOTOS = [
+      {
+        url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600"><defs><radialGradient id="g1" cx="50%" cy="40%" r="65%"><stop offset="0%" stop-color="#1e293b"/><stop offset="100%" stop-color="#020617"/></radialGradient></defs><rect width="800" height="600" fill="url(#g1)"/><circle cx="400" cy="140" r="46" fill="#facc15" opacity="0.18"/><polygon points="400,98 412,130 446,130 418,150 428,184 400,164 372,184 382,150 354,130 388,130" fill="#facc15"/><polygon points="400,170 290,340 510,340" fill="#166534"/><polygon points="400,245 250,435 550,435" fill="#15803d"/><polygon points="400,325 220,500 580,500" fill="#22c55e" opacity="0.9"/><rect x="372" y="500" width="56" height="48" rx="6" fill="#78350f"/><circle cx="350" cy="310" r="10" fill="#ef4444"/><circle cx="450" cy="360" r="10" fill="#38bdf8"/><circle cx="320" cy="430" r="11" fill="#facc15"/><circle cx="475" cy="450" r="11" fill="#ec4899"/><text x="400" y="575" text-anchor="middle" fill="#94a3b8" font-family="monospace" font-size="20">WARM HOLIDAY MEMORIES</text></svg>`),
+        caption: "คืนคริสต์มาสอันแสนอบอุ่น 🎄"
+      },
+      {
+        url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800"><defs><linearGradient id="g2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0f172a"/><stop offset="100%" stop-color="#1e1b4b"/></linearGradient></defs><rect width="600" height="800" fill="url(#g2)"/><circle cx="130" cy="140" r="4" fill="#fff" opacity="0.8"/><circle cx="480" cy="110" r="3" fill="#fff" opacity="0.7"/><circle cx="300" cy="90" r="5" fill="#fef08a"/><rect x="170" y="340" width="260" height="220" rx="18" fill="#dc2626"/><rect x="275" y="340" width="50" height="220" fill="#facc15"/><rect x="170" y="425" width="260" height="44" fill="#facc15"/><ellipse cx="255" cy="322" rx="48" ry="26" fill="none" stroke="#facc15" stroke-width="18"/><ellipse cx="345" cy="322" rx="48" ry="26" fill="none" stroke="#facc15" stroke-width="18"/><text x="300" y="650" text-anchor="middle" fill="#e2e8f0" font-family="monospace" font-size="24">A SPECIAL GIFT FOR YOU</text></svg>`),
+        caption: "ของขวัญชิ้นพิเศษสำหรับคนพิเศษ 🎁"
+      },
+      {
+        url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520"><defs><linearGradient id="g3" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#042f2e"/><stop offset="100%" stop-color="#0f172a"/></linearGradient></defs><rect width="800" height="520" fill="url(#g3)"/><circle cx="400" cy="230" r="130" fill="none" stroke="#38bdf8" stroke-width="4" stroke-dasharray="10 10"/><path d="M400 130 L400 330 M300 230 L500 230 M330 160 L470 300 M470 160 L330 300" stroke="#e0f2fe" stroke-width="8" stroke-linecap="round"/><circle cx="400" cy="230" r="24" fill="#0f172a" stroke="#38bdf8" stroke-width="6"/><text x="400" y="430" text-anchor="middle" fill="#bae6fd" font-family="monospace" font-size="22">SNOWFALL &amp; STARLIGHT</text></svg>`),
+        caption: "ขอให้ปีใหม่นี้เต็มไปด้วยรอยยิ้ม ❄️"
+      }
+    ];
+
+    const APP_CONFIG = {
+      wishTitle: "MERRY CHRISTMAS & HAPPY NEW YEAR",
+      wishMessage: "ขอให้ช่วงเวลาแห่งความสุขนี้อบอวลไปด้วยรอยยิ้ม ความอบอุ่น และความทรงจำดีๆ ตลอดทั้งปีนะครับ\nไม่ว่าปีหน้าจะเจอเรื่องท้าทายแค่ไหน ขอให้มีแต่พลังบวกและคนดีๆ อยู่รอบตัวเสมอ ✨",
+      senderName: "Secret Santa",
+      recipientName: "Special Person",
+      photos: [
+        { url: FALLBACK_PHOTOS[0].url, caption: FALLBACK_PHOTOS[0].caption },
+        { url: FALLBACK_PHOTOS[1].url, caption: FALLBACK_PHOTOS[1].caption },
+        { url: FALLBACK_PHOTOS[2].url, caption: FALLBACK_PHOTOS[2].caption }
+      ],
+      ornamentNotes: [
+        "ขอให้ทุกวันเริ่มต้นด้วยรอยยิ้ม ✨",
+        "สุขภาพแข็งแรง เงินทองไหลมาเทมา 💫",
+        "ขอบคุณที่อยู่ข้างกันเสมอมา 🎄",
+        "ขอให้สมหวังในทุกเรื่องที่ตั้งใจไว้ 🌟",
+        "พักผ่อนเยอะๆ และใจดีกับตัวเองด้วยนะ ❄️",
+        "ปีหน้าขอให้เป็นปีที่ยอดเยี่ยมที่สุด! 🎁"
+      ],
+      customCharset: "",
+      theme: "classic"
+    };
+
+    const THEMES = {
+      classic: {
+        bg: "#000000",
+        uiText: "#f8fafc",
+        uiMuted: "#94a3b8",
+        uiAccent: "#facc15",
+        treeDark: [10, 58, 22],
+        treeMid: [28, 138, 52],
+        treeLight: [90, 232, 128],
+        trunk: [146, 84, 18],
+        snowDark: [148, 163, 184],
+        snowLight: [236, 248, 255],
+        star: [250, 204, 21],
+        starGlow: "#facc15",
+        ribbon: [242, 62, 54],
+        snowParticle: "rgba(226, 240, 255, 0.85)",
+        ornaments: [
+          [239, 68, 68],
+          [37, 119, 245],
+          [250, 204, 21],
+          [168, 85, 247],
+          [34, 211, 238],
+          [244, 114, 182],
+          [249, 115, 22]
+        ],
+        gifts: [
+          { box: [37, 99, 235], bow: [250, 204, 21] },
+          { box: [220, 38, 38], bow: [250, 204, 21] },
+          { box: [147, 51, 234], bow: [250, 204, 21] },
+          { box: [16, 185, 129], bow: [239, 68, 68] },
+          { box: [236, 72, 153], bow: [255, 255, 255] },
+          { box: [245, 158, 11], bow: [220, 38, 38] }
+        ]
+      },
+      frost: {
+        bg: "#030a18",
+        uiText: "#f0f9ff",
+        uiMuted: "#7dd3fc",
+        uiAccent: "#38bdf8",
+        treeDark: [12, 74, 110],
+        treeMid: [2, 132, 199],
+        treeLight: [186, 230, 253],
+        trunk: [71, 85, 105],
+        snowDark: [125, 211, 252],
+        snowLight: [240, 249, 255],
+        star: [224, 242, 254],
+        starGlow: "#7dd3fc",
+        ribbon: [56, 189, 248],
+        snowParticle: "rgba(186, 230, 253, 0.9)",
+        ornaments: [
+          [224, 242, 254],
+          [56, 189, 248],
+          [129, 140, 248],
+          [192, 132, 252],
+          [103, 232, 249]
+        ],
+        gifts: [
+          { box: [14, 165, 233], bow: [240, 249, 255] },
+          { box: [99, 102, 241], bow: [186, 230, 253] },
+          { box: [51, 65, 85], bow: [56, 189, 248] },
+          { box: [168, 85, 247], bow: [224, 242, 254] },
+          { box: [2, 132, 199], bow: [103, 232, 249] },
+          { box: [148, 163, 184], bow: [56, 189, 248] }
+        ]
+      },
+      cyberpunk: {
+        bg: "#090414",
+        uiText: "#fdf4ff",
+        uiMuted: "#c084fc",
+        uiAccent: "#22d3ee",
+        treeDark: [88, 28, 135],
+        treeMid: [192, 38, 211],
+        treeLight: [34, 211, 238],
+        trunk: [112, 26, 117],
+        snowDark: [107, 33, 168],
+        snowLight: [232, 121, 249],
+        star: [253, 224, 71],
+        starGlow: "#f472b6",
+        ribbon: [34, 211, 238],
+        snowParticle: "rgba(244, 114, 182, 0.85)",
+        ornaments: [
+          [34, 211, 238],
+          [244, 114, 182],
+          [250, 204, 21],
+          [163, 230, 53],
+          [192, 132, 252]
+        ],
+        gifts: [
+          { box: [236, 72, 153], bow: [34, 211, 238] },
+          { box: [6, 182, 212], bow: [250, 204, 21] },
+          { box: [147, 51, 234], bow: [163, 230, 53] },
+          { box: [219, 39, 119], bow: [255, 255, 255] },
+          { box: [79, 70, 229], bow: [244, 114, 182] },
+          { box: [16, 185, 129], bow: [232, 121, 249] }
+        ]
+      },
+      champagne: {
+        bg: "#0d0907",
+        uiText: "#fef3c7",
+        uiMuted: "#d6b88d",
+        uiAccent: "#f59e0b",
+        treeDark: [36, 56, 38],
+        treeMid: [66, 97, 68],
+        treeLight: [163, 184, 134],
+        trunk: [120, 53, 15],
+        snowDark: [168, 145, 118],
+        snowLight: [254, 243, 199],
+        star: [251, 191, 36],
+        starGlow: "#fbbf24",
+        ribbon: [217, 119, 6],
+        snowParticle: "rgba(254, 243, 199, 0.82)",
+        ornaments: [
+          [251, 191, 36],
+          [244, 162, 158],
+          [254, 243, 199],
+          [217, 119, 6],
+          [231, 177, 146]
+        ],
+        gifts: [
+          { box: [180, 83, 9], bow: [254, 243, 199] },
+          { box: [159, 18, 57], bow: [251, 191, 36] },
+          { box: [120, 113, 108], bow: [244, 162, 158] },
+          { box: [217, 119, 6], bow: [255, 251, 235] },
+          { box: [68, 64, 60], bow: [251, 191, 36] },
+          { box: [190, 24, 93], bow: [254, 243, 199] }
+        ]
+      }
+    };
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const VIEW_MODE = urlParams.get("view") || "preview";
+    const IS_RECIPIENT = VIEW_MODE === "recipient";
+
+    const creatorToolbar = document.getElementById("creatorToolbar");
+    const hintBadge = document.getElementById("hintBadge");
+    if (IS_RECIPIENT) {
+      creatorToolbar.classList.add("hidden");
+    } else {
+      hintBadge.classList.add("creator-offset");
+    }
+
+    class HolidayAudio {
+      constructor() {
+        this.ctx = null;
+        this.masterGain = null;
+        this.isMuted = true;
+        this.bgmTimer = null;
+        this.bgmStep = 0;
+        this.triggeredCues = new Set();
+        this.melody = [
+          392.00, 523.25, 523.25, 587.33, 523.25, 493.88, 440.00, 440.00,
+          440.00, 587.33, 587.33, 659.25, 587.33, 523.25, 493.88, 392.00,
+          392.00, 659.25, 659.25, 698.46, 659.25, 587.33, 523.25, 440.00,
+          392.00, 392.00, 440.00, 587.33, 493.88, 523.25, 0, 0
+        ];
+      }
+
+      ensureContext() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (!AudioCtx) return false;
+          this.ctx = new AudioCtx();
+          this.masterGain = this.ctx.createGain();
+          this.masterGain.gain.value = this.isMuted ? 0 : 0.35;
+          this.masterGain.connect(this.ctx.destination);
+        }
+        if (this.ctx.state === "suspended") {
+          this.ctx.resume();
+        }
+        return true;
+      }
+
+      setMuted(muted) {
+        this.isMuted = muted;
+        if (!muted) {
+          if (this.ensureContext()) {
+            this.masterGain.gain.setTargetAtTime(0.35, this.ctx.currentTime, 0.06);
+            this.startBGM();
+          }
+        } else {
+          if (this.ctx && this.masterGain) {
+            this.masterGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.05);
+          }
+          this.stopBGM();
+        }
+        this.updateButtonUI();
+      }
+
+      toggle() {
+        this.setMuted(!this.isMuted);
+      }
+
+      updateButtonUI() {
+        const btn = document.getElementById("btnMute");
+        const icon = document.getElementById("muteIcon");
+        const label = document.getElementById("muteLabel");
+        if (this.isMuted) {
+          icon.textContent = "🔇";
+          label.textContent = "Sound Off";
+          btn.classList.remove("active");
+        } else {
+          icon.textContent = "🔊";
+          label.textContent = "Sound On";
+          btn.classList.add("active");
+        }
+      }
+
+      startBGM() {
+        if (this.bgmTimer || this.isMuted) return;
+        this.bgmTimer = setInterval(() => {
+          if (this.isMuted || !this.ctx) return;
+          const freq = this.melody[this.bgmStep % this.melody.length];
+          this.bgmStep++;
+          if (freq > 0) {
+            this.playTone(freq, 0.36, "triangle", 0.08, 0.01);
+          }
+        }, 420);
+      }
+
+      stopBGM() {
+        if (this.bgmTimer) {
+          clearInterval(this.bgmTimer);
+          this.bgmTimer = null;
+        }
+      }
+
+      resetTimelineCues() {
+        this.triggeredCues.clear();
+      }
+
+      playTone(freq, duration = 0.25, type = "sine", volume = 0.14, attack = 0.01) {
+        if (this.isMuted || !this.ctx || !this.masterGain) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, now);
+
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.linearRampToValueAtTime(volume, now + attack);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+        osc.start(now);
+        osc.stop(now + duration + 0.02);
+      }
+
+      playTimelineCue(id, type, index = 0) {
+        if (this.triggeredCues.has(id)) return;
+        this.triggeredCues.add(id);
+        if (this.isMuted || !this.ctx) return;
+
+        if (type === "shimmer") {
+          this.playTone(330, 0.9, "sine", 0.07, 0.2);
+          setTimeout(() => this.playTone(495, 0.8, "sine", 0.06, 0.15), 250);
+        } else if (type === "star") {
+          [1046.5, 1318.5, 1568.0, 2093.0].forEach((f, i) => {
+            setTimeout(() => this.playTone(f, 0.45, "sine", 0.11, 0.01), i * 65);
+          });
+        } else if (type === "gift") {
+          const scale = [392, 440, 493.88, 523.25, 587.33, 659.25];
+          const freq = scale[index % scale.length];
+          this.playTone(freq, 0.22, "triangle", 0.14, 0.008);
+        } else if (type === "ornament") {
+          const pentatonic = [784, 880, 1046.5, 1174.6, 1318.5, 1568];
+          const freq = pentatonic[index % pentatonic.length];
+          this.playTone(freq, 0.14, "sine", 0.055, 0.005);
+        }
+      }
+
+      playInteractive(type) {
+        if (this.isMuted) return;
+        this.ensureContext();
+        if (type === "giftOpen") {
+          [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
+            setTimeout(() => this.playTone(f, 0.35, "triangle", 0.13, 0.01), i * 55);
+          });
+        } else if (type === "ornamentTap") {
+          this.playTone(1318.5, 0.2, "sine", 0.11, 0.005);
+          setTimeout(() => this.playTone(1760, 0.24, "sine", 0.08, 0.005), 55);
+        } else if (type === "starFinale") {
+          [523.25, 659.25, 783.99, 1046.5, 1318.5, 1568, 2093].forEach((f, i) => {
+            setTimeout(() => this.playTone(f, 0.55, "sine", 0.12, 0.01), i * 70);
+          });
+        } else if (type === "click") {
+          this.playTone(880, 0.08, "sine", 0.07, 0.005);
+        }
+      }
+    }
+
+    const audio = new HolidayAudio();
+    document.getElementById("btnMute").addEventListener("click", () => audio.toggle());
+
+    const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+    const lerp = (a, b, t) => a + (b - a) * t;
+    const easeOutCubic = (t) => 1 - Math.pow(1 - clamp(t, 0, 1), 3);
+    const easeOutQuad = (t) => 1 - (1 - clamp(t, 0, 1)) * (1 - clamp(t, 0, 1));
+    const easeOutBack = (t) => {
+      const x = clamp(t, 0, 1);
+      const c1 = 1.70158;
+      const c3 = c1 + 1;
+      return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);
+    };
+
+    const DEFAULT_RAMP = " .:-=+*#%@";
+    let scenePoints = [];
+    let giftMeta = [];
+    let ornamentMeta = [];
+    let starCenter = { x: 0, y: 1.58, z: 0 };
+
+    function buildSceneGeometry() {
+      scenePoints = [];
+      giftMeta = [];
+      ornamentMeta = [];
+
+      const treeHeight = 2.68;
+      const treeTopY = 1.42;
+      const treeBottomY = treeTopY - treeHeight;
+      const tiers = 6;
+      const foliageCount = 5200;
+
+      for (let i = 0; i < foliageCount; i++) {
+        const u = Math.pow(Math.random(), 0.72);
+        const y = treeTopY - u * treeHeight;
+
+        const tierPhase = (u * tiers) % 1;
+        const tierFlare = 0.72 + 0.38 * tierPhase;
+        const maxR = (0.04 + u * 1.18) * tierFlare;
+
+        const radialBias = 0.58 + 0.42 * Math.pow(Math.random(), 0.42);
+        const r = maxR * radialBias;
+        const theta = Math.random() * Math.PI * 2;
+
+        const x = Math.cos(theta) * r;
+        const z = Math.sin(theta) * r;
+
+        const nx = Math.cos(theta) * 0.92;
+        const ny = 0.38;
+        const nz = Math.sin(theta) * 0.92;
+
+        const appearTime = u * 0.65;
+        scenePoints.push({
+          x, y, z, nx, ny, nz,
+          type: "tree",
+          shadeBias: radialBias,
+          appearTime,
+          duration: 0.25
+        });
+      }
+
+      for (let i = 0; i < 240; i++) {
+        const u = Math.random();
+        const theta = Math.random() * Math.PI * 2;
+        const r = 0.16 + Math.random() * 0.04;
+        const y = treeBottomY - 0.22 + u * 0.30;
+        scenePoints.push({
+          x: Math.cos(theta) * r,
+          y,
+          z: Math.sin(theta) * r,
+          nx: Math.cos(theta),
+          ny: 0,
+          nz: Math.sin(theta),
+          type: "trunk",
+          appearTime: 0.15,
+          duration: 0.28
+        });
+      }
+
+      const snowBaseY = treeBottomY - 0.22;
+      const snowRadius = 1.82;
+      const snowCount = 1900;
+      for (let i = 0; i < snowCount; i++) {
+        const radialNorm = Math.sqrt(Math.random());
+        const r = radialNorm * snowRadius;
+        const theta = Math.random() * Math.PI * 2;
+        const mound = Math.cos(radialNorm * Math.PI * 0.5) * 0.14;
+        const y = snowBaseY + mound + (Math.random() - 0.5) * 0.025;
+
+        scenePoints.push({
+          x: Math.cos(theta) * r,
+          y,
+          z: Math.sin(theta) * r,
+          nx: Math.cos(theta) * 0.2,
+          ny: 0.98,
+          nz: Math.sin(theta) * 0.2,
+          type: "snowBase",
+          appearTime: 0.55 + radialNorm * 0.85,
+          duration: 0.24
+        });
+      }
+
+      starCenter = { x: 0, y: treeTopY + 0.21, z: 0 };
+      const starOuter = 0.28;
+      const starInner = 0.115;
+      const starVertices = [];
+      for (let k = 0; k < 10; k++) {
+        const ang = (k * Math.PI) / 5 + Math.PI / 2;
+        const rad = k % 2 === 0 ? starOuter : starInner;
+        starVertices.push({ x: Math.cos(ang) * rad, y: Math.sin(ang) * rad });
+      }
+      for (let k = 0; k < 10; k++) {
+        const v1 = starVertices[k];
+        const v2 = starVertices[(k + 1) % 10];
+        for (let s = 0; s < 32; s++) {
+          const a = Math.random();
+          const b = Math.random() * (1 - a);
+          const lx = v1.x * a + v2.x * b;
+          const ly = v1.y * a + v2.y * b;
+          const depth = (1 - (a + b)) * 0.09 * (Math.random() > 0.5 ? 1 : -1);
+          scenePoints.push({
+            x: starCenter.x + lx,
+            y: starCenter.y + ly,
+            z: starCenter.z + depth,
+            nx: lx * 2,
+            ny: ly * 2,
+            nz: depth >= 0 ? 1 : -1,
+            type: "star",
+            glow: true,
+            appearTime: 1.25 + Math.random() * 0.25,
+            duration: 0.24
+          });
+        }
+      }
+
+      const ribbonSteps = 540;
+      const turns = 4.6;
+      for (let i = 0; i < ribbonSteps; i++) {
+        const t = i / (ribbonSteps - 1);
+        const y = treeTopY - 0.10 - t * (treeHeight - 0.16);
+        const tierPhase = (t * tiers) % 1;
+        const tierFlare = 0.76 + 0.34 * tierPhase;
+        const r = (0.08 + t * 1.19) * tierFlare + 0.055;
+        const angle = t * Math.PI * 2 * turns;
+
+        for (let w = -1; w <= 1; w++) {
+          const wy = y + w * 0.026;
+          scenePoints.push({
+            x: Math.cos(angle) * r,
+            y: wy,
+            z: Math.sin(angle) * r,
+            nx: Math.cos(angle),
+            ny: 0.2,
+            nz: Math.sin(angle),
+            type: "ribbon",
+            glow: true,
+            appearTime: 1.7 + t * 2.9,
+            duration: 0.16
+          });
+        }
+      }
+
+      const giftConfigs = [
+        { angle: 0.65,  dist: 1.32, size: 0.42, appearTime: 1.65 },
+        { angle: -0.58, dist: 1.36, size: 0.39, appearTime: 2.25 },
+        { angle: 1.65,  dist: 1.34, size: 0.38, appearTime: 2.85 },
+        { angle: -1.62, dist: 1.30, size: 0.40, appearTime: 3.45 },
+        { angle: 2.65,  dist: 1.36, size: 0.37, appearTime: 4.00 },
+        { angle: -2.65, dist: 1.32, size: 0.39, appearTime: 4.55 }
+      ];
+
+      giftConfigs.forEach((g, idx) => {
+        const cx = Math.cos(g.angle) * g.dist;
+        const cz = Math.sin(g.angle) * g.dist;
+        const cy = snowBaseY + g.size * 0.5 + 0.04;
+        const yaw = g.angle + 0.35;
+        const cosY = Math.cos(yaw);
+        const sinY = Math.sin(yaw);
+
+        giftMeta.push({
+          index: idx,
+          cx, cy, cz,
+          size: g.size,
+          appearTime: g.appearTime,
+          hoverScale: 1,
+          screenX: -999,
+          screenY: -999,
+          screenR: 0,
+          visible: false
+        });
+
+        const half = g.size * 0.5;
+        const gridN = 11;
+        for (let face = 0; face < 6; face++) {
+          for (let a = 0; a < gridN; a++) {
+            for (let b = 0; b < gridN; b++) {
+              const u = (a / (gridN - 1) - 0.5) * g.size;
+              const v = (b / (gridN - 1) - 0.5) * g.size;
+              let lx = 0, ly = 0, lz = 0, nx = 0, ny = 0, nz = 0;
+              if (face === 0) { lx = u; ly = v; lz = half; nz = 1; }
+              else if (face === 1) { lx = u; ly = v; lz = -half; nz = -1; }
+              else if (face === 2) { lx = half; ly = v; lz = u; nx = 1; }
+              else if (face === 3) { lx = -half; ly = v; lz = u; nx = -1; }
+              else if (face === 4) { lx = u; ly = half; lz = v; ny = 1; }
+              else { lx = u; ly = -half; lz = v; ny = -1; }
+
+              const isRibbon =
+                (face <= 1 && Math.abs(lx) < g.size * 0.145) ||
+                (face >= 2 && face <= 3 && Math.abs(lz) < g.size * 0.145) ||
+                (face === 4 && (Math.abs(lx) < g.size * 0.145 || Math.abs(lz) < g.size * 0.145));
+
+              const rx = lx * cosY - lz * sinY;
+              const rz = lx * sinY + lz * cosY;
+              const rnx = nx * cosY - nz * sinY;
+              const rnz = nx * sinY + nz * cosY;
+
+              scenePoints.push({
+                x: cx + rx,
+                y: cy + ly,
+                z: cz + rz,
+                ox: rx, oy: ly, oz: rz,
+                cx, cy, cz,
+                nx: rnx, ny, nz: rnz,
+                type: isRibbon ? "giftBow" : "giftBox",
+                groupIndex: idx,
+                glow: isRibbon,
+                appearTime: g.appearTime,
+                duration: 0.38
+              });
+            }
+          }
+        }
+
+        for (let k = 0; k < 36; k++) {
+          const ang = (k / 36) * Math.PI * 2;
+          const lx = Math.cos(ang) * (g.size * 0.25);
+          const ly = half + 0.055 + Math.abs(Math.sin(ang)) * 0.085;
+          const lz = Math.sin(ang * 2) * 0.045;
+          const rx = lx * cosY - lz * sinY;
+          const rz = lx * sinY + lz * cosY;
+          scenePoints.push({
+            x: cx + rx,
+            y: cy + ly,
+            z: cz + rz,
+            ox: rx, oy: ly, oz: rz,
+            cx, cy, cz,
+            nx: 0, ny: 1, nz: 0,
+            type: "giftBow",
+            groupIndex: idx,
+            glow: true,
+            appearTime: g.appearTime + 0.06,
+            duration: 0.34
+          });
+        }
+      });
+
+      const ornamentCount = 26;
+      const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+      for (let i = 0; i < ornamentCount; i++) {
+        const u = 0.14 + (i / (ornamentCount - 1)) * 0.78;
+        const y = treeTopY - u * treeHeight;
+        const tierPhase = (u * tiers) % 1;
+        const tierFlare = 0.76 + 0.34 * tierPhase;
+        const r = (0.06 + u * 1.19) * tierFlare + 0.08;
+        const theta = i * goldenAngle * 2.1 + 0.4;
+
+        const cx = Math.cos(theta) * r;
+        const cz = Math.sin(theta) * r;
+        const cy = y;
+        const appearTime = 4.9 + (i / (ornamentCount - 1)) * 3.6;
+        const rad = 0.138;
+
+        ornamentMeta.push({
+          index: i,
+          cx, cy, cz,
+          radius: rad,
+          appearTime,
+          colorIndex: i,
+          pulse: 0,
+          screenX: -999,
+          screenY: -999,
+          screenR: 0,
+          visible: false
+        });
+
+        const spherePts = 56;
+        for (let p = 0; p < spherePts; p++) {
+          const phi = Math.acos(1 - (2 * (p + 0.5)) / spherePts);
+          const lam = Math.PI * (1 + Math.sqrt(5)) * p;
+          const ox = Math.sin(phi) * Math.cos(lam) * rad;
+          const oy = Math.cos(phi) * rad;
+          const oz = Math.sin(phi) * Math.sin(lam) * rad;
+
+          scenePoints.push({
+            x: cx + ox,
+            y: cy + oy,
+            z: cz + oz,
+            ox, oy, oz,
+            cx, cy, cz,
+            nx: ox / rad,
+            ny: oy / rad,
+            nz: oz / rad,
+            type: "ornament",
+            groupIndex: i,
+            glow: true,
+            appearTime,
+            duration: 0.32
+          });
+        }
+      }
+    }
+
+    buildSceneGeometry();
+
+    const snowFlakes = [];
+    const burstParticles = [];
+    const SNOW_COUNT = 130;
+
+    function initSnowFlakes() {
+      snowFlakes.length = 0;
+      for (let i = 0; i < SNOW_COUNT; i++) {
+        snowFlakes.push({
+          x: Math.random(),
+          y: Math.random(),
+          z: 0.35 + Math.random() * 0.9,
+          speed: 0.03 + Math.random() * 0.06,
+          phase: Math.random() * Math.PI * 2,
+          char: Math.random() > 0.72 ? "*" : (Math.random() > 0.38 ? "+" : ".")
+        });
+      }
+    }
+    initSnowFlakes();
+
+    function spawnAsciiBurst(screenX, screenY, color, count = 26) {
+      const chars = ["*", "+", "✦", "✧", "·", "#"];
+      for (let i = 0; i < count; i++) {
+        const ang = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.35;
+        const speed = 70 + Math.random() * 210;
+        burstParticles.push({
+          x: screenX,
+          y: screenY,
+          vx: Math.cos(ang) * speed,
+          vy: Math.sin(ang) * speed - 40,
+          life: 0,
+          maxLife: 0.7 + Math.random() * 0.65,
+          char: chars[i % chars.length],
+          color,
+          size: 11 + Math.random() * 9
+        });
+      }
+    }
+
+    const canvas = document.getElementById("stage");
+    const ctx = canvas.getContext("2d", { alpha: false });
+
+    let viewW = window.innerWidth;
+    let viewH = window.innerHeight;
+    let dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    const DENSITY_LEVELS = [
+      { key: "Normal", desktopCell: 8.5, mobileCell: 7.0 },
+      { key: "Fine",   desktopCell: 6.5, mobileCell: 5.8 },
+      { key: "Retro",  desktopCell: 11.5, mobileCell: 9.0 }
+    ];
+    let densityIdx = 0;
+
+    let cellW = 8;
+    let cellH = 10;
+    let gridCols = 100;
+    let gridRows = 60;
+    let zBuffer = null;
+    let charBuffer = null;
+    let colorBuffer = null;
+    let glowBuffer = null;
+
+    function resizeCanvas() {
+      viewW = window.innerWidth;
+      viewH = window.innerHeight;
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+      canvas.width = Math.floor(viewW * dpr);
+      canvas.height = Math.floor(viewH * dpr);
+      canvas.style.width = viewW + "px";
+      canvas.style.height = viewH + "px";
+
+      const isMobile = viewW < 768;
+      const baseCell = isMobile
+        ? DENSITY_LEVELS[densityIdx].mobileCell
+        : DENSITY_LEVELS[densityIdx].desktopCell;
+
+      cellH = baseCell * 1.18;
+      cellW = baseCell * 0.72;
+      gridCols = Math.max(40, Math.ceil(viewW / cellW));
+      gridRows = Math.max(30, Math.ceil(viewH / cellH));
+
+      const total = gridCols * gridRows;
+      zBuffer = new Float32Array(total);
+      charBuffer = new Array(total);
+      colorBuffer = new Array(total);
+      glowBuffer = new Uint8Array(total);
+    }
+
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+
+    let introTime = 0;
+    let elapsedTotal = 0;
+    let yaw = 0.25;
+    let yawVelocity = 0;
+    let pitch = 0.22;
+    let targetPitch = 0.22;
+    let zoom = 1.0;
+    let targetZoom = 1.0;
+    let windX = 0;
+    let targetWindX = 0;
+
+    let isDragging = false;
+    let dragMoved = false;
+    let lastPointerX = 0;
+    let lastPointerY = 0;
+    let pointerX = -999;
+    let pointerY = -999;
+    let hoveredTarget = null;
+    let starScreen = { x: -999, y: -999, r: 24, visible: false };
+    let pinchDist = null;
+
+    const tooltipEl = document.getElementById("hoverTooltip");
+
+    function hitTest(px, py) {
+      if (starScreen.visible) {
+        const dx = px - starScreen.x;
+        const dy = py - starScreen.y;
+        if (dx * dx + dy * dy <= starScreen.r * starScreen.r) {
+          return { type: "star", x: starScreen.x, y: starScreen.y };
+        }
+      }
+
+      let bestGift = null;
+      let bestDist = Infinity;
+      for (let i = 0; i < giftMeta.length; i++) {
+        const g = giftMeta[i];
+        if (!g.visible) continue;
+        const dx = px - g.screenX;
+        const dy = py - g.screenY;
+        const d = Math.hypot(dx, dy);
+        if (d <= Math.max(g.screenR * 1.18, 24) && d < bestDist) {
+          bestDist = d;
+          bestGift = { type: "gift", index: g.index, x: g.screenX, y: g.screenY };
+        }
+      }
+      if (bestGift) return bestGift;
+
+      let bestOrn = null;
+      bestDist = Infinity;
+      for (let i = 0; i < ornamentMeta.length; i++) {
+        const o = ornamentMeta[i];
+        if (!o.visible) continue;
+        const dx = px - o.screenX;
+        const dy = py - o.screenY;
+        const d = Math.hypot(dx, dy);
+        if (d <= Math.max(o.screenR * 1.65, 16) && d < bestDist) {
+          bestDist = d;
+          bestOrn = { type: "ornament", index: o.index, x: o.screenX, y: o.screenY };
+        }
+      }
+      return bestOrn;
+    }
+
+    canvas.addEventListener("pointerdown", (e) => {
+      if (e.button && e.button !== 0) return;
+      isDragging = true;
+      dragMoved = false;
+      lastPointerX = e.clientX;
+      lastPointerY = e.clientY;
+      pointerX = e.clientX;
+      pointerY = e.clientY;
+      canvas.setPointerCapture(e.pointerId);
+    });
+
+    canvas.addEventListener("pointermove", (e) => {
+      pointerX = e.clientX;
+      pointerY = e.clientY;
+      targetWindX = ((e.clientX / viewW) - 0.5) * 0.16;
+
+      if (isDragging) {
+        const dx = e.clientX - lastPointerX;
+        const dy = e.clientY - lastPointerY;
+        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+          dragMoved = true;
+        }
+        yaw += dx * 0.0085;
+        yawVelocity = dx * 0.045;
+        targetPitch = clamp(targetPitch + dy * 0.004, -0.18, 0.58);
+        lastPointerX = e.clientX;
+        lastPointerY = e.clientY;
+        tooltipEl.classList.remove("visible");
+      } else {
+        hoveredTarget = hitTest(pointerX, pointerY);
+        if (hoveredTarget) {
+          canvas.classList.add("pointer-hover");
+          tooltipEl.style.left = hoveredTarget.x + "px";
+          tooltipEl.style.top = hoveredTarget.y + "px";
+          if (hoveredTarget.type === "gift") {
+            tooltipEl.textContent = `🎁 Open Gift #${hoveredTarget.index + 1}`;
+          } else if (hoveredTarget.type === "star") {
+            tooltipEl.textContent = "⭐ Click Star for Finale";
+          } else {
+            tooltipEl.textContent = "✨ Tap Ornament";
+          }
+          tooltipEl.classList.add("visible");
+        } else {
+          canvas.classList.remove("pointer-hover");
+          tooltipEl.classList.remove("visible");
+        }
+      }
+    });
+
+    canvas.addEventListener("pointerup", (e) => {
+      if (!isDragging) return;
+      isDragging = false;
+      if (!dragMoved) {
+        const hit = hitTest(e.clientX, e.clientY);
+        if (hit) handleTriggerClick(hit);
+      }
+    });
+
+    canvas.addEventListener("pointercancel", () => {
+      isDragging = false;
+    });
+
+    canvas.addEventListener("wheel", (e) => {
+      e.preventDefault();
+      targetZoom = clamp(targetZoom - e.deltaY * 0.0008, 0.68, 1.65);
+    }, { passive: false });
+
+    canvas.addEventListener("touchstart", (e) => {
+      if (e.touches.length === 2) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        pinchDist = Math.hypot(dx, dy);
+      }
+    }, { passive: true });
+
+    canvas.addEventListener("touchmove", (e) => {
+      if (e.touches.length === 2 && pinchDist !== null) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const nextDist = Math.hypot(dx, dy);
+        const delta = (nextDist - pinchDist) * 0.003;
+        targetZoom = clamp(targetZoom + delta, 0.68, 1.65);
+        pinchDist = nextDist;
+      }
+    }, { passive: true });
+
+    canvas.addEventListener("touchend", () => {
+      pinchDist = null;
+    }, { passive: true });
+
+    const modalBackdrop = document.getElementById("modalBackdrop");
+    const modalClose = document.getElementById("modalClose");
+    const modalBadge = document.getElementById("modalBadge");
+    const modalPhotoFrame = document.getElementById("modalPhotoFrame");
+    const modalPhoto = document.getElementById("modalPhoto");
+    const modalCaption = document.getElementById("modalCaption");
+    const modalTitle = document.getElementById("modalTitle");
+    const modalMessage = document.getElementById("modalMessage");
+    const modalTo = document.getElementById("modalTo");
+    const modalFrom = document.getElementById("modalFrom");
+
+    const ornamentToast = document.getElementById("ornamentToast");
+    const ornamentToastTag = document.getElementById("ornamentToastTag");
+    const ornamentToastText = document.getElementById("ornamentToastText");
+    let toastTimer = null;
+    let activeModalContext = null;
+
+    function getActivePhotos() {
+      if (Array.isArray(APP_CONFIG.photos) && APP_CONFIG.photos.length > 0) {
+        return APP_CONFIG.photos.filter(p => p && p.url);
+      }
+      return FALLBACK_PHOTOS;
+    }
+
+    function renderModalContent() {
+      if (!activeModalContext) return;
+      const photos = getActivePhotos();
+      const safePhotos = photos.length > 0 ? photos : FALLBACK_PHOTOS;
+
+      if (activeModalContext.type === "gift") {
+        const idx = activeModalContext.index;
+        const photoObj = safePhotos[idx % safePhotos.length];
+        modalBadge.textContent = `🎁 GIFT #${idx + 1}`;
+        modalPhotoFrame.style.display = "flex";
+        modalPhoto.onerror = () => {
+          modalPhoto.onerror = null;
+          modalPhoto.src = FALLBACK_PHOTOS[idx % FALLBACK_PHOTOS.length].url;
+        };
+        modalPhoto.src = photoObj.url;
+        modalCaption.textContent = photoObj.caption || "";
+        modalCaption.style.display = photoObj.caption ? "block" : "none";
+        modalTitle.textContent = APP_CONFIG.wishTitle || "Merry Christmas!";
+        modalMessage.textContent = APP_CONFIG.wishMessage || "";
+      } else if (activeModalContext.type === "star") {
+        modalBadge.textContent = "⭐ STARLIGHT WISH";
+        modalPhotoFrame.style.display = "none";
+        modalCaption.style.display = "none";
+        modalTitle.textContent = APP_CONFIG.wishTitle || "Merry Christmas!";
+        modalMessage.textContent = APP_CONFIG.wishMessage || "";
+      }
+
+      modalTo.textContent = APP_CONFIG.recipientName ? `To: ${APP_CONFIG.recipientName}` : "";
+      modalFrom.textContent = APP_CONFIG.senderName ? `From: ${APP_CONFIG.senderName}` : "";
+    }
+
+    function openModal(ctx) {
+      activeModalContext = ctx;
+      renderModalContent();
+      modalBackdrop.classList.add("open");
+    }
+
+    function closeModal() {
+      modalBackdrop.classList.remove("open");
+      activeModalContext = null;
+      targetZoom = 1.0;
+    }
+
+    modalClose.addEventListener("click", closeModal);
+    modalBackdrop.addEventListener("click", (e) => {
+      if (e.target === modalBackdrop) closeModal();
+    });
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && modalBackdrop.classList.contains("open")) {
+        closeModal();
+      }
+    });
+
+    function showOrnamentToast(index) {
+      const notes = Array.isArray(APP_CONFIG.ornamentNotes) && APP_CONFIG.ornamentNotes.length > 0
+        ? APP_CONFIG.ornamentNotes
+        : ["Merry Christmas! ✨"];
+      ornamentToastTag.textContent = `✨ ORNAMENT #${index + 1}`;
+      ornamentToastText.textContent = notes[index % notes.length];
+      ornamentToast.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        ornamentToast.classList.remove("show");
+      }, 2800);
+    }
+
+    function handleTriggerClick(hit) {
+      const theme = THEMES[APP_CONFIG.theme] || THEMES.classic;
+      if (hit.type === "gift") {
+        audio.playInteractive("giftOpen");
+        spawnAsciiBurst(hit.x, hit.y, theme.uiAccent, 30);
+        targetZoom = 1.24;
+        setTimeout(() => openModal({ type: "gift", index: hit.index }), 180);
+      } else if (hit.type === "ornament") {
+        audio.playInteractive("ornamentTap");
+        const orn = ornamentMeta[hit.index];
+        if (orn) orn.pulse = 1.0;
+        const c = theme.ornaments[hit.index % theme.ornaments.length];
+        spawnAsciiBurst(hit.x, hit.y, `rgb(${c[0]},${c[1]},${c[2]})`, 18);
+        showOrnamentToast(hit.index);
+      } else if (hit.type === "star") {
+        audio.playInteractive("starFinale");
+        spawnAsciiBurst(hit.x, hit.y, theme.starGlow, 46);
+        setTimeout(() => spawnAsciiBurst(hit.x - 50, hit.y + 25, theme.uiAccent, 24), 140);
+        setTimeout(() => spawnAsciiBurst(hit.x + 50, hit.y + 25, theme.uiAccent, 24), 240);
+        setTimeout(() => openModal({ type: "star", index: 0 }), 320);
+      }
+    }
+
+    function syncUIWithConfig() {
+      const themeKey = THEMES[APP_CONFIG.theme] ? APP_CONFIG.theme : "classic";
+      const t = THEMES[themeKey];
+
+      const root = document.documentElement.style;
+      root.setProperty("--bg-color", t.bg);
+      root.setProperty("--ui-text", t.uiText);
+      root.setProperty("--ui-muted", t.uiMuted);
+      root.setProperty("--ui-accent", t.uiAccent);
+
+      document.getElementById("uiWishTitle").textContent = APP_CONFIG.wishTitle || "";
+      const subParts = [];
+      if (APP_CONFIG.recipientName) subParts.push(`For ${APP_CONFIG.recipientName}`);
+      if (APP_CONFIG.senderName) subParts.push(`From ${APP_CONFIG.senderName}`);
+      document.getElementById("uiSubLine").textContent = subParts.join("  •  ");
+
+      document.querySelectorAll(".theme-btn").forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.theme === themeKey);
+      });
+
+      if (modalBackdrop.classList.contains("open")) {
+        renderModalContent();
+      }
+    }
+
+    function applyCustomData(newData) {
+      if (!newData || typeof newData !== "object") return;
+
+      if (typeof newData.wishTitle === "string") APP_CONFIG.wishTitle = newData.wishTitle;
+      if (typeof newData.wishMessage === "string") APP_CONFIG.wishMessage = newData.wishMessage;
+      if (typeof newData.senderName === "string") APP_CONFIG.senderName = newData.senderName;
+      if (typeof newData.recipientName === "string") APP_CONFIG.recipientName = newData.recipientName;
+      if (typeof newData.customCharset === "string") APP_CONFIG.customCharset = newData.customCharset;
+      if (typeof newData.theme === "string" && THEMES[newData.theme]) {
+        APP_CONFIG.theme = newData.theme;
+      }
+      if (Array.isArray(newData.photos)) {
+        APP_CONFIG.photos = newData.photos.map((item, i) => ({
+          url: item && item.url ? item.url : FALLBACK_PHOTOS[i % FALLBACK_PHOTOS.length].url,
+          caption: item && typeof item.caption === "string" ? item.caption : ""
+        }));
+      }
+      if (Array.isArray(newData.ornamentNotes) && newData.ornamentNotes.length > 0) {
+        APP_CONFIG.ornamentNotes = newData.ornamentNotes;
+      }
+
+      syncUIWithConfig();
+    }
+
+    window.APP_CONFIG = APP_CONFIG;
+    window.applyCustomData = applyCustomData;
+
+    window.addEventListener("message", (e) => {
+      if (!e.data || typeof e.data !== "object") return;
+      if (e.data.type === "MANITA_SYNC") {
+        const payload = e.data.payload && typeof e.data.payload === "object"
+          ? e.data.payload
+          : e.data;
+        applyCustomData(payload);
+      }
+    });
+
+    document.getElementById("btnReplay").addEventListener("click", () => {
+      audio.playInteractive("click");
+      introTime = 0;
+      audio.resetTimelineCues();
+    });
+
+    document.getElementById("btnDensity").addEventListener("click", (e) => {
+      audio.playInteractive("click");
+      densityIdx = (densityIdx + 1) % DENSITY_LEVELS.length;
+      e.currentTarget.textContent = `Grid: ${DENSITY_LEVELS[densityIdx].key}`;
+      resizeCanvas();
+    });
+
+    document.querySelectorAll(".theme-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        audio.playInteractive("click");
+        applyCustomData({ theme: btn.dataset.theme });
+      });
+    });
+
+    syncUIWithConfig();
+
+    let lastTimestamp = performance.now();
+
+    function getAsciiChar(brightness, seedIndex) {
+      const custom = APP_CONFIG.customCharset ? APP_CONFIG.customCharset.replace(/\s+/g, "") : "";
+      if (custom.length >= 2) {
+        if (brightness < 0.16) return ".";
+        if (brightness < 0.30) return ":";
+        return custom[seedIndex % custom.length];
+      }
+      const idx = Math.min(DEFAULT_RAMP.length - 1, Math.max(1, Math.floor(brightness * DEFAULT_RAMP.length)));
+      return DEFAULT_RAMP[idx];
+    }
+
+    function shadeRGB(rgb, intensity) {
+      const f = clamp(intensity, 0.2, 1.4);
+      const r = Math.min(255, Math.round(rgb[0] * f));
+      const g = Math.min(255, Math.round(rgb[1] * f));
+      const b = Math.min(255, Math.round(rgb[2] * f));
+      return `rgb(${r},${g},${b})`;
+    }
+
+    function updateAudioTimeline() {
+      if (introTime >= 0.05 && introTime < 0.4) {
+        audio.playTimelineCue("tree_start", "shimmer");
+      }
+      if (introTime >= 1.25) {
+        audio.playTimelineCue("star_appear", "star");
+      }
+      for (let i = 0; i < giftMeta.length; i++) {
+        if (introTime >= giftMeta[i].appearTime) {
+          audio.playTimelineCue("gift_" + i, "gift", i);
+        }
+      }
+      for (let i = 0; i < ornamentMeta.length; i += 3) {
+        if (introTime >= ornamentMeta[i].appearTime) {
+          audio.playTimelineCue("orn_" + i, "ornament", i);
+        }
+      }
+    }
+
+    function render(now) {
+      const dt = Math.min((now - lastTimestamp) / 1000, 0.05);
+      lastTimestamp = now;
+
+      introTime += dt;
+      elapsedTotal += dt;
+
+      updateAudioTimeline();
+
+      const autoSpinSpeed = 0.56;
+      if (!isDragging) {
+        yaw += (autoSpinSpeed + yawVelocity) * dt;
+        yawVelocity *= Math.pow(0.06, dt);
+        if (Math.abs(yawVelocity) < 0.002) yawVelocity = 0;
+      }
+
+      const introZoomOffset = introTime < 1.4 ? lerp(0.12, 0, easeOutCubic(introTime / 1.4)) : 0;
+      pitch = lerp(pitch, targetPitch, 1 - Math.pow(0.001, dt));
+      zoom = lerp(zoom, targetZoom + introZoomOffset, 1 - Math.pow(0.002, dt));
+      windX = lerp(windX, targetWindX, 1 - Math.pow(0.02, dt));
+
+      const theme = THEMES[APP_CONFIG.theme] || THEMES.classic;
+
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.fillStyle = theme.bg;
+      ctx.fillRect(0, 0, viewW, viewH);
+
+      ctx.font = `600 ${Math.round(cellH * 0.92)}px ${getComputedStyle(document.documentElement).getPropertyValue("--font-mono")}`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = theme.snowParticle;
+
+      for (let i = 0; i < snowFlakes.length; i++) {
+        const sf = snowFlakes[i];
+        sf.y += sf.speed * sf.z * dt;
+        sf.x += (Math.sin(elapsedTotal * 1.4 + sf.phase) * 0.015 + windX * sf.z) * dt;
+        if (sf.y > 1.04) { sf.y = -0.04; sf.x = Math.random(); }
+        if (sf.x > 1.04) sf.x = -0.04;
+        if (sf.x < -0.04) sf.x = 1.04;
+
+        ctx.globalAlpha = 0.3 + sf.z * 0.55;
+        ctx.fillText(sf.char, sf.x * viewW, sf.y * viewH);
+      }
+      ctx.globalAlpha = 1;
+
+      zBuffer.fill(-9999);
+      charBuffer.fill(null);
+      glowBuffer.fill(0);
+
+      const cosY = Math.cos(yaw);
+      const sinY = Math.sin(yaw);
+      const cosP = Math.cos(pitch);
+      const sinP = Math.sin(pitch);
+
+      const camDist = 5.4 / zoom;
+      const minDim = Math.min(viewW, viewH);
+      const focal = minDim * 1.15;
+      const centerX = viewW * 0.5;
+      const centerY = viewH * 0.53;
+
+      const lx = 0.52, ly = 0.68, lz = 0.51;
+
+      function project3D(wx, wy, wz) {
+        const x1 = wx * cosY - wz * sinY;
+        const z1 = wx * sinY + wz * cosY;
+        const y2 = wy * cosP - z1 * sinP;
+        const z2 = wy * sinP + z1 * cosP;
+        const depth = camDist - z2;
+        if (depth <= 0.4) return null;
+        const scale = focal / depth;
+        return {
+          sx: centerX + x1 * scale,
+          sy: centerY - y2 * scale,
+          z: z2,
+          scale
+        };
+      }
+
+      for (let i = 0; i < giftMeta.length; i++) {
+        const g = giftMeta[i];
+        const isHovered = hoveredTarget && hoveredTarget.type === "gift" && hoveredTarget.index === i;
+        g.hoverScale = lerp(g.hoverScale, isHovered ? 1.14 : 1.0, 1 - Math.pow(0.0005, dt));
+        g.visible = introTime >= g.appearTime;
+        if (g.visible) {
+          const p = project3D(g.cx, g.cy, g.cz);
+          if (p) {
+            g.screenX = p.sx;
+            g.screenY = p.sy;
+            g.screenR = g.size * 0.68 * p.scale;
+          }
+        }
+      }
+
+      for (let i = 0; i < ornamentMeta.length; i++) {
+        const o = ornamentMeta[i];
+        if (o.pulse > 0) o.pulse = Math.max(0, o.pulse - dt * 2.2);
+        o.visible = introTime >= o.appearTime;
+        if (o.visible) {
+          const p = project3D(o.cx, o.cy, o.cz);
+          if (p) {
+            o.screenX = p.sx;
+            o.screenY = p.sy;
+            o.screenR = o.radius * 1.15 * p.scale;
+          }
+        }
+      }
+
+      starScreen.visible = introTime >= 1.25;
+      if (starScreen.visible) {
+        const sp = project3D(starCenter.x, starCenter.y, starCenter.z);
+        if (sp) {
+          starScreen.x = sp.sx;
+          starScreen.y = sp.sy;
+          starScreen.r = Math.max(24, 0.30 * sp.scale);
+        }
+      }
+
+      for (let i = 0; i < scenePoints.length; i++) {
+        const pt = scenePoints[i];
+        if (introTime < pt.appearTime) continue;
+
+        const progress = clamp((introTime - pt.appearTime) / pt.duration, 0, 1);
+        let wx = pt.x, wy = pt.y, wz = pt.z;
+
+        if (pt.type === "giftBox" || pt.type === "giftBow") {
+          const g = giftMeta[pt.groupIndex];
+          const s = easeOutBack(progress) * g.hoverScale;
+          wx = pt.cx + pt.ox * s;
+          wy = pt.cy + pt.oy * s;
+          wz = pt.cz + pt.oz * s;
+        } else if (pt.type === "ornament") {
+          const o = ornamentMeta[pt.groupIndex];
+          const s = easeOutQuad(progress) * (1 + o.pulse * 0.45);
+          wx = pt.cx + pt.ox * s;
+          wy = pt.cy + pt.oy * s;
+          wz = pt.cz + pt.oz * s;
+        } else if (pt.type === "star") {
+          const s = easeOutBack(progress) * (1 + Math.sin(elapsedTotal * 4.2) * 0.05);
+          wx = starCenter.x + (pt.x - starCenter.x) * s;
+          wy = starCenter.y + (pt.y - starCenter.y) * s;
+          wz = starCenter.z + (pt.z - starCenter.z) * s;
+        }
+
+        const x1 = wx * cosY - wz * sinY;
+        const z1 = wx * sinY + wz * cosY;
+        const y2 = wy * cosP - z1 * sinP;
+        const z2 = wy * sinP + z1 * cosP;
+
+        const depth = camDist - z2;
+        if (depth <= 0.4) continue;
+
+        const scale = focal / depth;
+        const sx = centerX + x1 * scale;
+        const sy = centerY - y2 * scale;
+
+        const col = Math.floor(sx / cellW);
+        const row = Math.floor(sy / cellH);
+        if (col < 0 || col >= gridCols || row < 0 || row >= gridRows) continue;
+
+        const idx = row * gridCols + col;
+        if (z2 <= zBuffer[idx]) continue;
+
+        zBuffer[idx] = z2;
+
+        const nx1 = pt.nx * cosY - pt.nz * sinY;
+        const nz1 = pt.nx * sinY + pt.nz * cosY;
+        const ny2 = pt.ny * cosP - nz1 * sinP;
+        const nz2 = pt.ny * sinP + nz1 * cosP;
+
+        const dot = Math.max(0, nx1 * lx + ny2 * ly + nz2 * lz);
+        const depthFactor = clamp((z2 + 1.8) / 3.4, 0.25, 1.0);
+        let lum = (0.30 + dot * 0.70) * depthFactor * progress;
+
+        let colorStr = "#ffffff";
+        let isGlow = pt.glow ? 1 : 0;
+
+        if (pt.type === "tree") {
+          const tShade = clamp(lum * (0.76 + pt.shadeBias * 0.44), 0, 1);
+          const rgb = tShade < 0.5
+            ? [
+                lerp(theme.treeDark[0], theme.treeMid[0], tShade * 2),
+                lerp(theme.treeDark[1], theme.treeMid[1], tShade * 2),
+                lerp(theme.treeDark[2], theme.treeMid[2], tShade * 2)
+              ]
+            : [
+                lerp(theme.treeMid[0], theme.treeLight[0], (tShade - 0.5) * 2),
+                lerp(theme.treeMid[1], theme.treeLight[1], (tShade - 0.5) * 2),
+                lerp(theme.treeMid[2], theme.treeLight[2], (tShade - 0.5) * 2)
+              ];
+          colorStr = `rgb(${Math.round(rgb[0])},${Math.round(rgb[1])},${Math.round(rgb[2])})`;
+        } else if (pt.type === "trunk") {
+          colorStr = shadeRGB(theme.trunk, 0.5 + lum * 0.75);
+        } else if (pt.type === "snowBase") {
+          const sT = clamp(lum * 1.08, 0, 1);
+          const r = Math.round(lerp(theme.snowDark[0], theme.snowLight[0], sT));
+          const g = Math.round(lerp(theme.snowDark[1], theme.snowLight[1], sT));
+          const b = Math.round(lerp(theme.snowDark[2], theme.snowLight[2], sT));
+          colorStr = `rgb(${r},${g},${b})`;
+          lum = Math.max(lum, 0.55);
+        } else if (pt.type === "star") {
+          const shimmer = 0.90 + Math.sin(elapsedTotal * 6 + i) * 0.14;
+          colorStr = shadeRGB(theme.star, shimmer * 1.15);
+          lum = 0.98;
+          isGlow = 1;
+        } else if (pt.type === "ribbon") {
+          colorStr = shadeRGB(theme.ribbon, 0.65 + lum * 0.65);
+          lum = Math.max(lum, 0.78);
+        } else if (pt.type === "giftBox" || pt.type === "giftBow") {
+          const gPalette = theme.gifts[pt.groupIndex % theme.gifts.length];
+          const baseRGB = pt.type === "giftBow" ? gPalette.bow : gPalette.box;
+          const hoverBoost = giftMeta[pt.groupIndex].hoverScale > 1.02 ? 1.28 : 1.0;
+          colorStr = shadeRGB(baseRGB, (0.58 + lum * 0.68) * hoverBoost);
+          lum = Math.max(lum, 0.65);
+          if (hoverBoost > 1.05) isGlow = 1;
+        } else if (pt.type === "ornament") {
+          const o = ornamentMeta[pt.groupIndex];
+          const baseRGB = theme.ornaments[pt.groupIndex % theme.ornaments.length];
+          const specular = Math.pow(dot, 6) * 0.75;
+          const twinkle = 0.9 + Math.sin(elapsedTotal * 4.5 + pt.groupIndex * 1.7) * 0.18 + o.pulse * 0.4;
+          const factor = (0.62 + lum * 0.62) * twinkle;
+          const r = Math.min(255, Math.round(baseRGB[0] * factor + 255 * specular));
+          const g = Math.min(255, Math.round(baseRGB[1] * factor + 255 * specular));
+          const b = Math.min(255, Math.round(baseRGB[2] * factor + 255 * specular));
+          colorStr = `rgb(${r},${g},${b})`;
+          lum = Math.max(lum, 0.85);
+          isGlow = 1;
+        }
+
+        charBuffer[idx] = getAsciiChar(lum, i);
+        colorBuffer[idx] = colorStr;
+        glowBuffer[idx] = isGlow;
+      }
+
+      const fontSize = Math.round(cellH * 1.02);
+      ctx.font = `700 ${fontSize}px ${getComputedStyle(document.documentElement).getPropertyValue("--font-mono")}`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      ctx.shadowBlur = 0;
+      for (let r = 0; r < gridRows; r++) {
+        const py = r * cellH + cellH * 0.5;
+        const rowOffset = r * gridCols;
+        for (let c = 0; c < gridCols; c++) {
+          const idx = rowOffset + c;
+          const ch = charBuffer[idx];
+          if (!ch || glowBuffer[idx]) continue;
+          ctx.fillStyle = colorBuffer[idx];
+          ctx.fillText(ch, c * cellW + cellW * 0.5, py);
+        }
+      }
+
+      ctx.shadowBlur = 6;
+      for (let r = 0; r < gridRows; r++) {
+        const py = r * cellH + cellH * 0.5;
+        const rowOffset = r * gridCols;
+        for (let c = 0; c < gridCols; c++) {
+          const idx = rowOffset + c;
+          const ch = charBuffer[idx];
+          if (!ch || !glowBuffer[idx]) continue;
+          const colStr = colorBuffer[idx];
+          ctx.fillStyle = colStr;
+          ctx.shadowColor = colStr;
+          ctx.fillText(ch, c * cellW + cellW * 0.5, py);
+        }
+      }
+      ctx.shadowBlur = 0;
+
+      for (let i = burstParticles.length - 1; i >= 0; i--) {
+        const p = burstParticles[i];
+        p.life += dt;
+        if (p.life >= p.maxLife) {
+          burstParticles.splice(i, 1);
+          continue;
+        }
+        p.vy += 260 * dt;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+
+        const alpha = 1 - p.life / p.maxLife;
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = p.color;
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 10;
+        ctx.font = `700 ${Math.round(p.size)}px monospace`;
+        ctx.fillText(p.char, p.x, p.y);
+      }
+      ctx.globalAlpha = 1;
+      ctx.shadowBlur = 0;
+
+      requestAnimationFrame(render);
+    }
+
+    requestAnimationFrame(render);
+  </script>
+</body>
+</html>

@@ -140,6 +140,8 @@ export default function CreatorDashboard({
         ? 'tree_settings'
         : catId === 'arrow_birthday'
         ? 'arrow_settings'
+        : catId === 'ascii_christmas'
+        ? 'ascii_settings'
         : 'theme';
 
     setActiveTab(nextTab);
@@ -381,6 +383,9 @@ export default function CreatorDashboard({
     if (currentCategory === 'arrow_birthday') {
       return ['category', 'arrow_settings', 'photos'];
     }
+    if (currentCategory === 'ascii_christmas') {
+      return ['category', 'ascii_settings', 'photos'];
+    }
     return ['category', 'theme', 'entry', 'passcode', 'chat', 'reveal', 'photos', 'coupons'];
   };
 
@@ -506,7 +511,7 @@ export default function CreatorDashboard({
               }`}
             >
               <Layers className="w-4 h-4 shrink-0" />
-              <span>1. เลือกหมวด Preset (4 แบบ)</span>
+              <span>1. เลือกหมวด Preset (5 แบบ)</span>
             </button>
 
             {(currentCategory === 'chat_scratch' || currentCategory === 'chat_camera') && (
@@ -612,6 +617,21 @@ export default function CreatorDashboard({
               </button>
             )}
 
+            {currentCategory === 'ascii_christmas' && (
+              <button
+                id="studio-tab-ascii_settings"
+                onClick={() => setActiveTab('ascii_settings')}
+                className={`shrink-0 whitespace-nowrap lg:whitespace-normal text-left px-3.5 py-2.5 lg:py-3 rounded-2xl text-xs font-bold flex items-center gap-2 transition ${
+                  activeTab === 'ascii_settings'
+                    ? 'bg-rose-500 text-white shadow-sm shadow-rose-200'
+                    : 'bg-white dark:bg-stone-800 hover:bg-stone-50 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 border border-stone-200 dark:border-stone-700'
+                }`}
+              >
+                <Sparkles className="w-4 h-4 shrink-0" />
+                <span>2. ปรับแต่งต้นคริสต์มาส ASCII & ธีม</span>
+              </button>
+            )}
+
             <button
               id="studio-tab-photos"
               onClick={() => setActiveTab('photos')}
@@ -622,7 +642,7 @@ export default function CreatorDashboard({
               }`}
             >
               <ImageIcon className="w-4 h-4 shrink-0" />
-              <span>{currentCategory === 'christmas_tree' || currentCategory === 'arrow_birthday' ? '3. อัปโหลดรูปภาพ (ความทรงจำ)' : '7. อัปโหลดรูปภาพ (ความทรงจำ)'}</span>
+              <span>{currentCategory === 'christmas_tree' || currentCategory === 'arrow_birthday' || currentCategory === 'ascii_christmas' ? '3. อัปโหลดรูปภาพ (ความทรงจำ)' : '7. อัปโหลดรูปภาพ (ความทรงจำ)'}</span>
             </button>
 
             {(currentCategory === 'chat_scratch' || currentCategory === 'chat_camera') && (
@@ -668,7 +688,7 @@ export default function CreatorDashboard({
                 <div>
                   <h3 className="text-sm font-bold text-stone-800 dark:text-stone-100 flex items-center gap-2">
                     <Layers className="w-4 h-4 text-rose-500" />
-                    <span>เลือกรูปแบบประสบการณ์หลัก (4 Preset Categories)</span>
+                    <span>เลือกรูปแบบประสบการณ์หลัก (5 Preset Categories)</span>
                   </h3>
                   <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
                     เลือกหมวดหมู่ที่ต้องการสร้างสรรค์ แต่ละแบบจะให้ประสบการณ์และการโต้ตอบที่แตกต่างกัน
@@ -1703,6 +1723,140 @@ export default function CreatorDashboard({
                       onChange={(e) => onChangeConfig({ ...config, arrowSign: e.target.value })}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-stone-800 dark:text-stone-100 bg-white dark:bg-stone-800 focus:outline-none focus:border-rose-500"
                       placeholder="— จากคนที่หวังดีเสมอ ✨"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'ascii_settings' && (
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-bold text-stone-800 dark:text-stone-100 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-amber-500" />
+                    <span>ปรับแต่งต้นคริสต์มาส ASCII 3D & ธีม</span>
+                  </h3>
+                  <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+                    เลือกโทนสี ปรับคำอวยพร ชื่อผู้รับ-ผู้ส่ง และโน้ตบนลูกบอลประดับ
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-2">
+                    โทนสีตัวอักษร ASCII
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                    {[
+                      { id: 'classic', label: 'Classic', desc: 'เขียว-ทองคลาสสิก', dot: 'bg-emerald-500' },
+                      { id: 'frost', label: 'Frost', desc: 'ฟ้าหิมะเยือกเย็น', dot: 'bg-sky-400' },
+                      { id: 'cyberpunk', label: 'Cyber', desc: 'นีออนม่วง-ฟ้า', dot: 'bg-fuchsia-500' },
+                      { id: 'champagne', label: 'Cozy', desc: 'ทองแชมเปญอบอุ่น', dot: 'bg-amber-400' }
+                    ].map((t) => {
+                      const active = (config.asciiTheme || 'classic') === t.id;
+                      return (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => onChangeConfig({ ...config, asciiTheme: t.id })}
+                          className={`p-3 rounded-2xl border text-left transition ${
+                            active
+                              ? 'border-rose-500 bg-rose-50/70 dark:bg-rose-950/30 ring-1 ring-rose-500'
+                              : 'border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 hover:border-stone-300'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className={`w-3 h-3 rounded-full ${t.dot}`} />
+                            <span className="text-xs font-bold text-stone-800 dark:text-stone-100">{t.label}</span>
+                          </div>
+                          <p className="text-[11px] text-stone-500 dark:text-stone-400 mt-1">{t.desc}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="space-y-3 pt-1">
+                  <div>
+                    <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                      หัวข้อหลัก (Title)
+                    </label>
+                    <input
+                      type="text"
+                      value={config.asciiTitle ?? 'MERRY CHRISTMAS & HAPPY NEW YEAR'}
+                      onChange={(e) => onChangeConfig({ ...config, asciiTitle: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-stone-800 dark:text-stone-100 bg-white dark:bg-stone-800 focus:outline-none focus:border-rose-500"
+                      placeholder="MERRY CHRISTMAS & HAPPY NEW YEAR"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                        ชื่อผู้รับ (To)
+                      </label>
+                      <input
+                        type="text"
+                        value={config.asciiRecipient ?? ''}
+                        onChange={(e) => onChangeConfig({ ...config, asciiRecipient: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-stone-800 dark:text-stone-100 bg-white dark:bg-stone-800 focus:outline-none focus:border-rose-500"
+                        placeholder="Special Person"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                        ชื่อผู้ส่ง (From)
+                      </label>
+                      <input
+                        type="text"
+                        value={config.asciiSender ?? ''}
+                        onChange={(e) => onChangeConfig({ ...config, asciiSender: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-stone-800 dark:text-stone-100 bg-white dark:bg-stone-800 focus:outline-none focus:border-rose-500"
+                        placeholder="Secret Santa"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                      ข้อความคำอวยพรหลัก (แสดงในกล่องของขวัญและดาว)
+                    </label>
+                    <textarea
+                      rows={4}
+                      value={config.asciiWish ?? ''}
+                      onChange={(e) => onChangeConfig({ ...config, asciiWish: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-stone-800 dark:text-stone-100 bg-white dark:bg-stone-800 focus:outline-none focus:border-rose-500"
+                      placeholder="เขียนคำอวยพร..."
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                      ข้อความเมื่อแตะลูกบอลบนต้นไม้ (บรรทัดละ 1 ข้อความ)
+                    </label>
+                    <textarea
+                      rows={4}
+                      value={Array.isArray(config.asciiOrnamentNotes) ? config.asciiOrnamentNotes.join('\n') : ''}
+                      onChange={(e) =>
+                        onChangeConfig({
+                          ...config,
+                          asciiOrnamentNotes: e.target.value.split('\n')
+                        })
+                      }
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-stone-800 dark:text-stone-100 bg-white dark:bg-stone-800 focus:outline-none focus:border-rose-500"
+                      placeholder="ขอให้ทุกวันเริ่มต้นด้วยรอยยิ้ม ✨"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                      ชุดตัวอักษร ASCII พิเศษ (ไม่บังคับ — เว้นว่างเพื่อใช้ค่ามาตรฐาน)
+                    </label>
+                    <input
+                      type="text"
+                      value={config.asciiCharset ?? ''}
+                      onChange={(e) => onChangeConfig({ ...config, asciiCharset: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-xs sm:text-sm font-mono text-stone-800 dark:text-stone-100 bg-white dark:bg-stone-800 focus:outline-none focus:border-rose-500"
+                      placeholder="เช่น MANITA*+ หรือชื่อคนพิเศษ"
                     />
                   </div>
                 </div>

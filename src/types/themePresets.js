@@ -28,6 +28,13 @@ export const PRESET_CATEGORIES = [
     desc: 'ยิงธนูระเบิดประกายไฟ เปิดเค้กวันเกิด 3 มิติ และการ์ดอวยพรสุดซึ้ง',
     icon: '🏹',
     badge: 'Interactive'
+  },
+  {
+    id: 'ascii_christmas',
+    name: 'ต้นคริสต์มาส ASCII 3D',
+    desc: 'ต้นคริสต์มาสอักษร ASCII 3 มิติหมุนได้ เปิดกล่องของขวัญและแตะลูกบอลรับคำอวยพร',
+    icon: '✨',
+    badge: 'ASCII 3D'
   }
 ];
 

@@ -19,7 +19,7 @@ export default function MusicPlayerCard({
 
   // Compute active song metadata based on Preset and Theme
   const getSongMeta = () => {
-    if (presetCategory === 'christmas_tree' || themeKey === 'festive') {
+    if (presetCategory === 'christmas_tree' || presetCategory === 'ascii_christmas' || themeKey === 'festive') {
       return {
         title: 'Last Christmas',
         artist: 'Wham! / Festive Tree - MANITA',
