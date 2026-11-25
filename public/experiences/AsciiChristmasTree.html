@@ -421,17 +421,6 @@
     </button>
   </div>
 
-  <div class="hint-badge" id="hintBadge">Drag to spin • Tap gifts, ornaments &amp; star</div>
-
-  <div class="creator-toolbar" id="creatorToolbar">
-    <button class="pill-btn" id="btnReplay" type="button">↻ Replay</button>
-    <button class="pill-btn" id="btnDensity" type="button">Grid: Normal</button>
-    <button class="pill-btn theme-btn" data-theme="classic" type="button">Classic</button>
-    <button class="pill-btn theme-btn" data-theme="frost" type="button">Frost</button>
-    <button class="pill-btn theme-btn" data-theme="cyberpunk" type="button">Cyber</button>
-    <button class="pill-btn theme-btn" data-theme="champagne" type="button">Cozy</button>
-  </div>
-
   <div class="hover-tooltip" id="hoverTooltip"></div>
 
   <div class="ornament-toast" id="ornamentToast">
@@ -626,14 +615,6 @@
     const urlParams = new URLSearchParams(window.location.search);
     const VIEW_MODE = urlParams.get("view") || "preview";
     const IS_RECIPIENT = VIEW_MODE === "recipient";
-
-    const creatorToolbar = document.getElementById("creatorToolbar");
-    const hintBadge = document.getElementById("hintBadge");
-    if (IS_RECIPIENT) {
-      creatorToolbar.classList.add("hidden");
-    } else {
-      hintBadge.classList.add("creator-offset");
-    }
 
     class HolidayAudio {
       constructor() {
@@ -1515,26 +1496,6 @@
           : e.data;
         applyCustomData(payload);
       }
-    });
-
-    document.getElementById("btnReplay").addEventListener("click", () => {
-      audio.playInteractive("click");
-      introTime = 0;
-      audio.resetTimelineCues();
-    });
-
-    document.getElementById("btnDensity").addEventListener("click", (e) => {
-      audio.playInteractive("click");
-      densityIdx = (densityIdx + 1) % DENSITY_LEVELS.length;
-      e.currentTarget.textContent = `Grid: ${DENSITY_LEVELS[densityIdx].key}`;
-      resizeCanvas();
-    });
-
-    document.querySelectorAll(".theme-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        audio.playInteractive("click");
-        applyCustomData({ theme: btn.dataset.theme });
-      });
     });
 
     syncUIWithConfig();
