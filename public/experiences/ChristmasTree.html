@@ -2530,6 +2530,7 @@
       dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1.35 : 2);
       width = window.innerWidth;
       height = window.innerHeight;
+      if (width <= 0 || height <= 0) return;
       canvas.width = Math.round(width * dpr);
       canvas.height = Math.round(height * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -4278,15 +4279,19 @@
     }
 
     function setTheme(name, btn) {
+      if (!themes[name]) return;
+      const isDiff = currentThemeName !== name;
       currentTheme = themes[name];
       currentThemeName = name;
       buildLandscape();
-      bgLayer.style.background = currentTheme.bg;
-      titleText.style.textShadow = currentTheme.titleShadow;
+      if (bgLayer) bgLayer.style.background = currentTheme.bg;
+      if (titleText) titleText.style.textShadow = currentTheme.titleShadow;
 
       document.querySelectorAll('.controls .btn').forEach(b => b.classList.remove('active'));
       if (btn) btn.classList.add('active');
-      buildScene(true);
+      if (isDiff) {
+        buildScene(false);
+      }
     }
 
     function replayIntro() {
@@ -4394,6 +4399,14 @@
     document.addEventListener('fullscreenchange', updateFullscreenBtn);
     document.addEventListener('webkitfullscreenchange', updateFullscreenBtn);
     window.addEventListener('resize', resize);
+    if (typeof ResizeObserver !== 'undefined') {
+      const ro = new ResizeObserver(() => {
+        if (window.innerWidth !== width || window.innerHeight !== height) {
+          resize();
+        }
+      });
+      ro.observe(document.documentElement);
+    }
 
     // เริ่มต้นเตรียมฉาก (ยังไม่เล่นต้นไม้จนกว่าผู้ใช้จะกดปุ่มเริ่ม)
     window.addEventListener('pointermove', (e) => {
@@ -4467,7 +4480,7 @@
         if (data.wishMessage && typeof wishInput !== 'undefined' && wishInput) {
           wishInput.value = data.wishMessage;
         }
-        if (data.treeTheme && typeof themes !== 'undefined' && themes[data.treeTheme]) {
+        if (data.treeTheme && typeof themes !== 'undefined' && themes[data.treeTheme] && data.treeTheme !== currentThemeName) {
           if (typeof setTheme === 'function') {
             setTheme(data.treeTheme);
           }

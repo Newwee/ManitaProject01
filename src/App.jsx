@@ -758,13 +758,13 @@ function AppContent({ preferences, setPreferences }) {
 
             {/* RIGHT COLUMN: Live Preview Panel (Scrollable independently, collapsible) */}
             <div
-              className={`h-full overflow-y-auto transition-all duration-300 ease-in-out flex flex-col items-center justify-start relative select-none ${
+              className={`h-full transition-all duration-300 ease-in-out flex flex-col relative select-none ${
                 desktopViewMode === 'split'
-                  ? 'w-[48%] lg:w-[44%] xl:w-[42%] shrink-0 opacity-100 bg-stone-900/5 dark:bg-black/20 p-4 lg:p-6 border-l border-stone-200/60 dark:border-stone-800/60'
+                  ? 'w-[48%] lg:w-[44%] xl:w-[42%] shrink-0 opacity-100 bg-stone-900/5 dark:bg-black/20 p-4 lg:p-6 border-l border-stone-200/60 dark:border-stone-800/60 overflow-y-auto items-center justify-start'
                   : desktopViewMode === 'preview'
                   ? (category === 'christmas_tree' || category === 'arrow_birthday')
-                    ? 'w-full flex-1 shrink-0 opacity-100 bg-black p-0 m-0 overflow-hidden'
-                    : 'w-full flex-1 shrink-0 opacity-100 bg-transparent p-4 sm:p-8'
+                    ? 'w-full flex-1 shrink-0 opacity-100 bg-black p-0 m-0 overflow-hidden items-stretch justify-start'
+                    : 'w-full flex-1 shrink-0 opacity-100 bg-transparent p-4 sm:p-8 overflow-y-auto items-center justify-start'
                   : 'w-0 shrink-0 opacity-0 pointer-events-none overflow-hidden p-0 m-0 border-0'
               }`}
             >

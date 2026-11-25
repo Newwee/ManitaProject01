@@ -47,10 +47,13 @@ export default function ArrowBirthdayExperience({
     };
   }, []);
 
-  useEffect(() => {
-    const handleLoad = () => {
-      if (iframeRef.current && iframeRef.current.contentWindow) {
-        iframeRef.current.contentWindow.postMessage({
+  const lastSyncRef = useRef('');
+
+  const sendSyncMessage = () => {
+    const frame = iframeRef.current;
+    if (frame && frame.contentWindow) {
+      try {
+        frame.contentWindow.postMessage({
           type: 'MANITA_ARROW_SYNC',
           wishMessage,
           wishTitle: title,
@@ -58,27 +61,22 @@ export default function ArrowBirthdayExperience({
           photos,
           isRecipient
         }, '*');
-      }
-    };
-
-    const frame = iframeRef.current;
-    if (frame) {
-      frame.addEventListener('load', handleLoad);
-      try {
-        if (frame.contentWindow) {
-          frame.contentWindow.postMessage({
-            type: 'MANITA_ARROW_SYNC',
-            wishMessage,
-            wishTitle: title,
-            wishSign,
-            photos,
-            isRecipient
-          }, '*');
-        }
       } catch (e) {}
-
-      return () => frame.removeEventListener('load', handleLoad);
     }
+  };
+
+  useEffect(() => {
+    const payload = JSON.stringify({
+      wishMessage,
+      wishTitle: title,
+      wishSign,
+      photos,
+      isRecipient
+    });
+
+    if (payload === lastSyncRef.current) return;
+    lastSyncRef.current = payload;
+    sendSyncMessage();
   }, [wishMessage, title, wishSign, photos, isRecipient]);
 
   return (
@@ -94,6 +92,7 @@ export default function ArrowBirthdayExperience({
         className="w-full h-full border-0 absolute inset-0 block"
         title="MANITA Arrow Birthday Experience"
         allow="autoplay; fullscreen"
+        onLoad={sendSyncMessage}
       />
 
       <button

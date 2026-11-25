@@ -81,10 +81,13 @@ export default function ChristmasTreeExperience({
     };
   }, []);
 
-  useEffect(() => {
-    const handleLoad = () => {
-      if (iframeRef.current && iframeRef.current.contentWindow) {
-        iframeRef.current.contentWindow.postMessage({
+  const lastSyncRef = useRef('');
+
+  const sendSyncMessage = () => {
+    const frame = iframeRef.current;
+    if (frame && frame.contentWindow) {
+      try {
+        frame.contentWindow.postMessage({
           type: 'MANITA_TREE_SYNC',
           wishMessage,
           wishTitle: title,
@@ -99,34 +102,29 @@ export default function ChristmasTreeExperience({
           decorations,
           isRecipient
         }, '*');
-      }
-    };
-
-    const frame = iframeRef.current;
-    if (frame) {
-      frame.addEventListener('load', handleLoad);
-      try {
-        if (frame.contentWindow) {
-          frame.contentWindow.postMessage({
-            type: 'MANITA_TREE_SYNC',
-            wishMessage,
-            wishTitle: title,
-            treeTheme,
-            photos,
-            lockMode,
-            unlockDate,
-            boxUnlockDates,
-            lockMessage,
-            showCountdown,
-            countdownTitle,
-            decorations,
-            isRecipient
-          }, '*');
-        }
       } catch (e) {}
-
-      return () => frame.removeEventListener('load', handleLoad);
     }
+  };
+
+  useEffect(() => {
+    const payload = JSON.stringify({
+      wishMessage,
+      wishTitle: title,
+      treeTheme,
+      photos,
+      lockMode,
+      unlockDate,
+      boxUnlockDates,
+      lockMessage,
+      showCountdown,
+      countdownTitle,
+      decorations,
+      isRecipient
+    });
+
+    if (payload === lastSyncRef.current) return;
+    lastSyncRef.current = payload;
+    sendSyncMessage();
   }, [
     wishMessage,
     title,
@@ -157,6 +155,7 @@ export default function ChristmasTreeExperience({
         className="w-full h-full border-0 absolute inset-0 block"
         title="MANITA 3D Christmas Tree Experience"
         allow="autoplay; fullscreen"
+        onLoad={sendSyncMessage}
       />
 
       <button
