@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
+import { Maximize2, Minimize2 } from 'lucide-react';
 import ChristmasMusicPlayer from './ChristmasMusicPlayer';
 import ChristmasCountdownCard from './ChristmasCountdownCard';
 
@@ -17,10 +18,45 @@ export default function ChristmasTreeExperience({
   decorations = {},
   isRecipient = false
 }) {
+  const containerRef = useRef(null);
   const iframeRef = useRef(null);
   const [isIntroComplete, setIsIntroComplete] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Synchronize animation intro timing: let the 3D Christmas Tree animation be the spotlight first!
+  const toggleFullscreen = () => {
+    if (!isFullscreen) {
+      const el = containerRef.current || document.documentElement;
+      if (el.requestFullscreen) {
+        el.requestFullscreen().catch(() => {});
+      } else if (el.webkitRequestFullscreen) {
+        el.webkitRequestFullscreen();
+      }
+      setIsFullscreen(true);
+    } else {
+      if (document.fullscreenElement || document.webkitFullscreenElement) {
+        if (document.exitFullscreen) {
+          document.exitFullscreen().catch(() => {});
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        }
+      }
+      setIsFullscreen(false);
+    }
+  };
+
+  useEffect(() => {
+    const handleFsChange = () => {
+      const isFs = Boolean(document.fullscreenElement || document.webkitFullscreenElement);
+      setIsFullscreen(isFs);
+    };
+    document.addEventListener('fullscreenchange', handleFsChange);
+    document.addEventListener('webkitfullscreenchange', handleFsChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFsChange);
+      document.removeEventListener('webkitfullscreenchange', handleFsChange);
+    };
+  }, []);
+
   useEffect(() => {
     let timer = setTimeout(() => {
       setIsIntroComplete(true);
@@ -109,7 +145,12 @@ export default function ChristmasTreeExperience({
   const viewMode = isRecipient ? 'recipient' : 'preview';
 
   return (
-    <div className="w-full h-full relative bg-black overflow-hidden flex-1">
+    <div
+      ref={containerRef}
+      className={`w-full h-full relative bg-black overflow-hidden flex-1 ${
+        isFullscreen ? 'fixed inset-0 z-[100] w-screen h-screen' : ''
+      }`}
+    >
       <iframe
         ref={iframeRef}
         src={`/experiences/ChristmasTree.html?view=${viewMode}&theme=${treeTheme}&v=2.6`}
@@ -118,7 +159,16 @@ export default function ChristmasTreeExperience({
         allow="autoplay; fullscreen"
       />
 
-      {/* React Bits Odometer Countdown Card (visible immediately in sleek bottom-left mini-pill on mobile) */}
+      <button
+        type="button"
+        onClick={toggleFullscreen}
+        className="absolute top-3.5 right-4 z-[110] px-3 py-1.5 rounded-full bg-stone-900/80 hover:bg-stone-900 backdrop-blur-md text-white text-xs font-bold border border-white/20 shadow-xl flex items-center gap-1.5 transition active:scale-95"
+        title={isFullscreen ? 'ออกจากโหมดเต็มจอ' : 'ดูแบบเต็มจอ'}
+      >
+        {isFullscreen ? <Minimize2 className="w-3.5 h-3.5 text-rose-400" /> : <Maximize2 className="w-3.5 h-3.5 text-rose-400" />}
+        <span>{isFullscreen ? 'ออกเต็มจอ' : 'เต็มจอ'}</span>
+      </button>
+
       {showCountdown && lockMode !== 'immediate' && (
         <ChristmasCountdownCard
           unlockDate={unlockDate}
@@ -127,7 +177,6 @@ export default function ChristmasTreeExperience({
         />
       )}
 
-      {/* Modern Christmas Soundtrack Player (visible immediately in sleek bottom-right mini-pill on mobile) */}
       <ChristmasMusicPlayer showUI={true} />
     </div>
   );

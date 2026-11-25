@@ -251,7 +251,7 @@ export default function ChristmasMusicPlayer({ showUI = true }) {
       <div
         ref={cardRef}
         style={position ? { left: `${position.x}px`, top: `${position.y}px` } : undefined}
-        className={`fixed z-40 select-none touch-none ${
+        className={`fixed z-[105] select-none touch-none ${
           !position ? 'bottom-[max(1rem,env(safe-area-inset-bottom,1rem))] right-3 sm:top-20 sm:right-6 sm:bottom-auto' : ''
         } animate-in fade-in zoom-in-95 duration-500`}
       >
@@ -304,7 +304,7 @@ export default function ChristmasMusicPlayer({ showUI = true }) {
     <div
       ref={cardRef}
       style={position ? { left: `${position.x}px`, top: `${position.y}px` } : undefined}
-      className={`fixed z-40 select-none ${
+      className={`fixed z-[105] select-none ${
         !position ? 'bottom-[max(1rem,env(safe-area-inset-bottom,1rem))] right-3 sm:top-20 sm:right-6 sm:bottom-auto' : ''
       } animate-in fade-in slide-in-from-bottom-3 sm:slide-in-from-top-3 duration-500 will-change-transform`}
     >

@@ -762,26 +762,45 @@ function AppContent({ preferences, setPreferences }) {
                 desktopViewMode === 'split'
                   ? 'w-[48%] lg:w-[44%] xl:w-[42%] shrink-0 opacity-100 bg-stone-900/5 dark:bg-black/20 p-4 lg:p-6 border-l border-stone-200/60 dark:border-stone-800/60'
                   : desktopViewMode === 'preview'
-                  ? 'w-full flex-1 shrink-0 opacity-100 bg-transparent p-4 sm:p-8'
+                  ? (category === 'christmas_tree' || category === 'arrow_birthday')
+                    ? 'w-full flex-1 shrink-0 opacity-100 bg-black p-0 m-0 overflow-hidden'
+                    : 'w-full flex-1 shrink-0 opacity-100 bg-transparent p-4 sm:p-8'
                   : 'w-0 shrink-0 opacity-0 pointer-events-none overflow-hidden p-0 m-0 border-0'
               }`}
             >
               {/* Top Header of Preview Panel */}
               {desktopViewMode === 'preview' ? (
-                <div className="w-full max-w-4xl mx-auto mb-3 flex items-center justify-between px-2">
-                  <button
-                    type="button"
-                    onClick={() => setDesktopViewMode('split')}
-                    className="px-3.5 py-1.5 rounded-xl bg-white/95 dark:bg-stone-800/95 hover:bg-white dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 text-xs font-bold shadow-sm border border-stone-200 dark:border-stone-700 flex items-center gap-1.5 transition active:scale-95"
-                  >
-                    <Columns2 className="w-3.5 h-3.5 text-rose-500" />
-                    <span>← กลับสู่โหมดแบ่งหน้าจอ (Split View)</span>
-                  </button>
-                  <div className="text-xs font-bold text-stone-500 dark:text-stone-400 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <span>โหมดตัวอย่างเต็มตา (Full Preview Mode)</span>
+                (category === 'christmas_tree' || category === 'arrow_birthday') ? (
+                  <div className="absolute top-3.5 left-4 z-40 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setDesktopViewMode('split')}
+                      className="px-3.5 py-1.5 rounded-xl bg-stone-900/85 hover:bg-stone-900 backdrop-blur-md text-white text-xs font-bold border border-white/20 shadow-xl flex items-center gap-1.5 transition active:scale-95"
+                    >
+                      <Columns2 className="w-3.5 h-3.5 text-rose-400" />
+                      <span>← กลับสู่โหมดแบ่งหน้าจอ (Split View)</span>
+                    </button>
+                    <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-900/70 backdrop-blur-md border border-white/10 text-[11px] font-bold text-stone-300">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                      <span>โหมดตัวอย่างเต็มตา</span>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="w-full max-w-4xl mx-auto mb-3 flex items-center justify-between px-2">
+                    <button
+                      type="button"
+                      onClick={() => setDesktopViewMode('split')}
+                      className="px-3.5 py-1.5 rounded-xl bg-white/95 dark:bg-stone-800/95 hover:bg-white dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 text-xs font-bold shadow-sm border border-stone-200 dark:border-stone-700 flex items-center gap-1.5 transition active:scale-95"
+                    >
+                      <Columns2 className="w-3.5 h-3.5 text-rose-500" />
+                      <span>← กลับสู่โหมดแบ่งหน้าจอ (Split View)</span>
+                    </button>
+                    <div className="text-xs font-bold text-stone-500 dark:text-stone-400 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <span>โหมดตัวอย่างเต็มตา (Full Preview Mode)</span>
+                    </div>
+                  </div>
+                )
               ) : desktopViewMode === 'split' ? (
                 <div className="w-full max-w-[420px] mb-2.5 flex items-center justify-between px-1">
                   <div className="flex items-center gap-2">
@@ -807,21 +826,25 @@ function AppContent({ preferences, setPreferences }) {
 
               {/* Live Preview Content (Real-time updates without switching tabs) */}
               {category === 'christmas_tree' ? (
-                <div
-                  className={`w-full ${
-                    desktopViewMode === 'preview' ? 'max-w-3xl h-[calc(100vh-140px)]' : 'max-w-[420px] h-[720px]'
-                  } rounded-[36px] overflow-hidden shadow-2xl border-[6px] border-stone-800 bg-black relative flex flex-col my-auto transition-all`}
-                >
-                  {render3DExperience()}
-                </div>
+                desktopViewMode === 'preview' ? (
+                  <div className="w-full h-full relative flex flex-col bg-black overflow-hidden">
+                    {render3DExperience()}
+                  </div>
+                ) : (
+                  <div className="w-full max-w-[420px] h-[720px] rounded-[36px] overflow-hidden shadow-2xl border-[6px] border-stone-800 bg-black relative flex flex-col my-auto transition-all">
+                    {render3DExperience()}
+                  </div>
+                )
               ) : category === 'arrow_birthday' ? (
-                <div
-                  className={`w-full ${
-                    desktopViewMode === 'preview' ? 'max-w-3xl h-[calc(100vh-140px)]' : 'max-w-[420px] h-[720px]'
-                  } rounded-[36px] overflow-hidden shadow-2xl border-[6px] border-stone-800 bg-[#04020a] relative flex flex-col my-auto transition-all`}
-                >
-                  {render3DExperience()}
-                </div>
+                desktopViewMode === 'preview' ? (
+                  <div className="w-full h-full relative flex flex-col bg-[#04020a] overflow-hidden">
+                    {render3DExperience()}
+                  </div>
+                ) : (
+                  <div className="w-full max-w-[420px] h-[720px] rounded-[36px] overflow-hidden shadow-2xl border-[6px] border-stone-800 bg-[#04020a] relative flex flex-col my-auto transition-all">
+                    {render3DExperience()}
+                  </div>
+                )
               ) : (
                 <div className="w-full max-w-[420px] my-auto scale-[0.92] sm:scale-95 lg:scale-100 origin-top transition-transform">
                   <PhoneFrame
