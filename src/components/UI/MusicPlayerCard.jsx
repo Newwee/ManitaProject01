@@ -37,7 +37,7 @@ export default function MusicPlayerCard({
         };
       }
     }
-    if (presetCategory === 'christmas_tree' || presetCategory === 'ascii_christmas' || themeKey === 'festive') {
+    if (presetCategory === 'christmas_tree' || presetCategory === 'ascii_christmas' || presetCategory === 'santa_3d' || themeKey === 'festive') {
       return {
         title: 'Last Christmas',
         artist: 'Wham! / Festive Tree - MANITA',

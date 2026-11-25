@@ -284,6 +284,8 @@ export default function CreatorDashboard({
         ? 'arrow_settings'
         : catId === 'ascii_christmas'
         ? 'ascii_settings'
+        : catId === 'santa_3d'
+        ? 'santa_settings'
         : 'theme';
 
     setActiveTab(nextTab);
@@ -528,6 +530,9 @@ export default function CreatorDashboard({
     if (currentCategory === 'ascii_christmas') {
       return ['category', 'ascii_settings', 'photos'];
     }
+    if (currentCategory === 'santa_3d') {
+      return ['category', 'santa_settings', 'photos'];
+    }
     return ['category', 'theme', 'entry', 'passcode', 'chat', 'reveal', 'photos', 'coupons'];
   };
 
@@ -653,7 +658,7 @@ export default function CreatorDashboard({
               }`}
             >
               <Layers className="w-4 h-4 shrink-0" />
-              <span>1. เลือกหมวด Preset (5 แบบ)</span>
+              <span>1. เลือกหมวด Preset (6 แบบ)</span>
             </button>
 
             {(currentCategory === 'chat_scratch' || currentCategory === 'chat_camera') && (
@@ -774,6 +779,21 @@ export default function CreatorDashboard({
               </button>
             )}
 
+            {currentCategory === 'santa_3d' && (
+              <button
+                id="studio-tab-santa_settings"
+                onClick={() => setActiveTab('santa_settings')}
+                className={`shrink-0 whitespace-nowrap lg:whitespace-normal text-left px-3.5 py-2.5 lg:py-3 rounded-2xl text-xs font-bold flex items-center gap-2 transition ${
+                  activeTab === 'santa_settings'
+                    ? 'bg-rose-500 text-white shadow-sm shadow-rose-200'
+                    : 'bg-white dark:bg-stone-800 hover:bg-stone-50 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 border border-stone-200 dark:border-stone-700'
+                }`}
+              >
+                <Gift className="w-4 h-4 shrink-0" />
+                <span>2. ปรับแต่งซานต้า 3D & ลูกเล่น</span>
+              </button>
+            )}
+
             <button
               id="studio-tab-photos"
               onClick={() => setActiveTab('photos')}
@@ -784,7 +804,7 @@ export default function CreatorDashboard({
               }`}
             >
               <ImageIcon className="w-4 h-4 shrink-0" />
-              <span>{currentCategory === 'christmas_tree' || currentCategory === 'arrow_birthday' || currentCategory === 'ascii_christmas' ? '3. อัปโหลดรูปภาพ (ความทรงจำ)' : '7. อัปโหลดรูปภาพ (ความทรงจำ)'}</span>
+              <span>{currentCategory === 'christmas_tree' || currentCategory === 'arrow_birthday' || currentCategory === 'ascii_christmas' || currentCategory === 'santa_3d' ? '3. อัปโหลดรูปภาพ (ความทรงจำ)' : '7. อัปโหลดรูปภาพ (ความทรงจำ)'}</span>
             </button>
 
             {(currentCategory === 'chat_scratch' || currentCategory === 'chat_camera') && (
@@ -830,7 +850,7 @@ export default function CreatorDashboard({
                 <div>
                   <h3 className="text-sm font-bold text-stone-800 dark:text-stone-100 flex items-center gap-2">
                     <Layers className="w-4 h-4 text-rose-500" />
-                    <span>เลือกรูปแบบประสบการณ์หลัก (5 Preset Categories)</span>
+                    <span>เลือกรูปแบบประสบการณ์หลัก (6 Preset Categories)</span>
                   </h3>
                   <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
                     เลือกหมวดหมู่ที่ต้องการสร้างสรรค์ แต่ละแบบจะให้ประสบการณ์และการโต้ตอบที่แตกต่างกัน
@@ -2003,6 +2023,168 @@ export default function CreatorDashboard({
                       onChange={(e) => onChangeConfig({ ...config, asciiCharset: e.target.value })}
                       className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-xs sm:text-sm font-mono text-stone-800 dark:text-stone-100 bg-white dark:bg-stone-800 focus:outline-none focus:border-rose-500"
                       placeholder="เช่น MANITA*+ หรือชื่อคนพิเศษ"
+                    />
+                  </div>
+                </div>
+                {renderMusicSelector()}
+              </div>
+            )}
+
+            {activeTab === 'santa_settings' && (
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-sm font-bold text-stone-800 dark:text-stone-100 flex items-center gap-2">
+                    <Gift className="w-4 h-4 text-rose-500" />
+                    <span>ปรับแต่งซานต้า 3D &amp; ลูกเล่นในฉาก</span>
+                  </h3>
+                  <p className="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
+                    เปิด-ปิดลูกเล่นในฉากซานต้า แก้ข้อความวิ่ง ปรับคำอวยพรในการ์ดของขวัญ และเลือกเพลงได้อิสระ
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-2">
+                    ลูกเล่นตกแต่งในฉาก 3D (เปิด-ปิดได้อิสระ)
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {[
+                      { key: 'snow', label: '❄️ หิมะตก' },
+                      { key: 'trees', label: '🌲 ต้นสนบนเนิน' },
+                      { key: 'garland', label: '💡 ไฟระย้าด้านบน' },
+                      { key: 'shooting', label: '🌠 ดาวตก' },
+                      { key: 'fireworks', label: '🎆 ดอกไม้ไฟ' },
+                      { key: 'presents', label: '🎁 กล่องของขวัญหล่น' },
+                      { key: 'moon', label: '🌕 ดวงจันทร์' },
+                      { key: 'stars', label: '✨ ดาวระยิบระยับ' },
+                      { key: 'greeting', label: '💬 ข้อความวิ่งท้ายฉาก' }
+                    ].map((layer) => {
+                      const layerState = config.santaLayers || {};
+                      const isEnabled = layerState[layer.key] !== undefined ? layerState[layer.key] : true;
+                      return (
+                        <button
+                          key={layer.key}
+                          type="button"
+                          onClick={() =>
+                            onChangeConfig({
+                              ...config,
+                              santaLayers: {
+                                ...layerState,
+                                [layer.key]: !isEnabled
+                              }
+                            })
+                          }
+                          className={`flex items-center justify-between p-2.5 rounded-2xl border transition text-left ${
+                            isEnabled
+                              ? 'bg-rose-50/70 dark:bg-rose-950/30 border-rose-300 dark:border-rose-800'
+                              : 'bg-stone-50 dark:bg-stone-800/40 border-stone-200 dark:border-stone-700 opacity-60'
+                          }`}
+                        >
+                          <span className="text-[11px] font-bold text-stone-800 dark:text-stone-200 truncate">
+                            {layer.label}
+                          </span>
+                          <span
+                            className={`w-4 h-4 rounded-md flex items-center justify-center text-[10px] font-black shrink-0 ml-1 ${
+                              isEnabled
+                                ? 'bg-rose-500 text-white'
+                                : 'border border-stone-300 dark:border-stone-600 text-transparent'
+                            }`}
+                          >
+                            ✓
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="space-y-3 pt-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                        ข้อความวิ่งในฉาก 3D (สูงสุด 24 ตัวอักษร)
+                      </label>
+                      <input
+                        type="text"
+                        maxLength={24}
+                        value={config.santaGreeting ?? 'MERRY CHRISTMAS 2026'}
+                        onChange={(e) => onChangeConfig({ ...config, santaGreeting: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-xs sm:text-sm font-mono text-stone-800 dark:text-stone-100 bg-white dark:bg-stone-800 focus:outline-none focus:border-rose-500"
+                        placeholder="MERRY CHRISTMAS 2026"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                        ความเร็วแอนิเมชัน ({config.santaSpeed || 1}x)
+                      </label>
+                      <div className="grid grid-cols-4 gap-1.5">
+                        {[0.75, 1, 1.35, 1.75].map((spd) => (
+                          <button
+                            key={spd}
+                            type="button"
+                            onClick={() => onChangeConfig({ ...config, santaSpeed: spd })}
+                            className={`py-2 rounded-xl text-xs font-bold border transition ${
+                              (config.santaSpeed || 1) === spd
+                                ? 'border-rose-500 bg-rose-500 text-white'
+                                : 'border-stone-200 dark:border-stone-700 bg-white dark:bg-stone-800 text-stone-700 dark:text-stone-200'
+                            }`}
+                          >
+                            {spd}x
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                      หัวข้อหลักบนหน้าจอ &amp; การ์ดของขวัญ
+                    </label>
+                    <input
+                      type="text"
+                      value={config.santaTitle ?? 'Merry Christmas! 🎅✨'}
+                      onChange={(e) => onChangeConfig({ ...config, santaTitle: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-stone-800 dark:text-stone-100 bg-white dark:bg-stone-800 focus:outline-none focus:border-rose-500"
+                      placeholder="Merry Christmas! 🎅✨"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                        ชื่อผู้รับ (To)
+                      </label>
+                      <input
+                        type="text"
+                        value={config.santaRecipient ?? ''}
+                        onChange={(e) => onChangeConfig({ ...config, santaRecipient: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-stone-800 dark:text-stone-100 bg-white dark:bg-stone-800 focus:outline-none focus:border-rose-500"
+                        placeholder="Special Person"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                        ชื่อผู้ส่ง (From)
+                      </label>
+                      <input
+                        type="text"
+                        value={config.santaSender ?? ''}
+                        onChange={(e) => onChangeConfig({ ...config, santaSender: e.target.value })}
+                        className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-stone-800 dark:text-stone-100 bg-white dark:bg-stone-800 focus:outline-none focus:border-rose-500"
+                        placeholder="Secret Santa"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-stone-700 dark:text-stone-300 mb-1">
+                      ข้อความคำอวยพรในการ์ดของขวัญ
+                    </label>
+                    <textarea
+                      rows={4}
+                      value={config.santaWish ?? ''}
+                      onChange={(e) => onChangeConfig({ ...config, santaWish: e.target.value })}
+                      className="w-full px-3.5 py-2.5 rounded-xl border border-stone-200 dark:border-stone-700 text-xs sm:text-sm text-stone-800 dark:text-stone-100 bg-white dark:bg-stone-800 focus:outline-none focus:border-rose-500"
+                      placeholder="เขียนคำอวยพร..."
                     />
                   </div>
                 </div>

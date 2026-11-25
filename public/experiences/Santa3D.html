@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Santa 3D - MANITA</title>
+<style>
+:root{color-scheme:dark;--bg:#03040a;--fg:#c9d1e6;--dim:#6b7391;--line:#1c2240;--acc:#ffd24a;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font:13px/1.5 ui-monospace,Menlo,Consolas,"Noto Sans Thai",sans-serif;overflow:hidden}
+#app{height:100%;display:flex;flex-direction:column;align-items:center}
+#stage{flex:1;min-height:0;width:100%;display:flex;justify-content:center;align-items:center;position:relative}
+canvas{display:block;background:var(--bg)}
+footer{width:min(100%,520px);box-sizing:border-box;padding:8px 14px 12px;display:flex;justify-content:space-between;align-items:center;gap:10px;color:var(--dim);font-size:12px}
+body.embedded-mode footer,body.recipient-mode footer{display:none!important}
+button{font:inherit;color:var(--acc);background:none;border:1px solid var(--line);border-radius:6px;padding:6px 12px;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+#panel{position:absolute;right:8px;bottom:8px;width:min(300px,calc(100% - 16px));max-height:80%;overflow:auto;box-sizing:border-box;background:rgba(8,10,22,.94);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+#panel[hidden]{display:none}
+#panel h2{margin:0 0 8px;font-size:14px;color:var(--fg)}
+#list{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;margin-bottom:10px}
+#list label{display:flex;gap:6px;align-items:center;cursor:pointer;color:var(--fg)}
+#panel input[type=text]{width:100%;box-sizing:border-box;background:#0b0e1f;color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:inherit;margin:4px 0 10px}
+pre{margin:6px 0 0;padding:8px;background:#0b0e1f;border-radius:6px;overflow:auto;font-size:11px;color:#9fb0e0}
+summary{cursor:pointer;color:var(--dim)}
+
+.santa-top-wish{position:fixed;top:max(14px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:15;text-align:center;pointer-events:none;width:min(90vw,560px)}
+.santa-top-title{font-size:clamp(0.95rem,2.5vw,1.35rem);font-weight:700;color:#ffd24a;letter-spacing:.04em;text-shadow:0 0 18px rgba(255,210,74,.45);margin:0}
+.santa-top-sub{font-size:clamp(0.72rem,1.6vw,0.85rem);color:#9fb0e0;margin:2px 0 0;text-shadow:0 2px 8px rgba(0,0,0,.85)}
+
+.gift-trigger-btn{position:fixed;bottom:max(20px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:25;display:inline-flex;align-items:center;gap:8px;padding:10px 20px;border-radius:999px;border:1px solid rgba(255,210,74,.55);background:linear-gradient(135deg,rgba(217,35,43,.92),rgba(138,18,34,.95));color:#fff;font-family:"Prompt","Noto Sans Thai",sans-serif;font-size:13px;font-weight:700;box-shadow:0 10px 30px rgba(217,35,43,.45),0 0 18px rgba(255,210,74,.25);cursor:pointer;transition:transform .2s ease,box-shadow .2s ease;backdrop-filter:blur(8px)}
+.gift-trigger-btn:hover{transform:translateX(-50%) translateY(-2px) scale(1.03);box-shadow:0 14px 36px rgba(217,35,43,.6),0 0 24px rgba(255,210,74,.4)}
+.gift-trigger-btn:active{transform:translateX(-50%) scale(.96)}
+
+.gift-modal-backdrop{position:fixed;inset:0;z-index:50;background:rgba(3,4,10,.78);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);display:flex;align-items:center;justify-content:center;padding:18px;opacity:0;pointer-events:none;transition:opacity .3s ease;font-family:"Prompt","Noto Sans Thai",sans-serif}
+.gift-modal-backdrop.open{opacity:1;pointer-events:auto}
+.gift-modal-card{width:min(94vw,460px);max-height:88vh;overflow-y:auto;background:linear-gradient(160deg,rgba(15,19,36,.97),rgba(8,10,20,.98));border:1px solid rgba(255,210,74,.32);border-radius:22px;padding:20px;box-shadow:0 24px 70px rgba(0,0,0,.8),0 0 40px rgba(255,210,74,.12);transform:translateY(16px) scale(.96);transition:transform .32s cubic-bezier(.22,1,.36,1);position:relative;color:#f1f5f9}
+.gift-modal-backdrop.open .gift-modal-card{transform:translateY(0) scale(1)}
+.gift-modal-close{position:absolute;top:14px;right:14px;width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);color:#f1f5f9;font-size:15px;display:grid;place-items:center;padding:0}
+.gift-modal-close:hover{background:rgba(255,255,255,.16);border-color:#ffd24a}
+.gift-modal-badge{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:#ffd24a;background:rgba(255,210,74,.12);border:1px solid rgba(255,210,74,.35);padding:4px 11px;border-radius:999px;margin-bottom:12px}
+.gift-photo-stage{position:relative;width:100%;aspect-ratio:4/3;max-height:42vh;border-radius:14px;overflow:hidden;background:radial-gradient(circle at center,rgba(255,255,255,.07),rgba(0,0,0,.65));border:1px solid rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;margin-bottom:10px}
+.gift-photo-stage img{max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;display:block;border-radius:6px}
+.photo-nav-btn{position:absolute;top:50%;transform:translateY(-50%);width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:16px;display:grid;place-items:center;padding:0}
+.photo-nav-btn.prev{left:8px}
+.photo-nav-btn.next{right:8px}
+.photo-counter{position:absolute;bottom:8px;right:10px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:rgba(0,0,0,.65);color:#ffd24a}
+.gift-photo-caption{text-align:center;font-size:12px;color:#ffd24a;margin-bottom:10px;font-weight:600}
+.gift-wish-title{font-size:18px;font-weight:700;color:#fff;margin:0 0 8px}
+.gift-wish-text{font-size:14px;line-height:1.65;color:#cbd5e1;white-space:pre-line;margin:0}
+.gift-wish-footer{margin-top:14px;padding-top:12px;border-top:1px dashed rgba(255,255,255,.15);display:flex;justify-content:space-between;font-size:12px;color:#94a3b8}
+</style>
+</head>
+<body>
+<div class="santa-top-wish" id="santaTopWish">
+  <h1 class="santa-top-title" id="topWishTitle">Merry Christmas! 🎅✨</h1>
+  <p class="santa-top-sub" id="topWishSub"></p>
+</div>
+
+<div id="app">
+  <div id="stage">
+    <canvas id="c" aria-label="แอนิเมชันซานต้าบนเลื่อน"></canvas>
+    <aside id="panel" hidden>
+      <h2>ตกแต่งเพิ่ม</h2>
+      <div id="list"></div>
+      <label for="gr">ข้อความอวยพร</label>
+      <input id="gr" type="text" maxlength="24">
+      <details><summary>วิธีเพิ่มของตกแต่งเอง</summary>
+<pre>Xmas.add('ของฉัน', (api, t) =&gt; {
+  api.put(60, 30, '#ffd24a', 100, 2);
+  api.text(40, 10, 'HELLO', '#ff4d4d');
+}, { z: 50, label: 'ของฉัน' });</pre>
+      </details>
+    </aside>
+  </div>
+  <footer><span id="hud"></span><button id="tg" type="button" aria-expanded="false">ตกแต่ง</button></footer>
+</div>
+
+<button type="button" class="gift-trigger-btn" id="openGiftCardBtn">
+  <span>🎁</span>
+  <span>เปิดของขวัญ &amp; คำอวยพร</span>
+</button>
+
+<div class="gift-modal-backdrop" id="giftModalBackdrop" role="dialog" aria-modal="true">
+  <div class="gift-modal-card">
+    <button type="button" class="gift-modal-close" id="giftModalClose" aria-label="Close">✕</button>
+    <div class="gift-modal-badge">🎅 ของขวัญจากซานต้า</div>
+    <div class="gift-photo-stage" id="giftPhotoStage">
+      <img id="giftModalImg" alt="Santa Gift Memory" />
+      <button type="button" class="photo-nav-btn prev" id="prevPhotoBtn">‹</button>
+      <button type="button" class="photo-nav-btn next" id="nextPhotoBtn">›</button>
+      <div class="photo-counter" id="photoCounter">1 / 1</div>
+    </div>
+    <div class="gift-photo-caption" id="giftPhotoCaption"></div>
+    <h2 class="gift-wish-title" id="giftWishTitle"></h2>
+    <p class="gift-wish-text" id="giftWishText"></p>
+    <div class="gift-wish-footer">
+      <span id="giftWishTo"></span>
+      <span id="giftWishFrom"></span>
+    </div>
+  </div>
+</div>
+
+<script>
+const urlParams=new URLSearchParams(window.location.search);
+const VIEW_MODE=urlParams.get('view')||'preview';
+if(VIEW_MODE==='recipient')document.body.classList.add('recipient-mode');
+if(window.self!==window.top)document.body.classList.add('embedded-mode');
+
+const C=120,R=140,CW=8,T=21,HB=124,CX=C/2,CY=R*.45,N=C*R;
+const cv=document.getElementById('c'),g=cv.getContext('2d');cv.width=C*CW;cv.height=R*CW;
+const ease=(a,b,x)=>{x=Math.min(1,Math.max(0,(x-a)/(b-a)));return x*x*(3-2*x)};
+const mb=a=>()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296};
+const KC={};const K=c=>typeof c!=='string'?c:KC[c]||(KC[c]=[1,3,5].map(i=>parseInt(c.slice(i,i+2),16)));
+const PAL=['#ff5252','#ffd24a','#5bd36b','#58b4ff','#ff8ad8','#ffffff'].map(K);
+const RED=[217,35,43],DRED=[120,18,26],GOLD=[255,201,51],WH=[250,250,250],SK=[243,185,160],BR=[176,96,31],CR=[217,160,100],DK=[110,52,17],ANT=[240,211,160];
+const cz=new Float32Array(N),cc=new Uint8ClampedArray(N*3);
+const stat={presents:0,sparkles:0,alt:0};let texts=[];
+const cam={tx:0,zoom:1,cy:1,sy:0,cp:1,sp:0};
+const hillY=x=>HB-6*Math.abs(Math.sin(x*.13))-3*Math.abs(Math.sin(x*.33+2));
+function put(x,y,col,z=0,sz=1,k=1){col=K(col);x=Math.floor(x);y=Math.floor(y);
+  for(let dy=0;dy<sz;dy++)for(let dx=0;dx<sz;dx++){const X=x+dx,Y=y+dy;if(X<0||X>=C||Y<0||Y>=R)continue;const i=Y*C+X;
+    if(z>cz[i]){cz[i]=z;cc[i*3]=col[0]*k;cc[i*3+1]=col[1]*k;cc[i*3+2]=col[2]*k}}}
+function proj(x,y,z){x-=cam.tx;const X=x*cam.cy+z*cam.sy,Z0=-x*cam.sy+z*cam.cy,Y=y*cam.cp-Z0*cam.sp,Z=y*cam.sp+Z0*cam.cp,f=cam.zoom*(1+Z*.003);return[CX+X*f,CY-Y*f,Z]}
+
+const mk=()=>({p:[],n:[],c:[],e:[]});
+function add(m,x,y,z,nx,ny,nz,c,em){m.p.push(x,y,z);m.n.push(nx,ny,nz);m.c.push(c[0],c[1],c[2]);m.e.push(em?1:0)}
+function ell(m,cx,cy,cz_,rx,ry,rz,col,o={}){
+  const a=4*Math.PI*Math.pow((Math.pow(rx*ry,1.6)+Math.pow(rx*rz,1.6)+Math.pow(ry*rz,1.6))/3,1/1.6),n=Math.max(12,Math.ceil(a*2.2)),ga=Math.PI*(3-Math.sqrt(5));
+  for(let i=0;i<n;i++){const y=1-2*(i+.5)/n,r=Math.sqrt(1-y*y),th=i*ga,nx=Math.cos(th)*r,nz=Math.sin(th)*r,c=o.fn&&o.fn(nx,y,nz)||col,l=Math.hypot(nx/rx,y/ry,nz/rz);
+    add(m,cx+rx*nx,cy+ry*y,cz_+rz*nz,nx/rx/l,y/ry/l,nz/rz/l,c,o.em)}}
+function tube(m,a,b,r,c){const dx=b[0]-a[0],dy=b[1]-a[1],dz=b[2]-a[2],st=Math.max(2,Math.ceil(Math.hypot(dx,dy,dz)*2));
+  for(let i=0;i<=st;i++){const u=i/st,x=a[0]+dx*u,y=a[1]+dy*u,z=a[2]+dz*u;
+    add(m,x,y+r,z,0,1,0,c);add(m,x,y-r,z,0,-1,0,c);add(m,x,y,z+r,0,0,1,c);add(m,x,y,z-r,0,0,-1,c)}}
+function limb(m,a,b,r,c){const st=Math.max(1,Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1],b[2]-a[2])/(r*.8)));
+  for(let i=0;i<=st;i++){const u=i/st;ell(m,a[0]+(b[0]-a[0])*u,a[1]+(b[1]-a[1])*u,a[2]+(b[2]-a[2])*u,r,r,r,c)}}
+function box(m,cx,cy,cz_,w,h,d,c,rb){const S=[w,h,d];
+  for(let ax=0;ax<3;ax++)for(const sg of[-1,1]){const u=(ax+1)%3,v=(ax+2)%3,nu=Math.ceil(S[u]*1.5),nv=Math.ceil(S[v]*1.5);
+    for(let i=0;i<=nu;i++)for(let j=0;j<=nv;j++){const p=[0,0,0],n=[0,0,0];p[ax]=sg*S[ax]/2;p[u]=(i/nu-.5)*S[u];p[v]=(j/nv-.5)*S[v];n[ax]=sg;
+      const rib=rb&&(Math.abs(p[u])<S[u]*.12||Math.abs(p[v])<S[v]*.12);add(m,cx+p[0],cy+p[1],cz_+p[2],n[0],n[1],n[2],rib?rb:c)}}}
+const LX=-.45,LY=.62,LZ=.64;
+function emit(m,ox,oy,oz,roll=0){
+  const n=m.e.length,co=Math.cos(roll),si=Math.sin(roll),sz=cam.zoom>1.25?2:1;
+  for(let i=0;i<n;i++){const j=i*3;let x=m.p[j],y=m.p[j+1],z=m.p[j+2],nx=m.n[j],ny=m.n[j+1];const nz=m.n[j+2];
+    if(roll){const a=x*co-y*si;y=x*si+y*co;x=a;const b=nx*co-ny*si;ny=nx*si+ny*co;nx=b}
+    const s=m.e[i]?1.3:.26+.95*Math.max(0,nx*LX+ny*LY+nz*LZ);
+    const p=proj(x+ox,y+oy,z+oz);
+    put(p[0],p[1],[m.c[j]*s,m.c[j+1]*s,m.c[j+2]*(s+.12)],p[2],sz)}}
+
+const MS=mk();
+for(let i=0;i<=110;i++){const u=i/110,x=-21+u*43,w=6*Math.pow(Math.sin(Math.PI*(.05+.9*u)),.55),
+  top=6*Math.pow(Math.max(0,(.28-u)/.28),2)+4*Math.pow(Math.max(0,(u-.78)/.22),2),dep=5.5*Math.pow(w/6,.6);
+  for(let j=0;j<=24;j++){const a=j/24*Math.PI,z=w*Math.cos(a),y=top-dep*Math.sin(a);
+    add(MS,x,y,z,0,-Math.sin(a),Math.cos(a),RED);add(MS,x,y+.5,z*.88,0,Math.sin(a),-Math.cos(a),DRED)}
+  [-1,1].forEach(sg=>{add(MS,x,top+.2,sg*w,0,1,0,GOLD);add(MS,x,top-.9,sg*w,0,0,sg,GOLD)})}
+[-1,1].forEach(sg=>{const P=[];for(let i=0;i<=30;i++){const u=i/30;P.push([-21+u*40,-9.5+Math.pow(Math.max(0,u-.8)/.2,2)*7,sg*4.2])}
+  for(let i=0;i<30;i++)tube(MS,P[i],P[i+1],.55,GOLD);
+  [-14,-2,10].forEach(x=>tube(MS,[x,-5.5,sg*3.6],[x,-9.3,sg*4.2],.5,GOLD))});
+ell(MS,-6,3,0,4.6,6,4.2,RED);
+for(let i=0;i<28;i++){const a=i/28*6.283;add(MS,-6+Math.cos(a)*4.55,1.2,Math.sin(a)*4.2,Math.cos(a),0,Math.sin(a),[25,25,32])}
+ell(MS,-1.5,1.2,0,.5,.9,.9,GOLD);
+ell(MS,-5,11.2,0,2.9,2.9,2.8,SK);ell(MS,-3.6,9.2,0,2.6,3,3,WH);ell(MS,-2.1,10.7,0,.6,.6,.6,[240,140,130]);
+[-1.1,1.1].forEach(z=>ell(MS,-2.2,12,z,.45,.45,.45,[20,20,30]));
+for(let t=0;t<=1;t+=.035){const cx=-5-9*t*t,cy=12.8+5.5*t-3*t*t,r=3.3*Math.pow(1-t,.85)+.25,dx=-18*t,dy=5.5-6*t,L=Math.hypot(dx,dy),e1=[-dy/L,dx/L],n=Math.ceil(6.283*r*2.2)+2;
+  for(let k=0;k<n;k++){const f=k/n*6.283,cf=Math.cos(f),sf=Math.sin(f);add(MS,cx+r*cf*e1[0],cy+r*cf*e1[1],r*sf,cf*e1[0],cf*e1[1],sf,RED)}}
+for(let k=0;k<16;k++){const a=k/16*6.283;ell(MS,-5+Math.cos(a)*3.3,12.8,Math.sin(a)*3.3,1,.8,1,WH)}
+ell(MS,-14,15.3,0,1.7,1.7,1.7,WH);
+limb(MS,[-6,6,-3.8],[0,4.2,-3.2],1.5,RED);ell(MS,.8,4,-3.2,1.6,1.6,1.6,WH);
+ell(MS,-16,3,-.5,4.6,4.4,4.2,[46,154,85]);box(MS,-18,6,1.8,3.5,3.5,3.5,[255,111,163],GOLD);box(MS,-14.5,7.5,-2,3,3,3,[74,168,255],GOLD);
+const MD=mk();
+ell(MD,0,0,0,8,3.8,3.2,BR,{fn:(x,y)=>y<-.35?CR:0});
+limb(MD,[5,1.5,0],[9.5,6.5,0],2,BR);ell(MD,12,7.4,0,3.3,1.9,1.7,BR);ell(MD,15,7,0,1.1,1.1,1.1,[255,40,40],{em:1});
+[-1,1].forEach(sg=>{ell(MD,10,9.4,sg*1.5,.5,1.2,.5,BR);const z=sg*1.2;
+  tube(MD,[10,8.8,z],[9,13,z],.45,ANT);tube(MD,[9,13,z],[9.5,17.5,z],.45,ANT);tube(MD,[9,12,z],[12.5,14.8,z],.4,ANT);tube(MD,[9.3,15.5,z],[6.5,17.2,z],.4,ANT)});
+ell(MD,-8.5,1.5,0,1.5,1.3,1.3,WH);
+for(let k=0;k<22;k++){const a=k/22*6.283;add(MD,3.3,Math.cos(a)*3.6,Math.sin(a)*3.1,0,Math.cos(a),Math.sin(a),RED)}
+function legs(m,ph){[[4.8,2.2,0],[4.8,-2.2,.5],[-5,2.2,2.2],[-5,-2.2,2.7]].forEach(([hx,hz,o])=>{
+  const a=Math.sin(ph+o)*.75,k=[hx+Math.sin(a)*4.5,-2-Math.cos(a)*4.5,hz],b=a*1.3-.9*(Math.cos(ph+o)>0?1:.4),f=[k[0]+Math.sin(b)*4.5,k[1]-Math.cos(b)*4.5,hz];
+  tube(m,[hx,-2,hz],k,.75,BR);tube(m,k,f,.6,DK)})}
+const BOX=[[224,38,45],[46,154,85],[74,168,255]].map(c=>{const m=mk();box(m,0,0,0,4,4,4,c,GOLD);return m});
+function rein(m,a,b,sag){let pv=a;for(let i=1;i<=10;i++){const u=i/10,p=[a[0]+(b[0]-a[0])*u,a[1]+(b[1]-a[1])*u-Math.sin(Math.PI*u)*sag,a[2]+(b[2]-a[2])*u];tube(m,pv,p,.3,[255,90,68]);pv=p}}
+
+const api={C,R,put,proj,emit,ease,stat,hillY,K,text:(x,y,s,c)=>texts.push([x,y,s,K(c)]),build:{mk,ell,tube,limb,box}};
+const Xmas={layers:[],cfg:{greeting:'MERRY CHRISTMAS 2026',speed:1},
+  add(name,fn,o={}){const l={name,fn,on:o.on!==false,z:o.z??50,label:o.label||name};
+    this.layers=this.layers.filter(x=>x.name!==name).concat(l).sort((a,b)=>a.z-b.z);buildPanel();return l}};
+window.Xmas=Xmas;
+const gxAt=t=>ease(16,20.5,t)*80,byAt=t=>Math.sin(t*1.7)*1.8;
+
+const rs=mb(7),STARS=Array.from({length:150},()=>[rs()*C,rs()*100,rs()*6.28,.3+rs()*.7]);
+Xmas.add('stars',(a,t)=>STARS.forEach(([x,y,p,b])=>put(x,y,[255,255,255],-990,1,(.3+.7*(.5+.5*Math.sin(t*2+p)))*b)),{z:0,label:'ดาว'});
+Xmas.add('moon',()=>{for(let dy=-10;dy<=10;dy++)for(let dx=-10;dx<=10;dx++){const d=Math.hypot(dx,dy);if(d>9.5)continue;
+  const cr=[[-3,-2,2.4],[3,3,3],[-4,4,1.6],[4,-4,1.4]].some(([x,y,r])=>Math.hypot(dx-x,dy-y)<r);
+  put(38+dx,17+dy,cr?[205,197,155]:[243,236,200],-900,1,1-d*.012)}},{z:5,label:'ดวงจันทร์'});
+Xmas.add('hills',()=>{for(let x=0;x<C;x++){const y=hillY(x);put(x,y,[60,74,130],-500);for(let r=Math.ceil(y)+1;r<R;r++)put(x,r,[22,30,62],-500)}},{z:20,label:'เนินเขา'});
+const BURSTS=[[11.2,30,34,0],[12.1,88,28,1],[13,58,20,2],[13.9,20,45,3],[14.8,100,40,4],[15.6,65,30,5]];
+Xmas.add('fireworks',(a,t)=>BURSTS.forEach(([t0,x,y,k])=>{const age=t-t0;if(age<0)return;
+  if(age<.8){const u=1-Math.pow(1-age/.8,2);for(let i=0;i<5;i++)put(x,HB-(HB-y)*Math.max(0,u-i*.03),[255,230,160],-100,1,1-i/5);return}
+  const s=age-.8;if(s>1.8)return;
+  for(let i=0;i<40;i++){const an=i/40*6.283+k,sp=12+(i%3)*5;put(x+Math.cos(an)*sp*s*(1-s*.12),y+Math.sin(an)*sp*s+4*s*s,PAL[(i+k)%6],-100,1,Math.max(0,1-s/1.8));stat.sparkles++}}),{z:30,label:'ดอกไม้ไฟ'});
+Xmas.add('rig',(a,t)=>{
+  const gx=gxAt(t),by=byAt(t),roll=Math.sin(t*1.3)*.035,q=ease(1.4,4,t),dyn=mk();
+  stat.alt=Math.round(1200+by*90+ease(0,3,t)*300);
+  const wv=ease(4,5,t)*(1-ease(14,15,t)),hand=[1+wv,5+wv*9,3.2+wv*.8+Math.sin(t*9)*1.4*wv];
+  limb(dyn,[-5,6,3.8],hand,1.5,RED);ell(dyn,hand[0],hand[1],hand[2],1.6,1.6,1.6,WH);
+  const D=t>1.2?[0,1].map(i=>({x:31+i*18+(1-q)*(90+i*40),y:4+Math.sin(t*2.2+i)*2.2+(1-q)*10,i})):[];
+  if(D.length){[-1,1].forEach(sg=>{rein(dyn,[.8,4,sg*3.2],[D[0].x+3.3,D[0].y+2.5,sg*3],3);rein(dyn,[D[0].x+3.3,D[0].y+2.5,sg*3],[D[1].x+3.3,D[1].y+2.5,sg*3],1.5)})}
+  emit(MS,gx,by,0,roll);emit(dyn,gx,by,0,roll);
+  D.forEach(d=>{const m=mk();legs(m,t*9+d.i*1.4);emit(m,gx+d.x,by+d.y,0,roll);emit(MD,gx+d.x,by+d.y,0,roll);
+    if(d.i===1){const p=proj(gx+d.x+15,by+d.y+7,0);for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++)if(dx||dy)put(p[0]+dx,p[1]+dy,[255,50,40],p[2]+1,1,.45)}});
+  for(let j=0;j<50;j++){const tb=t-j*.05,p=proj(gxAt(tb)-23-j*.9+Math.sin(j*12.9)*2,byAt(tb)-6-j*.12+Math.cos(j*7.1)*2,Math.sin(j*7.3)*5);
+    put(p[0],p[1],[255,200-j*2,120+j*2],p[2],1,1-j/50);stat.sparkles++}
+},{z:40,label:'ซานต้า+กวาง'});
+const DROPS=[6.2,7.4,8.6];
+Xmas.add('presents',(a,t)=>DROPS.forEach((t0,i)=>{const dt=t-t0;if(dt<0)return;
+  const x0=gxAt(t0)-12,y0=byAt(t0)-4,gy=-57,dl=(-6+Math.sqrt(36+56*(y0-gy)))/28;
+  if(dt<dl)emit(BOX[i],x0-dt*6,y0-6*dt-14*dt*dt,0,dt*3);
+  else{stat.presents++;const la=dt-dl;if(la<1){const p=proj(x0-dl*6,gy,0);for(let k=0;k<16;k++){const an=k/16*6.283;put(p[0]+Math.cos(an)*la*9,p[1]+Math.sin(an)*la*6,PAL[k%6],50,1,1-la)}}}}),{z:45,label:'ของขวัญ'});
+Xmas.add('greeting',(a,t)=>{const tx=Xmas.cfg.greeting,sp=4,x0=Math.round((C-tx.length*sp)/2),cols=['#ff4d4d','#3fd56a','#ffd24a'],n=Math.floor((t-15.5)/.12);
+  if(n<=0||t>19.2)return;for(let i=0;i<Math.min(n,tx.length);i++)if(tx[i]!==' ')a.text(x0+i*sp,R-4,tx[i],cols[i%3])},{z:90,label:'ข้อความ'});
+
+Xmas.add('snow',(a,t)=>{for(let i=0;i<90;i++)put(((i*37)%C)+Math.sin(t+i)*2.5,(t*(5+i%5)+i*17)%R,[255,255,255],200,1,.85)},{z:60,on:false,label:'หิมะ'});
+Xmas.add('trees',(a,t)=>[10,28,50,78,100,112].forEach((x,i)=>{const b=hillY(x)+1,h=14+i%3*4;
+  for(let r=0;r<h;r++){const w=Math.round(r*.45)+1;for(let dx=-w;dx<=w;dx++)put(x+dx,b-h+r,[31,122,69],-400)}
+  for(let k=0;k<6;k++)put(x+Math.sin(k*2.3)*3,b-h+3+k*2,Math.sin(t*3+k+i)>0?PAL[(k+i)%5]:[36,74,53],-399);put(x,b-h-1,GOLD,-399)}),{z:22,on:false,label:'ต้นสน'});
+Xmas.add('garland',(a,t)=>{for(let x=0;x<C;x+=3){const y=2+3*Math.sin(x/C*Math.PI*6);put(x,y,[20,80,47],80,3);put(x+1,y+1,Math.sin(t*4+x)>0?PAL[(x/3|0)%5]:[42,48,80],81)}},{z:70,on:false,label:'ไฟระย้า'});
+Xmas.add('shooting',(a,t)=>{const tt=t%4.5;if(tt>.7)return;for(let i=0;i<10;i++)put(100-tt*90+i,8+tt*50-i*.6,[255,255,255],-950,1,1-i/10)},{z:8,on:false,label:'ดาวตก'});
+
+const panel=document.getElementById('panel'),tg=document.getElementById('tg'),gr=document.getElementById('gr');
+function buildPanel(){const list=document.getElementById('list');list.innerHTML='';Xmas.layers.forEach(l=>{const lb=document.createElement('label'),cb=document.createElement('input');
+  cb.type='checkbox';cb.checked=l.on;cb.onchange=()=>l.on=cb.checked;lb.append(cb,l.label);list.append(lb)})}
+tg.onclick=()=>{panel.hidden=!panel.hidden;tg.setAttribute('aria-expanded',String(!panel.hidden))};
+gr.value=Xmas.cfg.greeting;gr.oninput=()=>Xmas.cfg.greeting=gr.value.toUpperCase();buildPanel();
+
+const FALLBACK_PHOTOS=[
+  {url:"data:image/svg+xml;charset=UTF-8,"+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600"><rect width="800" height="600" fill="#070a18"/><circle cx="620" cy="120" r="55" fill="#ffd24a" opacity=".88"/><circle cx="150" cy="100" r="4" fill="#fff"/><circle cx="310" cy="80" r="3" fill="#fff"/><circle cx="480" cy="140" r="4" fill="#ffd24a"/><rect x="300" y="250" width="200" height="170" rx="18" fill="#d9232b"/><rect x="382" y="250" width="36" height="170" fill="#ffd24a"/><rect x="300" y="318" width="200" height="34" fill="#ffd24a"/><text x="400" y="495" text-anchor="middle" fill="#c9d1e6" font-family="sans-serif" font-size="24">SPECIAL GIFT FROM SANTA</text></svg>'),caption:"ของขวัญสุดพิเศษจากซานต้า 🎅🎁"}
+];
+
+const APP_CONFIG={
+  wishTitle:'Merry Christmas! 🎅✨',
+  wishMessage:'ขอให้ซานต้านำพาความสุข รอยยิ้ม และของขวัญดีๆ มาให้เธอในทุกๆ วันนะ สุขสันต์วันคริสต์มาสและปีใหม่!',
+  senderName:'Secret Santa',
+  recipientName:'Special Person',
+  photos:[...FALLBACK_PHOTOS]
+};
+
+let currentPhotoIdx=0;
+const giftModalBackdrop=document.getElementById('giftModalBackdrop');
+const giftPhotoStage=document.getElementById('giftPhotoStage');
+const giftModalImg=document.getElementById('giftModalImg');
+const giftPhotoCaption=document.getElementById('giftPhotoCaption');
+const photoCounter=document.getElementById('photoCounter');
+const prevPhotoBtn=document.getElementById('prevPhotoBtn');
+const nextPhotoBtn=document.getElementById('nextPhotoBtn');
+
+function getActivePhotos(){
+  if(Array.isArray(APP_CONFIG.photos)&&APP_CONFIG.photos.length>0){
+    const valid=APP_CONFIG.photos.filter(p=>p&&p.url);
+    if(valid.length>0)return valid;
+  }
+  return FALLBACK_PHOTOS;
+}
+
+function renderGiftModal(){
+  const photos=getActivePhotos();
+  if(currentPhotoIdx>=photos.length)currentPhotoIdx=0;
+  const item=photos[currentPhotoIdx];
+  giftPhotoStage.style.display='flex';
+  giftModalImg.onerror=()=>{giftModalImg.onerror=null;giftModalImg.src=FALLBACK_PHOTOS[0].url};
+  giftModalImg.src=item.url;
+  giftPhotoCaption.textContent=item.caption||'';
+  giftPhotoCaption.style.display=item.caption?'block':'none';
+  photoCounter.textContent=`${currentPhotoIdx+1} / ${photos.length}`;
+  prevPhotoBtn.style.display=photos.length>1?'grid':'none';
+  nextPhotoBtn.style.display=photos.length>1?'grid':'none';
+  document.getElementById('giftWishTitle').textContent=APP_CONFIG.wishTitle||'Merry Christmas!';
+  document.getElementById('giftWishText').textContent=APP_CONFIG.wishMessage||'';
+  document.getElementById('giftWishTo').textContent=APP_CONFIG.recipientName?`ถึง: ${APP_CONFIG.recipientName}`:'';
+  document.getElementById('giftWishFrom').textContent=APP_CONFIG.senderName?`จาก: ${APP_CONFIG.senderName}`:'';
+}
+
+function syncHeader(){
+  document.getElementById('topWishTitle').textContent=APP_CONFIG.wishTitle||'';
+  const sub=[];
+  if(APP_CONFIG.recipientName)sub.push(`ถึง ${APP_CONFIG.recipientName}`);
+  if(APP_CONFIG.senderName)sub.push(`จาก ${APP_CONFIG.senderName}`);
+  document.getElementById('topWishSub').textContent=sub.join('  •  ');
+  if(giftModalBackdrop.classList.contains('open'))renderGiftModal();
+}
+
+document.getElementById('openGiftCardBtn').onclick=()=>{currentPhotoIdx=0;renderGiftModal();giftModalBackdrop.classList.add('open')};
+document.getElementById('giftModalClose').onclick=()=>giftModalBackdrop.classList.remove('open');
+giftModalBackdrop.onclick=e=>{if(e.target===giftModalBackdrop)giftModalBackdrop.classList.remove('open')};
+prevPhotoBtn.onclick=()=>{const p=getActivePhotos();currentPhotoIdx=(currentPhotoIdx-1+p.length)%p.length;renderGiftModal()};
+nextPhotoBtn.onclick=()=>{const p=getActivePhotos();currentPhotoIdx=(currentPhotoIdx+1)%p.length;renderGiftModal()};
+
+function applyCustomData(data){
+  if(!data||typeof data!=='object')return;
+  if(typeof data.greeting==='string'){
+    const clean=data.greeting.slice(0,24).toUpperCase();
+    Xmas.cfg.greeting=clean;
+    gr.value=clean;
+  }
+  if(typeof data.speed==='number'&&data.speed>0)Xmas.cfg.speed=data.speed;
+  if(data.layers&&typeof data.layers==='object'){
+    Xmas.layers.forEach(l=>{if(typeof data.layers[l.name]==='boolean')l.on=data.layers[l.name]});
+    buildPanel();
+  }
+  if(typeof data.wishTitle==='string')APP_CONFIG.wishTitle=data.wishTitle;
+  if(typeof data.wishMessage==='string')APP_CONFIG.wishMessage=data.wishMessage;
+  if(typeof data.senderName==='string')APP_CONFIG.senderName=data.senderName;
+  if(typeof data.recipientName==='string')APP_CONFIG.recipientName=data.recipientName;
+  if(Array.isArray(data.photos)){
+    APP_CONFIG.photos=data.photos.filter(p=>p&&p.url).map(p=>({url:p.url,caption:p.caption||''}));
+  }
+  syncHeader();
+}
+
+window.addEventListener('message',e=>{
+  if(e.data&&e.data.type==='MANITA_SANTA_SYNC'){
+    applyCustomData(e.data.payload||e.data);
+  }
+});
+syncHeader();
+
+const hud=document.getElementById('hud');
+function frame(t){
+  cz.fill(-1e9);cc.fill(0);stat.presents=0;stat.sparkles=0;texts=[];
+  const yaw=.4+.28*Math.sin(t*.55)+ease(15.5,19,t)*.3,pit=.1;
+  cam.zoom=(.32+.68*ease(0,3.2,t))*(1+.5*ease(15.5,19.5,t));cam.tx=ease(1.2,4,t)*21;
+  cam.cy=Math.cos(yaw);cam.sy=Math.sin(yaw);cam.cp=Math.cos(pit);cam.sp=Math.sin(pit);
+  Xmas.layers.forEach(l=>{if(l.on){try{l.fn(api,t)}catch(e){console.error(l.name,e)}}});
+  g.fillStyle='#03040a';g.fillRect(0,0,cv.width,cv.height);let dots=0;
+  for(let i=0;i<N;i++){if(cz[i]<-1e8)continue;const r=cc[i*3],gg=cc[i*3+1],b=cc[i*3+2],l=(.3*r+.59*gg+.11*b)/255;if(l<.03)continue;dots++;
+    const s=CW*(.42+.5*Math.min(1,l*1.4)),x=(i%C)*CW+(CW-s)/2,y=((i/C)|0)*CW+(CW-s)/2;g.fillStyle=`rgb(${r},${gg},${b})`;g.fillRect(x,y,s,s)}
+  g.font=`bold ${CW*1.1}px ui-monospace,Menlo,Consolas,monospace`;g.textAlign='center';g.textBaseline='middle';
+  texts.forEach(([x,y,s,c])=>{g.fillStyle=`rgb(${c})`;g.fillText(s,x*CW+CW/2,y*CW+CW/2)});
+  hud.textContent=`altitude ${stat.alt} m  presents ${stat.presents}  sparkles ${stat.sparkles}  dots ${dots}`;
+}
+function fit(){const st=document.getElementById('stage'),k=Math.min(st.clientWidth/cv.width,st.clientHeight/cv.height);cv.style.width=cv.width*k+'px';cv.style.height=cv.height*k+'px'}
+addEventListener('resize',fit);fit();
+const still=matchMedia('(prefers-reduced-motion: reduce)').matches;let last=0,t0=performance.now();
+function loop(now){requestAnimationFrame(loop);if(now-last<33)return;last=now;frame(still?15.5:((now-t0)/1000*Xmas.cfg.speed)%T)}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

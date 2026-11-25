@@ -127,7 +127,7 @@ export function startMusic(themeKey = 'scrapbook', presetCategory = 'chat_scratc
     } catch (e) {}
   }
 
-  if (selectedMusic === 'none' || presetCategory === 'christmas_tree' || presetCategory === 'ascii_christmas') {
+  if (selectedMusic === 'none' || presetCategory === 'christmas_tree' || presetCategory === 'ascii_christmas' || presetCategory === 'santa_3d') {
     return;
   }
 
